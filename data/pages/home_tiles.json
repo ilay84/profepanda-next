@@ -1,0 +1,32 @@
+[
+  {
+    "id": "glosarios",
+    "slug": "glosarios",
+    "title": "📚 Glosarios Regionales",
+    "desc": "Glosarios con ejemplos auténticos de la cultura popular, siempre con audio.",
+    "href": "/glosarios",
+    "image": "assets/tiles/glosarios.png",
+    "enabled": true,
+    "order": 1
+  },
+  {
+    "id": "guias",
+    "slug": "guias",
+    "title": "📖 Guías",
+    "desc": "Explicaciones claras de estructuras del español para usar en la vida real.",
+    "href": "/pages",
+    "image": "assets/tiles/guias.png",
+    "enabled": true,
+    "order": 2
+  },
+  {
+    "id": "novedades",
+    "slug": "novedades",
+    "title": "✨ Novedades",
+    "desc": "Lo último en ProfePanda: lanzamientos, mejoras y recursos nuevos.",
+    "href": "#",
+    "image": "assets/tiles/novedades.png",
+    "enabled": true,
+    "order": 3
+  }
+]

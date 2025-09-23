@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}Glosario Regional: {{ country_code|capitalize }}{% endblock %}
+
+{% block content %}
+
+<!-- 🔹 Modal container for entry pop-ups -->
+<div id="entryModal" class="modal">
+  <div class="modal-content large-modal">
+    <div class="modal-header">
+      <span id="closeEntryModal" class="close">&times;</span>
+      <h2 id="modalWordTitle"></h2>
+    </div>
+    <div class="modal-body" id="modalWordContent">
+      <!-- Word details will be dynamically injected -->
+    </div>
+  </div>
+</div>
+
+<h2>Glosario Regional: {{ country_code|capitalize }}</h2>
+
+<!-- 🔹 Grid layout for word cards -->
+<div class="glossary-grid">
+  {% for entry in entries %}
+    <div class="entry-card"
+        data-entry='{{ entry | tojson | safe }}'
+        onclick='openEntryModal(JSON.parse(`{{ entry | tojson | safe }}`))'>
+      {{ entry.word }}
+    </div>
+  {% endfor %}
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+{% raw %}
+<script>
+function openEntryModal(entry) {
+  document.getElementById("modalWordTitle").textContent = entry.word;
+
+    const variantsSection = (entry.variants && Object.keys(entry.variants).length)
+      ? (() => {
+        const masc = [].concat(entry.variants.ms || [], entry.variants.mp || []);
+        const fem = [].concat(entry.variants.fs || [], entry.variants.fp || []);
+        const dim = entry.variants.diminutivo || [];
+        const aug = entry.variants.aumentativo || [];
+
+        let tableRows = "";
+        if (fem.length) {
+          tableRows += `<tr>
+                          <td style="padding: 2px 6px; font-weight: bold;">feminino:</td>
+                          <td style="padding: 2px 6px; font-style: italic;">${fem.join(", ")}</td>
+                        </tr>`;
+        }
+        if (masc.length) {
+          tableRows += `<tr>
+                          <td style="padding: 2px 6px; font-weight: bold;">masculino:</td>
+                          <td style="padding: 2px 6px; font-style: italic;">${masc.join(", ")}</td>
+                        </tr>`;
+        }
+        if (dim.length) {
+          tableRows += `<tr>
+                          <td style="padding: 2px 6px; font-weight: bold;">diminutivo:</td>
+                          <td style="padding: 2px 6px; font-style: italic;">${dim.join(", ")}</td>
+                        </tr>`;
+        }
+        if (aug.length) {
+          tableRows += `<tr>
+                          <td style="padding: 2px 6px; font-weight: bold;">aumentativo:</td>
+                          <td style="padding: 2px 6px; font-style: italic;">${aug.join(", ")}</td>
+                        </tr>`;
+        }
+
+        return `<details>
+                  <summary>📚 Formas variantes</summary>
+                  <table style="border-collapse: collapse; margin-top: 0.5rem;">
+                    ${tableRows}
+                  </table>
+                </details>`;
+      })()
+    : "";
+
+  const sensesSection = (entry.senses && entry.senses.length)
+    ? entry.senses.map((sense, idx) => `
+        <div class="sense-block">
+          <h3>Sentido ${idx + 1}</h3>
+          ${sense.tag_word_class?.length
+            ? `<div>${sense.tag_word_class.map(cls => `<span class="tag-btn tag-class">${cls}</span>`).join(" ")}</div>` : ``}
+          ${sense.tag_general?.length
+            ? `<div>${sense.tag_general.map(tag => `<span class="tag-btn tag-general">${tag}</span>`).join(" ")}</div>` : ``}
+          <div class="sense-definition">${sense.definition || ""}</div>
+          ${sense.equivalents?.length
+            ? `<div><strong>🇺🇸 Equivalentes en inglés:</strong>
+               <ul>${sense.equivalents.map(eq => `<li>${eq}</li>`).join("")}</ul></div>` : ``}
+          ${sense.audio ? `<audio controls src="${sense.audio}"></audio>` : ``}
+          ${sense.examples?.length
+            ? `<details>
+                 <summary>👀 Leer y 🎧 escuchar ejemplos auténticos</summary>
+                 ${sense.examples.map(ex => `
+                   <div class="example-block">
+                     <div>📖 ${ex.es}</div>
+                     ${ex.en ? `<div>💬 ${ex.en}</div>` : ``}
+                     ${ex.audio ? `<audio controls src="${ex.audio}"></audio>` : ``}
+                     ${ex.source ? (() => {
+                      const label = ex.source.text || ex.source.handle || ex.source.title || ex.source.song || "Fuente";
+                      const inner = ex.source.url
+                        ? `<a href="${ex.source.url}" target="_blank" rel="noopener noreferrer">${label}</a>`
+                        : label;
+                      return `<span class="source-chip">🔖 ${inner}</span>`;
+                    })() : ``}
+                   </div>`).join("")}
+               </details>` : ``}
+        </div>
+      `).join("")
+    : "";
+
+  document.getElementById("modalWordContent").innerHTML = `
+    ${variantsSection}
+    ${entry.audio ? `<audio controls src="${entry.audio}"></audio>` : ``}
+    ${sensesSection}
+  `;
+
+  document.getElementById("entryModal").style.display = "block";
+}
+
+document.getElementById("closeEntryModal").onclick = function() {
+  document.getElementById("entryModal").style.display = "none";
+};
+window.onclick = function(event) {
+  if (event.target.id === "entryModal") {
+    document.getElementById("entryModal").style.display = "none";
+  }
+};
+
+// === Fuente filter: click on the 🔖 chip to show only entries with that fuente
+document.addEventListener("click", function (e) {
+  const chip = e.target.closest(".source-chip");
+  if (!chip) return;
+
+  // Get the fuente label text from the chip (strip the leading emoji if present)
+  let fuenteLabel = chip.textContent.trim();
+  if (fuenteLabel.startsWith("🔖")) {
+    fuenteLabel = fuenteLabel.slice(1).trim();
+  }
+  // If the chip contains a link, textContent already includes it—no problem.
+
+  // Filter cards by checking their examples' sources
+  const cards = document.querySelectorAll(".entry-card");
+  const target = fuenteLabel.toLowerCase();
+
+  cards.forEach(card => {
+    try {
+      const entry = JSON.parse(card.dataset.entry || "{}");
+      // Look through senses -> examples -> source to see if any label matches
+      const hasFuente = (entry.senses || []).some(s =>
+        (s.examples || []).some(ex => {
+          const src = ex.source || {};
+          const label =
+            src.text || src.handle || src.title || src.song || "fuente";
+          return (label || "").toLowerCase() === target;
+        })
+      );
+      card.style.display = hasFuente ? "" : "none";
+    } catch {
+      // If parsing fails, hide the card (shouldn't happen)
+      card.style.display = "none";
+    }
+  });
+
+  // Close the modal so user sees the filtered grid
+  const modal = document.getElementById("entryModal");
+  if (modal) modal.style.display = "none";
+});
+
+</script>
+{% endraw %}
+{% endblock %}

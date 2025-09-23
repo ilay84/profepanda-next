@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Admin – Inicio (Tiles){% endblock %}
+
+{% block content %}
+<h2 style="display:flex;align-items:center;gap:.5rem;">
+  🏠 Inicio – Tiles
+</h2>
+<p style="margin:.35rem 0 1rem;color:#475569;">
+  Lista de tarjetas que aparecen en la página de inicio.
+</p>
+
+<style>
+  .tiles-admin-grid{
+    display:grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap:1rem;
+  }
+  @media (max-width: 1024px){
+    .tiles-admin-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 640px){
+    .tiles-admin-grid{ grid-template-columns: 1fr; }
+  }
+
+  .tile-admin-card{
+    border:1px solid #e5e7eb;
+    border-radius:14px;
+    overflow:hidden;
+    background:#fff;
+    box-shadow:0 4px 14px rgba(0,0,0,.05);
+  }
+  .tile-admin-media{
+    aspect-ratio:1/1;
+    width:100%;
+    background:#f3f4f6;
+    display:flex;align-items:center;justify-content:center;
+    overflow:hidden;
+  }
+  .tile-admin-media img{
+    width:100%;height:100%;object-fit:cover;display:block;
+  }
+  .tile-admin-body{
+    padding:.85rem 1rem 1rem;
+  }
+  .tile-admin-title{
+    margin:0 0 .25rem 0;font-weight:700;font-size:1.05rem;color:#0f172a;
+  }
+  .tile-admin-meta{
+    font-size:.85rem;color:#64748b;margin-bottom:.5rem;display:flex;gap:.75rem;flex-wrap:wrap;
+  }
+  .tile-admin-desc{
+    margin:0;color:#475569;font-size:.95rem;line-height:1.35rem;
+  }
+  .tile-admin-actions{
+    display:flex;gap:.5rem;margin-top:.85rem;flex-wrap:wrap;
+  }
+  .btn{
+    appearance:none;border:1px solid #cbd5e1;border-radius:10px;padding:.45rem .7rem;font-size:.9rem;
+    background:#fff;color:#0f172a;text-decoration:none;cursor:pointer;
+    transition:background .12s ease,border-color .12s ease,transform .06s ease;
+  }
+  .btn:hover{ background:#f8fafc; }
+  .btn:active{ transform:translateY(1px); }
+  .btn-primary{ border-color:#2563eb;color:#1e40af; }
+  .btn-danger{ border-color:#ef4444;color:#b91c1c; }
+  .pill{
+    display:inline-flex;align-items:center;gap:.35rem;
+    padding:.2rem .5rem;border-radius:999px;border:1px solid #e2e8f0;background:#f8fafc;font-size:.8rem;color:#334155;
+  }
+</style>
+
+<div style="margin:0 0 1rem 0;display:flex;gap:.5rem;flex-wrap:wrap;">
+  <a class="btn btn-primary" href="#" title="(Próximo paso) agregar nueva tarjeta" onclick="alert('En el próximo paso agregamos el formulario de creación/edición 😉'); return false;">+ Nueva tarjeta</a>
+  <a class="btn" href="{{ url_for('admin.admin_home') }}">← Volver al panel</a>
+</div>
+
+{% if not tiles %}
+  <div style="padding:1rem;border:1px dashed #cbd5e1;border-radius:12px;background:#f8fafc;color:#475569;">
+    No hay tiles configurados todavía. Creá <code>data/pages/home_tiles.json</code> o usá “Nueva tarjeta” (lo activaremos en el próximo paso).
+  </div>
+{% else %}
+  <div class="tiles-admin-grid">
+    {% for t in tiles %}
+      <article class="tile-admin-card">
+        <div class="tile-admin-media">
+          {% if t.image %}
+            <img src="{{ url_for('static', filename=t.image) }}" alt="{{ t.title or 'tile' }}">
+          {% else %}
+            <div style="font-size:.9rem;color:#94a3b8;">Sin imagen</div>
+          {% endif %}
+        </div>
+        <div class="tile-admin-body">
+          <h3 class="tile-admin-title">{{ t.title or '—' }}</h3>
+          <div class="tile-admin-meta">
+            <span class="pill">Orden: <strong>{{ t.order if t.order is not none else '—' }}</strong></span>
+            <span class="pill">Estado: <strong>{{ 'habilitada' if t.enabled is not defined or t.enabled else 'deshabilitada' }}</strong></span>
+            {% if t.href %}
+              <span class="pill">Link: <a href="{{ t.href }}" target="_blank" rel="noopener" style="color:#2563eb;text-decoration:none;">{{ t.href }}</a></span>
+            {% endif %}
+          </div>
+          {% if t.desc %}
+            <p class="tile-admin-desc">{{ t.desc }}</p>
+          {% endif %}
+
+          <div class="tile-admin-actions">
+            <a href="#" class="btn btn-primary" onclick="alert('Editar vendrá en el próximo paso 🤓'); return false;">Editar</a>
+            <a href="#" class="btn btn-danger" onclick="alert('Borrar vendrá en el próximo paso 🧹'); return false;">Borrar</a>
+          </div>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+{% endif %}
+{% endblock %}

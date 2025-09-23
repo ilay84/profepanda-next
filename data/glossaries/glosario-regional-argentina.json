@@ -1,0 +1,3943 @@
+[
+    {
+        "word": "a caballo",
+        "slug": "a-caballo",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-a_caballo.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "locución adjetival"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🍽️ comida",
+                    "📈 común"
+                ],
+                "definition": "<p>Expresión culinaria usada para indicar que un plato viene <em>con huevos fritos encima</em>.</p><p>Común en restaurantes y bares de Argentina, especialmente con papas fritas o milanesas.</p><p>El nombre sugiere visualmente cómo los huevos \"montan\" el plato <em>como si fueran un jinete</em>.</p>",
+                "equivalents": [
+                    "with fried eggs on top",
+                    "topped with fried eggs"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "Traeme unas papas fritas `a caballo`. Si me quedo con hambre, te pido otra cosa.",
+                        "en": "Bring me some fries with eggs on top. If I’m still hungry, I’ll ask for something else.",
+                        "source": {
+                            "kind": "pelicula",
+                            "title": "Relatos Salvajes",
+                            "year": "2014"
+                        },
+                        "audio": "static/audio/examples/a-caballo/ex-a_caballo-01.mp3"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "afanar",
+        "slug": "afanar",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-afanar.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "verbo transitivo"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "📈 común",
+                    "🤙 informal",
+                    "🧩 lunfardo"
+                ],
+                "definition": "<p>Robar, quitar algo sin permiso o apropiarse de lo ajeno.</p>",
+                "equivalents": [
+                    "steal",
+                    "swipe",
+                    "snatch",
+                    "jack",
+                    "lift",
+                    "rip off"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "¿Cómo podés `afanar` esto?",
+                        "en": "How can you steal this?",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Casados con Hijos",
+                            "year": "2005",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "audio": "static/audio/examples/afanar/ex-afanar-01.mp3"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "al toque",
+        "slug": "al-toque",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-al_toque.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "expresión adverbial"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🤙 informal",
+                    "📈 común"
+                ],
+                "definition": "<p>Expresión usada para indicar que algo se hace <em>de inmediato</em>, <em>sin demora</em>.</p><p>Es muy común en el habla argentina, tanto en contextos <strong>informales</strong> como en situaciones más <strong>urgentes o enfáticas</strong>, y puede transmitir eficiencia o apuro según el tono.</p>",
+                "equivalents": [
+                    "right away",
+                    "immediately",
+                    "in a flash",
+                    "real quick"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "El SAME viene `al toque`.",
+                        "en": "The ambulance gets here real quick.",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Casados con Hijos",
+                            "year": "2005",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked_words": [],
+                        "audio": "static/audio/examples/al_toque/ex-al_toque-01.mp3"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "atender (el teléfono)",
+        "slug": "atender--el-teléfono-",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-atender_el_telefono.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "verbo transitivo"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina"
+                ],
+                "definition": "<p>En Argentina y Uruguay, verbo usado para indicar <em>responder una llamada telefónica</em>. Equivale a <em>contestar</em> en la mayoría de los demás países hispanohablantes, aunque <em>atender</em> es la forma preferida en el español rioplatense.</p>",
+                "equivalents": [
+                    "to answer (the phone)",
+                    "to pick up (the phone)"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "Cuando hace un par de meses te pregunté de quién era ese número que cortó cuando yo `atendí` tu teléfono y me dijiste que era de tu profesor de guitarra.",
+                        "en": "When a couple of months ago I asked you whose number it was that hung up when I answered your phone, and you told me it was your guitar teacher’s.",
+                        "source": {
+                            "kind": "pelicula",
+                            "title": "Relatos Salvajes",
+                            "year": "2014"
+                        },
+                        "audio": "static/audio/examples/atender_el_telefono/ex-atender_el_telefono-01.mp3"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "barrio cerrado",
+        "slug": "barrio-cerrado",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-barrio_cerrado.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "expresión nominal"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🏠 vivienda / hogar",
+                    "🏦 clase social"
+                ],
+                "definition": "<p>Urbanización residencial <strong>privada y cerrada</strong>, con acceso restringido, seguridad y servicios propios.</p><p>En Argentina, se asocia con sectores <em>medios-altos o altos</em> y puede implicar un estilo de vida <em>exclusivo</em>, <em>aislado</em> o con aspiraciones de distinción social.</p>",
+                "equivalents": [
+                    "gated community",
+                    "private neighborhood"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "—¡Ay, estoy tan nerviosa! Nunca trabajé en un `barrio cerrado`. ¿Cómo es la gente? —Lo peor.",
+                        "en": "—Ugh, I’m so nervous! I’ve never worked in a gated community. What are the people like? —The worst.",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Viudas negras: P*tas y chorras",
+                            "year": "2025",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "audio": "static/audio/examples/barrio_cerrado/ex-barrio_cerrado-01.mp3"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "birra",
+        "slug": "birra",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-birra.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo femenino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🍺 bebida",
+                    "📈 común"
+                ],
+                "definition": "<p>Forma <em>coloquial</em> de referirse a la <strong>cerveza</strong>, muy común en el habla cotidiana argentina.</p><p>Proviene del italiano <em>birra</em> y se usa en todos los grupos etarios, especialmente en contextos <em>informales o sociales</em>.</p>",
+                "equivalents": [
+                    "beer"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "¡Qué bueno! Bueno, vayan a tomar `birra` a la esquina, hagan algo normal de su edad.",
+                        "en": "That’s great! Now go grab a beer on the corner or something—do something normal for your age.",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Viudas negras: P*tas y chorras",
+                            "year": "2025",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked_words": [],
+                        "audio": "static/audio/examples/birra/ex-birra-01.mp3"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "boliche",
+        "slug": "boliche",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-boliche.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo masculino"
+                ],
+                "tag_general": [
+                    "🗣️ coloquial",
+                    "🎤 lenguaje oral",
+                    "🏙️ contexto urbano",
+                    "👥 popular",
+                    "🇦🇷 Argentina"
+                ],
+                "definition": "<p>En Argentina, se usa para referirse a un <strong>club nocturno</strong>, <strong>discoteca</strong> o lugar donde se va a <em>bailar y salir de noche</em>.</p><p>Es una palabra <em>coloquial</em> muy común en todo el país, especialmente en contextos <em>sociales o festivos</em>.</p>",
+                "equivalents": [
+                    "nightclub",
+                    "club",
+                    "dance club"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "—¿Quién era Marcos Gussi? ¿Por qué me suena tanto? \n—¡Ay, gorda! El dueño de todos los `boliches` de la costanera.",
+                        "en": "—Who was Marcos Gussi? Why does that name sound so familiar? \n—Girl, he owned all the clubs along the riverfront.",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Viudas negras: P*tas y chorras",
+                            "year": "2025",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "audio": "static/audio/examples/boliche/ex-boliche-01.mp3"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "boludo",
+        "slug": "boludo",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-boludo.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo masculino y femenino; adjetivo"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🗣️ coloquial",
+                    "🤙 informal",
+                    "🥰 insulto cariñoso",
+                    "😒 insulto leve",
+                    "🤬 insulto",
+                    "📈 común"
+                ],
+                "definition": "<p>Persona <em>tonta</em>, <em>ingenua</em> o que actúa sin pensar, a veces de forma torpe o distraída.</p><p>Pero también se usa entre amigos como una forma <em>afectuosa</em>, <em>informal</em> o incluso <em>cómica</em> de llamarse la atención o expresar cercanía.</p>",
+                "equivalents": [
+                    "idiot",
+                    "dummy (insulting)",
+                    "dude",
+                    "girl",
+                    "silly (affectionate)"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "Sí, te estoy jodiendo, `boluda`, son las empanadas.",
+                        "en": "Yeah, I’m messing with you — dummy, the empanadas are here.",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Viudas negras: P*tas y chorras",
+                            "year": "2025",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "audio": "static/audio/examples/boludo/ex-boludo-01.mp3"
+                    },
+                    {
+                        "es": "Parece un bar swinger, `boluda`.",
+                        "en": "It totally sounds like a swinger bar, dude.",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Viudas negras: P*tas y chorras",
+                            "year": "2025",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "audio": "static/audio/examples/boludo/ex-boludo-02.mp3"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "cachamay",
+        "slug": "cachamay",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-cachamay.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo masculino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🏷️ marca comercial",
+                    "🧉yerba mate"
+                ],
+                "definition": "<p>Infusión de hierbas con propiedades <em>digestivas</em> o <em>relajantes</em>.</p><p> En Argentina, <strong>cachamay</strong><span class=\"ql-cursor\">﻿﻿</span> se usa de forma genérica para referirse a cualquier té de hierbas, especialmente aquellos que se consumen para <em>calmar los nervios</em> o <em>facilitar la digestión</em>.</p><p>El término proviene originalmente de la marca registrada <strong>Cachamai</strong>, empresa argentina fundada en la década de 1950 y especializada en productos naturales.</p><p>El nombre <em>Cachamai</em> proviene del quechua y significa <em>“hierbas que hacen bien”</em>. Aunque comenzó como marca comercial, con el tiempo el término se volvió de uso común, al punto que hoy se escucha en frases como: <em>“me tomé un cachamay y me fui a dormir”</em>.</p><p>La misma empresa también produce la línea <strong>Cachamate</strong>, una variedad de <em>yerba mate compuesta</em>, es decir, mezclada con hierbas como boldo, manzanilla o menta.</p>",
+                "equivalents": [
+                    "herbal tea",
+                    "digestive tea",
+                    "herbal blend"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "Yo anoche me vi una película de vaqueros, me tomé un `cachamay` y a las 11 estaba durmiendo como todas las noches.",
+                        "en": "Last night I watched a western, had an herbal tea, and I was asleep by 11 just like always.",
+                        "source": {
+                            "kind": "pelicula",
+                            "title": "Relatos Salvajes",
+                            "year": "2014"
+                        },
+                        "audio": "static/audio/examples/cachamay/ex-cachamay-01.mp3"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "caerle la ficha",
+        "slug": "caerle-la-ficha",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-caerle_la_ficha.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "expresión"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🧩 lunfardo",
+                    "🎤 lenguaje oral",
+                    "🗣️ coloquial",
+                    "🤷 sarcasmo / ironía"
+                ],
+                "definition": "<p>Expresión que indica que alguien <em>comprende algo de golpe</em>, <em>toma conciencia</em> o <em>entiende</em> una situación de forma repentina.</p><p>Suele usarse cuando esa comprensión llega <em>tarde</em> o después de un momento de confusión, con un tono de <em>realización inesperada</em> o <em>despertar mental</em>.</p>",
+                "equivalents": [
+                    "realize",
+                    "dawn on someone",
+                    "have something click",
+                    "have it sink in",
+                    "finally get it"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "¿En serio? Vos me estás contando una historia a mí? ¿Vos me la estás contando a mí, que `te cayó la ficha` de golpe?",
+                        "en": "Seriously? You’re telling me a story? You’re telling me this, like it suddenly hit you?",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Viudas negras: P*tas y chorras",
+                            "year": "2025",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "audio": "static/audio/examples/caerle_la_ficha/ex-caerle_la_ficha-01.mp3"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "cagada",
+        "variants": {
+            "m.s.": [],
+            "m.p.": [],
+            "f.s.": [],
+            "f.p.": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio_word": null,
+        "senses": [
+            {
+                "tag_word_class": [],
+                "tag_general": [],
+                "definition": "",
+                "equivalents": [],
+                "audio": null,
+                "examples": []
+            }
+        ]
+    },
+    {
+        "word": "cagón",
+        "slug": "cagon",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-cagon.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo masculino y femenino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🤬 insulto",
+                    "😡 malsonante",
+                    "❗ enfático"
+                ],
+                "definition": "<p>Persona <em>cobarde</em>, que evita el conflicto o se echa atrás ante situaciones difíciles o incómodas.</p><p>Se usa como <strong>insulto directo</strong> para cuestionar la <em>valentía</em>, <em>determinación</em> o <em>carácter</em> de alguien, a menudo con tono de desprecio o burla.</p>",
+                "equivalents": [
+                    "coward",
+                    "wimp",
+                    "chicken",
+                    "pussy"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "—¡Está blindado, no lo vas a poder romper! \r\n—¡`Cagón`!",
+                        "en": "—It’s bulletproof, you won’t be able to break it! \r\n—Coward!",
+                        "audio": "static/audio/examples/cagon/ex-cagon-01.mp3",
+                        "source": {
+                            "kind": "pelicula",
+                            "title": "Relatos Salvajes",
+                            "year": "2014"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "calentarse",
+        "slug": "calentarse",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-calentarse.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "verbo pronominal"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🗣️ coloquial",
+                    "😭 emoción"
+                ],
+                "definition": "<p>Enojarse, exaltarse o alterarse emocionalmente, especialmente ante una situación <em>frustrante</em>, <em>provocadora</em> o <em>injusta</em>.</p><p>Es común en el habla cotidiana y suele usarse en imperativos como <em>“no te calentés”</em> para pedir que alguien <em>se calme</em> o <em>no reaccione con bronca</em>.</p>",
+                "equivalents": [
+                    "to get mad",
+                    "to lose your cool",
+                    "to get worked up",
+                    "to lose your temper"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "No `te calentés`. Take it easy.",
+                        "en": "Don't lose your cool. Take it easy.",
+                        "audio": "static/audio/examples/calentarse/ex-calentarse-01.mp3",
+                        "source": {
+                            "kind": "pelicula",
+                            "title": "Relatos Salvajes",
+                            "year": "2014"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "cantarse las pelotas",
+        "slug": "cantarse-las-pelotas",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-cantarse_las_pelotas.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "verbo pronominal; expresión"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🗣️ coloquial",
+                    "😡 malsonante",
+                    "🤬 grosero"
+                ],
+                "definition": "<p>Expresión vulgar que significa hacer lo que a uno <em>le da la gana</em>, <em>sin importar reglas, consecuencias ni la opinión ajena</em>.</p><p>Es una variante de <em>“hacer lo que se te canta”</em>, pero con una carga <strong>grosera</strong>, más <em>enfática</em> y <em>desafiante</em>, que transmite bronca o desprecio por la autoridad.</p>",
+                "equivalents": [
+                    "do whatever the hell you want",
+                    "do whatever the fuck you feel like",
+                    "not give a damn"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "Yo te di la mejor educación y vos siempre hiciste lo que `se te cantaron las pelotas`, así que ahora ¡jodete, hermano!",
+                        "en": "I gave you the best education and you always did whatever the hell you wanted — so now screw you, man!",
+                        "audio": "static/audio/examples/cantarse_las_pelotas/ex-cantarse_las_pelotas-01.mp3",
+                        "source": {
+                            "kind": "pelicula",
+                            "title": "Relatos Salvajes",
+                            "year": "2014"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "cargar",
+        "slug": "cargar",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-cargar.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "verbo transitivo"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🎤 lenguaje oral",
+                    "🗣️ coloquial",
+                    "❗ enfático"
+                ],
+                "definition": "<p>Usado en forma <em>coloquial</em> para expresar <strong>burla</strong>, <strong>sorpresa</strong> o <strong>incredulidad</strong>, especialmente en frases como <em>“¿me estás cargando?”</em>.</p><p>También puede significar <em>molestar</em>, <em>tomarle el pelo</em> o <em>burlarse</em> de alguien de manera insistente o provocadora.</p>",
+                "equivalents": [
+                    "to tease",
+                    "to mess with",
+                    "to kid"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "¿Te cagaste la vida? ¿Me estás `cargando`? ¡Te casaste con el feo ese y te salvaste!",
+                        "en": "You ruined your life? Are you kidding? You married that ugly guy and saved yourself!",
+                        "audio": "static/audio/examples/cargar/ex-cargar-01.mp3",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Viudas negras: P*tas y chorras",
+                            "year": "2025",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "che",
+        "slug": "che",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-che.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "interjección"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🗣️ coloquial",
+                    "📢 vocativo",
+                    "🎤 lenguaje oral",
+                    "📈 común"
+                ],
+                "definition": "<p>Interjección muy común en Argentina y Uruguay, usada para <strong>llamar la atención</strong>, <strong>iniciar una frase</strong>, <strong>expresar sorpresa</strong> o marcar un tono <em>familiar</em> o <em>cercano</em>.</p><p>Su uso es altamente contextual y puede transmitir <em>afecto</em>, <em>urgencia</em>, <em>disgusto</em> o simplemente <em>complicidad</em> entre hablantes.</p>",
+                "equivalents": [
+                    "hey",
+                    "yo",
+                    "dude",
+                    "man"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "—`Che`, gordo..., vos así vestido, por favor, no, eh. —¿Qué tiene? ¿Está mal? ¿Tengo que vestirme bien para ir a mi living?",
+                        "en": "—Hey, babe… dressed like that? Come on, no way. —What’s wrong with it? Is it bad? Do I need to dress up just to be in my own living room?",
+                        "audio": "static/audio/examples/che/ex-che-01.mp3",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Viudas negras: P*tas y chorras",
+                            "year": "2025",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked": [
+                            "living",
+                            "gordo"
+                        ]
+                    },
+                    {
+                        "es": "`Che`, ¿dónde es la previa?",
+                        "en": "Hey, where’s the pregame at?",
+                        "audio": "static/audio/examples/che/ex-che-02.mp3",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Viudas negras: P*tas y chorras",
+                            "year": "2025",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "cheto",
+        "slug": "cheto",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-cheto.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo masculino y femenino; adjetivo"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🧩 lunfardo",
+                    "🗣️ coloquial"
+                ],
+                "definition": "<p>Persona, lugar o cosa asociado a sectores de <strong>clase alta</strong>, con actitudes <em>pretenciosas</em>, <em>elitistas</em> o de <em>superioridad</em>.</p><p>Suele implicar <em>riqueza</em>, <em>aspiraciones sociales</em> o <em>snobismo</em>, y se usa a menudo con un tono <strong>burlón</strong>, <strong>crítico</strong> o de <em>distanciamiento irónico</em>.</p>",
+                "equivalents": [
+                    "bougie",
+                    "rich",
+                    "upscale",
+                    "preppy",
+                    "fancy",
+                    "stuck-up"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "De Flores venís, Marina. ¡Es `cheto` Flores! ¿Sabés lo que sale un alquiler ahí? Esto donde vivís no es `cheto`, ¡es extraterrestre!",
+                        "en": "You’re from Flores, Marina? Flores is bougie! Do you know how much it costs to rent there? Where you live isn’t just upscale — it’s like another planet!",
+                        "audio": "static/audio/examples/cheto/ex-cheto-01.mp3",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Viudas negras: P*tas y chorras",
+                            "year": "2025",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "chocho",
+        "slug": "chocho",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-chocho.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "adjetivo"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🗣️ coloquial",
+                    "😄 felicidad",
+                    "😭 emoción",
+                    "🤙 informal"
+                ],
+                "definition": "<p>Muy <em>contento</em>, <em>entusiasmado</em> o <em>satisfecho</em>.</p><p>Se usa en situaciones <strong>informales</strong> para expresar <em>alegría espontánea</em>, <em>placer</em> o <em>orgullo</em>, y suele tener connotaciones <strong>positivas</strong> y <em>afectuosas</em>.</p>",
+                "equivalents": [
+                    "happy",
+                    "thrilled",
+                    "delighted",
+                    "over the moon",
+                    "stoked"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "Llamó mi vieja, todo bien. Clarita estaba `chocha`.",
+                        "en": "My mom called—everything’s fine. Clarita was thrilled.",
+                        "audio": "static/audio/examples/chocho/ex-chocho-01.mp3",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Viudas negras: P*tas y chorras",
+                            "year": "2025",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked": [
+                            "viejo"
+                        ]
+                    },
+                    {
+                        "es": "Estoy `chocha`. ¿Viste cuando todo lo que hay es lo que querés?",
+                        "en": "I'm thrilled. You know when everything around you is exactly what you want?",
+                        "audio": "static/audio/examples/chocho/ex-chocho-02.mp3",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Viudas negras: P*tas y chorras",
+                            "year": "2025",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "chorro",
+        "slug": "chorro",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-chorro.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo masculino y femenino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🤬 insulto",
+                    "🗣️ coloquial",
+                    "🧩 lunfardo"
+                ],
+                "definition": "<p>Persona que <strong>roba</strong> o se aprovecha de los demás, especialmente en contextos <em>urbanos</em> o de <em>corrupción institucional</em>.</p><p>En Argentina, se usa tanto para ladrones comunes como para referirse de forma <em>crítica</em> a <strong>políticos</strong> o <strong>empresarios corruptos</strong>.</p>",
+                "equivalents": [
+                    "thief",
+                    "robber",
+                    "crook",
+                    "scammer",
+                    "corrupt politician"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "¿Qué se siente ser un `chorro`? Decime. Contame.",
+                        "en": "What’s it like to be a thief? Tell me. Go on, I want to hear.",
+                        "audio": "static/audio/examples/chorro/ex-chorro-01.mp3",
+                        "source": {
+                            "kind": "pelicula",
+                            "title": "Relatos Salvajes",
+                            "year": "2014"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "ciruja",
+        "slug": "ciruja",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-ciruja.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo masculino y femenino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🧩 lunfardo",
+                    "🏦 clase social",
+                    "🤬 insulto",
+                    "😒 insulto leve",
+                    "🗣️ coloquial",
+                    "🤙 informal",
+                    "📈 común",
+                    "⚠️ término sensible"
+                ],
+                "definition": "<p>Persona que vive en la calle o en condiciones <em>muy precarias</em>, y que suele dedicarse a la <strong>recolección de basura</strong>, <strong>cartoneo</strong> o actividades informales similares.</p><p>También se usa como <strong>insulto despectivo o exagerado</strong> para señalar a alguien <em>sucio</em>, <em>descuidado</em> o asociado a una <em>imagen marginal o de clase baja</em>.</p>",
+                "equivalents": [
+                    "bum",
+                    "vagrant",
+                    "trash picker",
+                    "hobo"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "Todo el barrio sabía que tenías sexo con `cirujas`.",
+                        "en": "The whole neighborhood knew you were having sex with hobos.",
+                        "audio": "static/audio/examples/ciruja/ex-ciruja-01.mp3",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Viudas negras: P*tas y chorras",
+                            "year": "2025",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "conchudo",
+        "slug": "conchudo",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-conchudo.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo masculino y femenino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🤬 insulto",
+                    "😡 malsonante",
+                    "🗣️ coloquial",
+                    "🎤 lenguaje oral"
+                ],
+                "definition": "<p>Insulto <strong>vulgar</strong> que se usa para describir a alguien <em>caradura</em>, <em>desvergonzado</em> o que actúa con <strong>cinismo</strong> e <strong>impunidad</strong>.</p><p> Suele expresar una reacción de <em>rabia</em> o <em>indignación</em> frente a una provocación o injusticia, con un tono <strong>agresivo</strong> y <strong>ofensivo</strong>.</p><p><em>Nota:</em> Tiene una carga <strong>fuertemente ofensiva</strong> y su uso puede ser considerado <strong>violento</strong> o <strong>denigrante</strong>, especialmente en contextos sensibles.</p><p><em>Origen:</em> Deriva del término “concha” (vulva), lo que refuerza su carga <strong>sexista</strong> y lo vincula a una visión <strong>despectiva de lo femenino</strong> en el lenguaje insultante.</p>",
+                "equivalents": [
+                    "asshole",
+                    "bastard",
+                    "prick",
+                    "shameless fuck"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "Pedazo de `conchudo` que sos, eh.",
+                        "en": "What a fucking asshole you are, seriously.",
+                        "audio": "static/audio/examples/conchudo/ex-conchudo-01.mp3",
+                        "source": {
+                            "kind": "pelicula",
+                            "title": "Relatos Salvajes",
+                            "year": "2014"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "cordón",
+        "slug": "cordon",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-cordon.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo masculino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "📈 común",
+                    "🧱 objeto",
+                    "🏙️ contexto urbano"
+                ],
+                "definition": "<p>Borde de <strong>hormigón</strong> que separa la <strong>vereda</strong> (acera) de la <strong>calle</strong>.</p><p>En Argentina, el término se usa de forma común en contextos de <em>estacionamiento</em>, <em>tránsito</em> y <em>organización del espacio urbano</em>.</p>",
+                "equivalents": [
+                    "curb",
+                    "curbside"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "El `cordón` estaba absolutamente despintado, o sea, no había ninguna forma de que yo me enterara de que ahí no se podía estacionar.",
+                        "en": " The curb was completely unpainted — I had no way of knowing you weren’t allowed to park there.",
+                        "audio": "static/audio/examples/cordon/ex-cordon-01.mp3",
+                        "source": {
+                            "kind": "pelicula",
+                            "title": "Relatos Salvajes",
+                            "year": "2014"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "coso",
+        "slug": "coso",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": null,
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo masculino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "📈 común",
+                    "🗣️ coloquial",
+                    "🎤 lenguaje oral",
+                    "🧱 objeto",
+                    "👥 popular"
+                ],
+                "definition": "<p>Término <strong>comodín</strong> usado para referirse a una <em>cosa</em>, <em>persona</em> o <em>situación</em> cuando no se recuerda el nombre, no se quiere nombrar, o no se considera importante.</p><p>Puede expresar <em>vaguedad</em>, <em>desdén</em> o <em>falta de interés</em>, y es muy común en el habla cotidiana.</p><p>1) Objeto no identificado: “Pasame ese coso de ahí.” </p><p>2) Persona ambigua o irrelevante: “Ese coso que vino con vos…”\r\n</p>",
+                "equivalents": [
+                    "thing",
+                    "thingy",
+                    "whatchamacallit",
+                    "that guy",
+                    "that girl",
+                    "whatshisname",
+                    "whatshername"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "¿Y ese `coso` que te dice Mari? ¿Es tu amiga en serio? Me dejó sola con su hijo solo porque le hice bien las manos. ¡No me conoce! ¡Yo podría tener antecedentes!",
+                        "en": "And that girl who calls you Mari — is she really your friend? She left me alone with her kid just because I did her nails well. She doesn’t know me! I could have a criminal record!",
+                        "audio": "static/audio/examples/coso/ex-coso-01.mp3",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Viudas negras: P*tas y chorras",
+                            "year": "2025",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "country",
+        "slug": "country",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-country.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo masculino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🗣️ coloquial",
+                    "🏦 clase social",
+                    "📍localismo",
+                    "🔤 préstamo"
+                ],
+                "definition": "<p>En Argentina, urbanización privada y cerrada con control de acceso, áreas verdes y servicios comunes, habitada mayormente por personas de clase media-alta o alta. Suele usarse de forma abreviada para referirse a <em>country club</em>.</p>",
+                "equivalents": [
+                    "gated community",
+                    "country club"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "Bueno, esa es la mesa de los chicos del `country`.",
+                        "en": "Well, that’s the table for our childhood buddies from the gated neighborhood.",
+                        "audio": "static/audio/examples/country/ex-country-01.mp3",
+                        "source": {
+                            "kind": "pelicula",
+                            "title": "Relatos Salvajes",
+                            "year": "2014"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "crique",
+        "slug": "crique",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-crique.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo masculino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "📈 común",
+                    "🧱 objeto"
+                ],
+                "definition": "<p>Herramienta usada para <strong>levantar un auto</strong>, especialmente durante un cambio de neumático.</p><p>En el español de Argentina, <em>crique</em> o <em>críquet</em> es una forma común y extendida de referirse al <strong>gato hidráulico</strong>, sobre todo en contextos <em>informales</em> y <em>cotidianos</em>.</p>",
+                "equivalents": [
+                    "car jack",
+                    "jack",
+                    "tire jack",
+                    "hydraulic jack"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "Porque el coche es nuevo y la verdad que no me doy mucha maña con el `críquet`.",
+                        "en": "The car’s new, and honestly, I’m not too good with the jack.",
+                        "audio": "static/audio/examples/crique/ex-crique-01.mp3",
+                        "source": {
+                            "kind": "pelicula",
+                            "title": "Relatos Salvajes",
+                            "year": "2014"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "culo",
+        "variants": {
+            "m.s.": [],
+            "m.p.": [],
+            "f.s.": [],
+            "f.p.": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio_word": null,
+        "senses": [
+            {
+                "tag_word_class": [],
+                "tag_general": [],
+                "definition": "",
+                "equivalents": [],
+                "audio": null,
+                "examples": []
+            }
+        ]
+    },
+    {
+        "word": "embalado",
+        "slug": "embalado",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-embalado.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "adjetivo"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🗣️ coloquial",
+                    "😭 emoción"
+                ],
+                "definition": "<p>Estado de <em>exaltación emocional</em>, <em>impulso desmedido</em> o <em>entusiasmo fuera de control</em>, que lleva a actuar sin pensar demasiado.</p><p> Puede surgir por <strong>enojo</strong>, <strong>euforia</strong>, <strong>alcohol</strong> o una reacción emocional <em>repentina</em> e <em>intensa</em>, y suele implicar pérdida de control o aceleración.</p>",
+                "equivalents": [
+                    "amped up",
+                    "fired up",
+                    "hyped",
+                    "worked up",
+                    "carried away"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "Y anoche había tomado, la verdad. Y, bueno, estaba `embalado` y salí.",
+                        "en": "I’d been drinking last night, honestly. And, well, I was all hyped up and I left.",
+                        "audio": "static/audio/examples/embalado/ex-embalado-01.mp3",
+                        "source": {
+                            "kind": "pelicula",
+                            "title": "Relatos Salvajes",
+                            "year": "2014"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "en bolas",
+        "slug": "en-bolas",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-en_bolas.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "locución adjetival idiomática"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🗣️ coloquial"
+                ],
+                "definition": "<p>Expresión coloquial del español rioplatense que significa <em>desnudo/a</em> o con muy poca ropa. También puede usarse de forma figurada para indicar que alguien está desprevenido, sin recursos o sin preparación.</p>",
+                "equivalents": [
+                    "naked",
+                    "in the nude",
+                    "stripped down"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "¡Siempre `en` `bolas`, Bocha!",
+                        "en": "Always naked, Bocha!",
+                        "audio": "static/audio/examples/en_bolas/ex-en_bolas-01.mp3",
+                        "source": {
+                            "kind": "pelicula",
+                            "title": "Relatos Salvajes",
+                            "year": "2014"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "flaco",
+        "slug": "flaco",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-flaco.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo masculino y femenino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "📈 común",
+                    "📢 vocativo",
+                    "🗣️ coloquial",
+                    "🤙 informal"
+                ],
+                "definition": "<p>Forma <em>coloquial</em> de referirse a una persona, especialmente a un <strong>hombre</strong>, con tono <em>familiar</em>, <em>informal</em> o <em>afectuoso</em>.</p><p>Se usa como <strong>vocativo</strong> (<em>“che, flaco”</em>) o para hablar de alguien (<em>“el flaco ese”</em>), y puede transmitir <em>cercanía</em>, <em>complicidad</em> o incluso <em>lástima</em>, según el contexto y el tono.</p>",
+                "equivalents": [
+                    "dude",
+                    "girl",
+                    "man",
+                    "lady",
+                    "bro",
+                    "sis",
+                    "buddy",
+                    "guy",
+                    "gal"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "Pobre `flaco`, cómo le dábamos.",
+                        "en": "Poor guy, we really gave him a hard time.",
+                        "audio": "static/audio/examples/flaco/ex-flaco-01.mp3",
+                        "source": {
+                            "kind": "pelicula",
+                            "title": "Relatos Salvajes",
+                            "year": "2014"
+                        },
+                        "linked": []
+                    },
+                    {
+                        "es": "Dale, `flaco`, seguí.",
+                        "en": "Come on, man — keep going.",
+                        "audio": "static/audio/examples/flaco/ex-flaco-02.mp3",
+                        "source": {
+                            "kind": "pelicula",
+                            "title": "Relatos Salvajes",
+                            "year": "2014"
+                        },
+                        "linked": []
+                    },
+                    {
+                        "es": "¿Y sabés qué, `flaco`? Yo tengo muchas razones para vivir.",
+                        "en": "You know what, man? I’ve got plenty of reasons to live.",
+                        "audio": "static/audio/examples/flaco/ex-flaco-03.mp3",
+                        "source": {
+                            "kind": "pelicula",
+                            "title": "Relatos Salvajes",
+                            "year": "2014"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "forro",
+        "slug": "forro",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-forro.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo masculino y femenino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🤬 insulto",
+                    "😡 malsonante",
+                    "🗣️ coloquial"
+                ],
+                "definition": "<p>Insulto <strong>vulgar</strong> que se usa para describir a alguien <em>molesto</em>, <em>despreciable</em>, <em>traicionero</em> o <em>egoísta</em>.</p><p>Literalmente significa “preservativo”, pero en este uso no tiene sentido literal. Puede abarcar desde un simple <em>idiota</em> hasta un <strong>cagón traidor</strong>, según el tono y la situación.</p><p><em>Nota:</em> Aunque suele tener una carga <strong>agresiva</strong>, no siempre implica violencia. En algunos contextos se usa con <em>enojo leve</em> o incluso entre amigos, en tono <em>irónico</em> o <em>confianzudo</em>.</p>",
+                "equivalents": [
+                    "asshole",
+                    "jerk",
+                    "dick",
+                    "douchebag"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "¿Sabés que sos un negro resentido? ¡`Forro`!",
+                        "en": "You know what you are? A bitter lowlife. Douchebag!",
+                        "audio": "static/audio/examples/forro/ex-forro-01.mp3",
+                        "source": {
+                            "kind": "pelicula",
+                            "title": "Relatos Salvajes",
+                            "year": "2014"
+                        },
+                        "linked": [
+                            "negro"
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "gaseosa",
+        "slug": "gaseosa",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-gaseosa.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo femenino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🍺 bebida",
+                    "📈 común"
+                ],
+                "definition": "<p>Bebida <em>con gas</em>, generalmente <em>azucarada</em> o endulzada con <em>edulcorantes artificiales</em>, como Coca-Cola, Fanta o similares.</p><p>En Argentina, se usa el término <strong>gaseosa</strong> en lugar de “refresco”, y es de uso común en <em>contextos cotidianos</em>, <em>familiares</em> o <em>comerciales</em>.</p>",
+                "equivalents": [
+                    "soda",
+                    "soft drink",
+                    "pop",
+                    "fizzy drink",
+                    "carbonated drink"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "¡Terrible! No lo deja tomar `gaseosa` tampoco. Un desastre, un infierno vive el nene. Pensé en llamar a la policía, mirá lo que te digo.",
+                        "en": "It’s awful! She won’t even let him drink soda. A total nightmare, that kid is living in hell. I almost called the cops, I swear.",
+                        "audio": "static/audio/examples/gaseosa/ex-gaseosa-01.mp3",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Viudas negras: P*tas y chorras",
+                            "year": "2025",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked": [
+                            "nene"
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "gil",
+        "slug": "gil",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-gil.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo masculino y femenino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🤙 informal",
+                    "🗣️ coloquial",
+                    "🧩 lunfardo",
+                    "🥰 insulto cariñoso",
+                    "😒 insulto leve",
+                    "🤬 insulto",
+                    "🎤 lenguaje oral"
+                ],
+                "definition": "<p>Persona considerada <em>tonta</em>, <em>ingenua</em> o <em>fácil de manipular</em>.</p><p>En Argentina, se usa como <strong>insulto suave</strong> o <em>burla</em>, incluso entre amigos, y también puede aplicarse a uno mismo con <em>tono de resignación</em> o <em>autocrítica</em>.</p>",
+                "equivalents": [
+                    "fool",
+                    "sucker",
+                    "chump",
+                    "dummy",
+                    "pushover",
+                    "idiot",
+                    "dope"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "Este `gil` siempre está disponible. Olvidate.",
+                        "en": "This sucker is always available. Forget it.",
+                        "audio": "static/audio/examples/gil/ex-gil-01.mp3",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Casados con Hijos",
+                            "year": "2005",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "goma",
+        "slug": "goma",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-goma.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "(de un auto) sustantivo femenino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🧱 objeto",
+                    "📈 común"
+                ],
+                "definition": "<p><strong>Neumático</strong> o <strong>rueda</strong> de un vehículo. </p>",
+                "equivalents": [
+                    "tire"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "Te decía que pinché una `goma` acá a la altura del kilómetro 60 de la ruta que une Salta Capital con Cafayate, digamos.",
+                        "en": "I was telling you, I got a flat tire around kilometer 60 on the road from Salta to Cafayate.",
+                        "audio": "static/audio/examples/goma/ex-goma-01.mp3",
+                        "source": {
+                            "kind": "pelicula",
+                            "title": "Relatos Salvajes",
+                            "year": "2014"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "gordo",
+        "slug": "gordo",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-gordo.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo masculino y femenino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🧑‍🎤 apodo",
+                    "❤️ afecto",
+                    "🗣️ coloquial",
+                    "🤙 informal",
+                    "😄 felicidad",
+                    "📈 común"
+                ],
+                "definition": "<p>Apodo <em>afectuoso</em> muy común en parejas, amistades o círculos cercanos en Argentina, <strong>sin relación necesaria con el cuerpo</strong> de la persona.</p><p>Según el contexto y el tono, puede expresar <em>cariño</em>, <em>cercanía</em> o incluso <em>ternura</em>.</p>",
+                "equivalents": [
+                    "babe",
+                    "honey",
+                    "sweetie",
+                    "love",
+                    "baby"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "—Che, `gordo`..., vos así vestido, por favor, no, eh. —¿Qué tiene? ¿Está mal? ¿Tengo que vestirme bien para ir a mi living?",
+                        "en": "—Hey, babe… dressed like that? Come on, no way. —What’s wrong with it? Is it bad? Do I need to dress up just to be in my own living room?",
+                        "audio": "static/audio/examples/gordo/ex-gordo-01.mp3",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Viudas negras: P*tas y chorras",
+                            "year": "2025",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked": [
+                            "che",
+                            "living"
+                        ]
+                    },
+                    {
+                        "es": "Yo no me metería, `gorda`, te soy sincera.",
+                        "en": "If I’m being honest, I wouldn’t get involved, girl.",
+                        "audio": "static/audio/examples/gordo/ex-gordo-02.mp3",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Viudas negras: P*tas y chorras",
+                            "year": "2025",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "guita",
+        "slug": "guita",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-guita.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo femenino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🧩 lunfardo",
+                    "💸 dinero",
+                    "🤙 informal",
+                    "🗣️ coloquial",
+                    "🎤 lenguaje oral",
+                    "📈 común"
+                ],
+                "definition": "<p>Forma <em>coloquial</em> de referirse al <strong>dinero</strong> en Argentina, equivalente a <em>plata</em>.</p><p>Proviene del <strong>lunfardo</strong> y se usa en contextos <em>informales</em> o <em>populares</em>, con un tono relajado o cotidiano.</p>",
+                "equivalents": [
+                    "money",
+                    "cash",
+                    "dough",
+                    "moolah"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "—Y ahora, vos también, Micaela, ¿por qué se lo hiciste? —Me puso muchísima `guita`.",
+                        "en": "—And now you too, Micaela? Why’d you do it? —He offered me a ton of money.",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Viudas negras: P*tas y chorras",
+                            "year": "2025",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked_words": [],
+                        "audio": "static/audio/examples/guita/ex-guita-01.mp3"
+                    },
+                    {
+                        "es": "El Gobierno habilita a una empresa privada para que levante `guita` en pala.",
+                        "en": "The government gives a private company the green light to rake in tons of cash.",
+                        "source": {
+                            "kind": "pelicula",
+                            "title": "Relatos Salvajes",
+                            "year": "2014"
+                        },
+                        "linked_words": [],
+                        "audio": "static/audio/examples/guita/ex-guita-02.mp3"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "hijo de tigre",
+        "slug": "hijo-de-tigre",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-hijo_de_tigre.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "expresión"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🗣️ coloquial",
+                    "👨‍👩‍👧‍👦 familia",
+                    "🤷 sarcasmo / ironía",
+                    "📈 común"
+                ],
+                "definition": "<p>Expresión usada para referirse, con <em>orgullo</em> o <em>humor</em>, a alguien que sigue los pasos de sus padres o hereda una <strong>habilidad</strong>, <strong>carácter</strong> o <strong>rasgo distintivo</strong>.</p><p>Implica una continuidad familiar admirada, y suele decirse con tono <em>cariñoso</em> o <em>celebratorio</em>.</p>",
+                "equivalents": [
+                    "chip off the old block",
+                    "like father",
+                    "like son"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "—¡Le voy a robar la merienda a un chico más chico que yo! —¡`Hijo de tigre`!",
+                        "en": "—I’m gonna steal a snack from a kid smaller than me! —Like father, like son!",
+                        "audio": "static/audio/examples/hijo_de_tigre/ex-hijo_de_tigre-01.mp3",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Casados con Hijos",
+                            "year": "2005",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "intendente",
+        "slug": "intendente",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-intendente.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo masculino y femenino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "📊 política / economía",
+                    "📈 común"
+                ],
+                "definition": "<p>Cargo político que equivale al de <strong>alcalde</strong> o <strong>jefe de gobierno municipal</strong> en Argentina.</p><p>Es la autoridad <strong>máxima</strong> de una ciudad o municipio y se encarga de la gestión local, servicios públicos y administración del territorio.</p>",
+                "equivalents": [
+                    "mayor"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "Encima se va a presentar a `intendente`. ¡Ese hijo de puta! ¿Lo podés creer?",
+                        "en": "And now he’s going to run for mayor. That son of a bitch! Can you believe it?",
+                        "audio": "static/audio/examples/intendente/ex-intendente-01.mp3",
+                        "source": {
+                            "kind": "pelicula",
+                            "title": "Relatos Salvajes",
+                            "year": "2014"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "jogging",
+        "slug": "jogging",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-jogging.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo masculino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "👕 ropa",
+                    "🇺🇸 anglicismo",
+                    "🗣️ coloquial",
+                    "🤙 informal",
+                    "📈 común",
+                    "🔤 préstamo"
+                ],
+                "definition": "<p>En Argentina, se refiere al <strong>pantalón deportivo</strong> (o conjunto) usado para hacer ejercicio, aunque en la práctica se usa más como <em>ropa cómoda</em> o <em>de estar en casa</em> que para correr.</p><p>Deriva del inglés <em>jogging</em>, pero en el uso local tiene un significado <strong>distinto y más amplio</strong>, asociado a lo <em>informal</em> y <em>cotidiano</em>.</p>",
+                "equivalents": [
+                    "sweatpants",
+                    "track pants",
+                    "jogging pants"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "Además, a todos los que vienen hoy ya los veo todos los días en `jogging`.",
+                        "en": "Besides, everyone coming today—I see them every day in sweatpants.",
+                        "audio": "static/audio/examples/jogging/ex-jogging-01.mp3",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Viudas negras: P*tas y chorras",
+                            "year": "2025",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "la concha de Dios",
+        "slug": "la-concha-de-dios",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-la_concha_de_dios.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "expresión"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "😡 malsonante",
+                    "❗ enfático",
+                    "🎤 lenguaje oral"
+                ],
+                "definition": "<p>Exclamación <strong>vulgar</strong> y <strong>enfática</strong> que se usa para expresar <em>sorpresa</em>, <em>indignación</em>, <em>enojo</em> o <em>frustración intensa</em>.</p><p>Suele aparecer en momentos de <strong>shock</strong>, <strong>furia</strong> o cuando algo <em>sale muy mal</em>. Tiene una carga <strong>irreverente</strong> y puede considerarse <strong>blasfema</strong> o <strong>ofensiva</strong>, según el contexto.</p>",
+                "equivalents": [
+                    "Jesus fucking Christ",
+                    "Goddammit",
+                    "What the fuck",
+                    "Holy shit",
+                    "Motherfucker"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "¡`La concha de Dios`! Ahora Mecha que va a contar a todo el barrio este papelón y yo, ¿cómo explico que fui al colegio con vos? ¡¿Cómo?!",
+                        "en": "Holy fuck! Now Mecha’s going to tell the whole neighborhood about this disaster, and how am I supposed to explain I went to school with you? Huh?!",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Viudas Negras: P*tas y Chorras",
+                            "year": "2025",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked_words": [
+                            "la concha de la lora",
+                            "la concha de tu hermana",
+                            "la concha de tu madre",
+                            "papelón"
+                        ],
+                        "audio": "static/audio/examples/la_concha_de_dios/ex-la_concha_de_dios-01.mp3"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "la concha de la lora",
+        "slug": "la-concha-de-la-lora",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-la_concha_de_la_lora.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "expresión vulgar"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🗣️ coloquial",
+                    "😡 malsonante",
+                    "🤬 grosero",
+                    "❗ enfático"
+                ],
+                "definition": "<p>Expresión vulgar muy común en Argentina para manifestar enfado, sorpresa o frustración. Literalmente significa “la vulva de la lora” (loro hembra), pero su sentido es puramente figurado e intensificador, sin relación con el significado literal de las palabras.</p>",
+                "equivalents": [
+                    "for fuck’s sake",
+                    "goddammit",
+                    "holy shit"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "Ay, `la` `concha` `de` `la` `lora`...",
+                        "en": "For fuck’s sake…",
+                        "audio": "static/audio/examples/la_concha_de_la_lora/ex-la_concha_de_la_lora-01.mp3",
+                        "source": {
+                            "kind": "pelicula",
+                            "title": "Relatos Salvajes",
+                            "year": "2014"
+                        },
+                        "linked": [
+                            "la concha de Dios",
+                            "la concha de tu hermana",
+                            "la concha de tu madre"
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "la concha de tu hermana",
+        "slug": "la-concha-de-tu-hermana",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-la_concha_de_tu_hermana.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "expresión"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "😡 malsonante",
+                    "🤬 insulto",
+                    "❗ enfático",
+                    "🗣️ coloquial"
+                ],
+                "definition": "<p>Insulto <strong>vulgar</strong>, <strong>agresivo</strong> y de fuerte carga emocional, que hace referencia al aparato genital de la hermana del interlocutor.</p><p>Se utiliza para expresar <em>bronca</em>, <em>rabia</em> o <em>desprecio profundo</em>, y aunque no siempre tiene una intención <strong>literal</strong>, se reconoce como una de las formas más <strong>viscerales y ofensivas</strong> de insultar en el español rioplatense.</p>",
+                "equivalents": [
+                    "motherfucker",
+                    "son of a bitch",
+                    "fucking hell (depending on tone)"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "No, `la concha de tu hermana`, hijo de puta.",
+                        "en": "No — fuck you, you son of a bitch.",
+                        "audio": "static/audio/examples/la_concha_de_tu_hermana/ex-la_concha_de_tu_hermana-01.mp3",
+                        "source": {
+                            "kind": "pelicula",
+                            "title": "Relatos Salvajes",
+                            "year": "2014"
+                        },
+                        "linked": [
+                            "la concha de Dios",
+                            "la concha de la lora",
+                            "la concha de tu madre"
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "la concha de tu madre",
+        "slug": "la-concha-de-tu-madre",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-la_concha_de_tu_madre.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "expresión"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "😡 malsonante",
+                    "🤬 insulto",
+                    "❗ enfático",
+                    "🗣️ coloquial",
+                    "⚠️ término sensible"
+                ],
+                "definition": "<p>Insulto <strong>altamente ofensivo</strong> y de uso <strong>explosivo</strong>, dirigido a otra persona con <em>violencia verbal</em> o <em>desprecio extremo</em>.</p><p>Literalmente hace referencia a los <strong>genitales femeninos</strong> de la madre del interlocutor, aunque en la práctica se usa de forma <em>automática</em> o <em>descargada</em>, más como una expresión de <strong>furia intensa</strong> que con intención literal.</p><p> Es una de las frases más <strong>agresivas</strong> y <strong>culturalmente reconocidas</strong> del español rioplatense.</p>",
+                "equivalents": [
+                    "motherfucker",
+                    "son of a bitch",
+                    "fucking hell (depending on tone)"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "¡Uy, pendeja, `la concha de tu madre`!",
+                        "en": "You little shit — motherfucker!",
+                        "audio": "static/audio/examples/la_concha_de_tu_madre/ex-la_concha_de_tu_madre-01.mp3",
+                        "source": {
+                            "kind": "pelicula",
+                            "title": "Relatos Salvajes",
+                            "year": "2014"
+                        },
+                        "linked": [
+                            "pendejo",
+                            "la concha de Dios",
+                            "la concha de la lora",
+                            "la concha de tu hermana"
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "laburar",
+        "slug": "laburar",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-laburar.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "verbo intransitivo"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🗣️ coloquial",
+                    "🧩 lunfardo"
+                ],
+                "definition": "<p>Verbo coloquial del español rioplatense que significa <em>trabajar</em>, especialmente en contextos informales o del habla cotidiana. Puede referirse tanto al trabajo formal como al informal, y a menudo transmite cercanía o complicidad entre hablantes.</p>",
+                "equivalents": [
+                    "to work",
+                    "to have a job",
+                    "to earn a living"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "Hagan lo que tengan que hacer. ¡`Laburen`, viejo!",
+                        "en": "Do what you have to do. Get to work, man!",
+                        "audio": "static/audio/examples/laburar/ex-laburar-01.mp3",
+                        "source": {
+                            "kind": "pelicula",
+                            "title": "Relatos Salvajes",
+                            "year": "2014"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "living",
+        "slug": "living",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-living.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo masculino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🏠 hogar",
+                    "🇺🇸 anglicismo",
+                    "🔤 préstamo",
+                    "📈 común",
+                    "🗣️ coloquial"
+                ],
+                "definition": "<p>Adaptación del inglés <em>living room</em> usada en Argentina para referirse al <strong>salón</strong> o <strong>sala de estar</strong> de una casa o departamento.</p><p>Es de uso <strong>común y cotidiano</strong>, aunque no suele aparecer en registros <em>formales</em> o en el español estándar.</p>",
+                "equivalents": [
+                    "living room",
+                    "lounge"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "—Che, gordo..., vos así vestido, por favor, no, eh. \r\n—¿Qué tiene? ¿Está mal? ¿Tengo que vestirme bien para ir a mi `living`?",
+                        "en": "—Hey, babe… dressed like that? Come on, no way. \r\n—What’s wrong with it? Is it bad? Do I need to dress up just to be in my own living room?",
+                        "audio": "static/audio/examples/living/ex-living-01.mp3",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Viudas negras: P*tas y chorras",
+                            "year": "2025",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "mango",
+        "slug": "mango",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-mango.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo masculino"
+                ],
+                "tag_general": [
+                    "🇦🇷 lunfardo",
+                    "dinero",
+                    "🗣️ coloquial",
+                    "📊 política / economía",
+                    "👥 popular"
+                ],
+                "definition": "<p>Forma muy <em>común</em> y <em>coloquial</em> en Argentina para referirse a una <strong>suma de dinero</strong>.</p><p>Puede usarse en <em>singular o plural</em> (<em>\"no tengo un mango\"</em>) y suele implicar una cantidad <em>modesta</em>, <em>puntual</em> o <em>insuficiente</em>.</p>",
+                "equivalents": [
+                    "buck",
+                    "dollar",
+                    "a few bucks",
+                    "some cash",
+                    "spare change"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "Escuchame una cosa, ¿vamos a ver un `mango` de todo esto?",
+                        "en": "Listen to me—are we going to see a single buck from any of this?",
+                        "audio": "static/audio/examples/mango/ex-mango-01.mp3",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Viudas negras: P*tas y chorras",
+                            "year": "2025",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "mina",
+        "slug": "mina",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-mina.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo femenino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "👥 popular",
+                    "📈 común",
+                    "🤙 informal",
+                    "🧩 lunfardo",
+                    "🗣️ coloquial",
+                    "🎤 lenguaje oral",
+                    "⚧️ género"
+                ],
+                "definition": "<p>En el <strong>lunfardo</strong> y el uso <em>coloquial argentino</em>, “<code>mina</code>” se refiere a una <strong>mujer</strong>.</p><p>Aunque su origen es histórico, sigue siendo de uso <strong>frecuente</strong>, especialmente entre <em>varones</em> o en contextos <em>informales</em>.</p><p> Puede sonar <em>despectivo</em>, <em>condescendiente</em> o <em>cosificador</em>, dependiendo del tono y la intención.</p>",
+                "equivalents": [
+                    "chick",
+                    "broad",
+                    "babe",
+                    "girl",
+                    "woman"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "¿Sos feliz volteándote todos los días a una `mina` distinta?",
+                        "en": "Are you really happy banging a different chick every day?",
+                        "audio": "static/audio/examples/mina/ex-mina-01.mp3",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Casados con Hijos",
+                            "year": "2005",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked": [
+                            "voltearse"
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "monigotadas",
+        "slug": "monigotadas",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-monigotadas.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo femenino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🤙 informal",
+                    "🗣️ coloquial",
+                    "🤷 sarcasmo / ironía"
+                ],
+                "definition": "<p><em>Payasadas</em>, <em>gestos ridículos</em> o <em>movimientos exagerados</em> hechos para <strong>llamar la atención</strong>, <strong>molestar</strong> o <strong>hacer reír</strong>.</p><p>En Argentina, se usa especialmente para referirse a <em>caras graciosas</em>, <em>gesticulaciones corporales</em> o actos <em>infantiles</em> con intención de provocar o hacer broma.</p>",
+                "equivalents": [
+                    "goofing around",
+                    "clowning",
+                    "making faces"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "¡Eso! De andar haciendo `monigotadas` detrás del sillón, ¡¿te acordás que casi le infartás a la abuela!?",
+                        "en": "That’s right! Messing around like a little clown behind the couch—remember you nearly gave Grandma a heart attack?!",
+                        "audio": "static/audio/examples/monigotadas/ex-monigotadas-01.mp3",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Casados con Hijos",
+                            "year": "2005",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "mosquita muerta",
+        "slug": "mosquita-muerta",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-mosquita_muerta.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo femenino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "📈 común",
+                    "🗣️ coloquial",
+                    "⚧️ género",
+                    "🤷 sarcasmo / ironía"
+                ],
+                "definition": "<p>Mujer que aparenta ser <em>inocente</em>, <em>ingenua</em> o <em>inofensiva</em>, pero que en realidad <strong>no lo es</strong>.</p><p>Se usa con tono <strong>irónico</strong> o <strong>despectivo</strong> para describir a alguien que <em>finge pasividad</em> o <em>desconocimiento</em> con el fin de <strong>manipular</strong>, <strong>evadir responsabilidades</strong> o <strong>pasar desapercibida</strong>.</p><p>También puede implicar una crítica a actitudes <em>fingidamente sumisas</em> o <em>excesivamente correctas</em>.</p><p><em>Nota:</em> Es una expresión <strong>marcadamente de género</strong>, usada casi exclusivamente para referirse a <strong>mujeres</strong>, sin equivalente directo masculino.</p>",
+                "equivalents": [
+                    "fake innocent",
+                    "two-faced girl",
+                    "pretend saint",
+                    "sneaky little thing"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "Hacete la mosquita `muerta ahora`, decime que no te diste cuenta.",
+                        "en": "Go ahead, act all innocent now — tell me you didn’t notice.",
+                        "audio": "static/audio/examples/mosquita_muerta/ex-mosquita_muerta-01.mp3",
+                        "source": {
+                            "kind": "pelicula",
+                            "title": "Relatos Salvajes",
+                            "year": "2014"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "mucama",
+        "slug": "mucama",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-mucama.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo femenino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🏦 clase social",
+                    "💼 lenguaje laboral / profesional"
+                ],
+                "definition": "<p>Persona empleada para realizar tareas <strong>domésticas</strong> como <em>limpieza</em>, <em>cocina</em> o <em>atención en el hogar</em>.</p><p>En Argentina, el término <strong>mucama</strong> suele usarse para mujeres en este rol, y conlleva connotaciones históricas de <strong>clase social</strong>, <strong>género</strong> y, en algunos casos, <strong>jerarquía servil</strong>.</p>",
+                "equivalents": [
+                    "maid",
+                    "housekeeper",
+                    "domestic worker",
+                    "cleaning lady"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "Lo encontraron vestido de `mucamita`, muerto en la casa...",
+                        "en": "They found him dressed up like a little maid, dead in the house.",
+                        "audio": "static/audio/examples/mucama/ex-mucama-01.mp3",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Viudas negras: P*tas y chorras",
+                            "year": "2025",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked": []
+                    },
+                    {
+                        "es": "¿Por qué estás acá infiltrándote como `mucama` en la casa de una vecina mía?",
+                        "en": "Why are you here posing as a house cleaner in one of my neighbor's homes?",
+                        "audio": "static/audio/examples/mucama/ex-mucama-02.mp3",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Viudas negras: P*tas y chorras",
+                            "year": "2025",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "negro",
+        "slug": "negro",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-negro.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "negra, negrassustantivo masculino y femenino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🗣️ coloquial",
+                    "🏦 clase social",
+                    "🤬 insulto",
+                    "📈 común",
+                    "⚠️ término sensible"
+                ],
+                "definition": "<p>Término de uso muy extendido en Argentina, que puede funcionar tanto como <strong>apodo afectivo</strong> (<em>“che, negro”</em>) como <strong>insulto clasista o despectivo</strong>, según el <em>tono</em> y la <em>relación entre hablantes</em>.</p><p>Cuando se usa de forma ofensiva —como en <em>“negro resentido”</em>— suele implicar una carga de <strong>discriminación social</strong>, refiriéndose a una persona de <em>clase baja</em>, con <em>poca educación</em> o con <em>resentimiento</em>.</p><p>No necesariamente hace referencia al <strong>color de piel</strong>. Su interpretación depende <strong>fuertemente del contexto</strong> y puede ser <strong>altamente ofensiva</strong> fuera del ámbito rioplatense.</p>",
+                "equivalents": [
+                    "lowlife",
+                    "trashy",
+                    "angry poor guy",
+                    "thug (contextual – no direct racial parallel)",
+                    "babe (esp. as a romantic nickname)",
+                    "dude (when addressing a friend)"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "¿Sabés que sos un `negro` resentido? ¡Forro!",
+                        "en": "You know what you are? A bitter lowlife. Douchebag!",
+                        "audio": "static/audio/examples/negro/ex-negro-01.mp3",
+                        "source": {
+                            "kind": "pelicula",
+                            "title": "Relatos Salvajes",
+                            "year": "2014"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "nene",
+        "slug": "nene",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-nene.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo masculino y femenino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🎂 edad",
+                    "👨‍👩‍👧‍👦 familia",
+                    "🗣️ coloquial",
+                    "📈 común"
+                ],
+                "definition": "<p>Forma <em>coloquial</em> y <em>afectuosa</em> de referirse a un <strong>niño</strong> o <strong>niña</strong>.</p><p>Puede expresar <em>ternura</em>, <em>protección</em> o <em>cercanía</em>, y en algunos contextos también implica <em>vulnerabilidad</em>, <em>dependencia</em> o una actitud <em>infantilizada</em> hacia otra persona.</p>",
+                "equivalents": [
+                    "kid",
+                    "child",
+                    "little boy",
+                    "little girl"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "¡Terrible! No lo deja tomar gaseosa tampoco. Un desastre, un infierno vive el `nene`. Pensé en llamar a la policía, mirá lo que te digo.",
+                        "en": "It’s awful! She won’t even let him drink soda. A total nightmare, that kid is living in hell. I almost called the cops, I swear.",
+                        "audio": "static/audio/examples/nene/ex-nene-01.mp3",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Viudas Negras: P*tas y Chorras",
+                            "year": "2025",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked": [
+                            "gaseosa"
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "no me jodas",
+        "slug": "no-me-jodas",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-no_me_jodas.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "expresión negativa"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🤬 grosero",
+                    "😡 malsonante",
+                    "❗ enfático",
+                    "🤷 sarcasmo / ironía",
+                    "📈 común",
+                    "🗣️ coloquial",
+                    "🤙 informal"
+                ],
+                "definition": "<p>Expresión utilizada para mostrar <strong>fastidio</strong>, <strong>molestia</strong> o para <strong>exigir que alguien deje de molestar</strong>.</p><p>Su tono puede variar desde un simple <em>“no me molestes”</em> hasta una reacción <strong>enojada</strong>, <strong>irónica</strong> o <strong>cortante</strong>, dependiendo del contexto y la relación entre los hablantes.</p>",
+                "equivalents": [
+                    "don’t mess with me",
+                    "don’t bother me",
+                    "give me a break",
+                    "cut the crap",
+                    "don’t fuck with me"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "`No me jodas` más, te lo pido por favor.",
+                        "en": "Don’t mess with me anymore, I’m begging you.",
+                        "audio": "static/audio/examples/no_me_jodas/ex-no_me_jodas-01.mp3",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Casados con Hijos",
+                            "year": "2005",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "no rompas",
+        "slug": "no-rompas",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-no_rompas.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "expresión"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🤙 informal",
+                    "🗣️ coloquial",
+                    "❗ enfático",
+                    "📈 común",
+                    "🫢 eufemismo"
+                ],
+                "definition": "<p>Forma <em>abreviada</em> de “<strong>no rompas las pelotas</strong>”, usada para pedirle a alguien que <strong>no moleste</strong>, <strong>no insista</strong> o <strong>no sea fastidioso</strong>.</p><p>Tiene un tono <em>irritado</em>, <em>impaciente</em> o <em>directo</em>, y es común en discusiones o cuando se busca poner un <strong>límite verbal</strong> rápidamente.</p>",
+                "equivalents": [
+                    "don’t push it",
+                    "stop bugging me",
+                    "knock it off",
+                    "quit it",
+                    "stop being a pain"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "Vas y te lo comprás vos. `No rompas`.",
+                        "en": "Go buy it yourself. Don’t be annoying.",
+                        "audio": "static/audio/examples/no_rompas/ex-no_rompas-01.mp3",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Casados con Hijos",
+                            "year": "2005",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "palo",
+        "slug": "palo",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-palo.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo masculino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "💸 dinero",
+                    "🗣️ coloquial"
+                ],
+                "definition": "<p>Forma <em>coloquial</em> de referirse a <strong>un millón</strong> de unidades monetarias, generalmente <strong>pesos</strong> o <strong>dólares</strong>.</p><p>La expresión <em>“un palo verde”</em> significa <strong>un millón de dólares estadounidenses</strong>, haciendo alusión al <em>color verde</em> de los billetes.</p><p> Es una forma típica del habla argentina para hablar de <em>plata en grandes cantidades</em>, especialmente en contextos <em>informales</em> o <em>medios de comunicación</em>.</p>",
+                "equivalents": [
+                    "a million",
+                    "a mil",
+                    "one mil",
+                    "one million bucks"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "—¿Caro? ¿Cuánto? —Un `palo`.",
+                        "en": "—Expensive? How much? —One million.",
+                        "source": {
+                            "kind": "pelicula",
+                            "title": "Relatos Salvajes",
+                            "year": "2014"
+                        },
+                        "linked_words": [],
+                        "audio": "static/audio/examples/palo/ex-palo-01.mp3"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "papelón",
+        "slug": "papelon",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/laconchadedios.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo masculino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🗣️ coloquial",
+                    "😭 emoción"
+                ],
+                "definition": "<p>Situación que genera <strong>vergüenza</strong>, <strong>ridículo</strong> o un <em>bochorno notorio</em>, especialmente si ocurre en público o frente a otros.</p><p>Se usa para enfatizar el nivel de la <strong>humillación</strong> o el <em>desacierto</em>, y muchas veces se dice con tono <em>crítico</em>, <em>burlón</em> o <em>exasperado</em>.</p>",
+                "equivalents": [
+                    "disaster",
+                    "embarrassment",
+                    "public disgrace",
+                    "shitshow"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "¡La concha de Dios! Ahora Mecha que va a contar a todo el barrio este `papelón` y yo, ¿cómo explico que fui al colegio con vos? ¡¿Cómo?!",
+                        "en": "Holy fuck! Now Mecha’s going to tell the whole neighborhood about this disaster, and how am I supposed to explain I went to school with you? Huh?!",
+                        "audio": "static/audio/examples/papelon/ex-papelon-01.mp3",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Viudas Negras: P*tas y Chorras",
+                            "year": "2025",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked": [
+                            "la concha de Dios"
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "patente",
+        "slug": "patente",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-patente.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo femenino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🧱 objeto"
+                ],
+                "definition": "<p>Número de identificación <strong>alfanumérico</strong> que se asigna a cada <strong>vehículo</strong> y que aparece en su <strong>placa</strong>.</p><p>En Argentina, <em>patente</em> es el término habitual para referirse a la <strong>chapa</strong> o <strong>matrícula</strong> del auto, tanto en lenguaje <em>cotidiano</em> como <em>administrativo</em>.</p>",
+                "equivalents": [
+                    "license plate",
+                    "plate number",
+                    "registration number",
+                    "tag"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "La `patente` del hombre es...",
+                        "en": "The guy’s license plate is...",
+                        "audio": "static/audio/examples/patente/ex-patente-01.mp3",
+                        "source": {
+                            "kind": "pelicula",
+                            "title": "Relatos Salvajes",
+                            "year": "2014"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "pelotas",
+        "slug": "pelotas",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-pelotas.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo masculino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🤬 grosero",
+                    "❗ enfático",
+                    "😡 malsonante",
+                    "🤷 sarcasmo / ironía",
+                    "🗣️ coloquial",
+                    "🤙 informal",
+                    "📈 común"
+                ],
+                "definition": "<p><strong>Sustantivo vulgar</strong> que literalmente significa <em>testículos</em>, pero que se usa en múltiples expresiones idiomáticas para expresar <strong>rechazo</strong>, <strong>enojo</strong> o <strong>enfado intenso</strong>.</p><p>Funciona como <strong>intensificador emocional</strong> y puede usarse <em>solo</em> (<em>“¡pelotas!”</em>) o como parte de frases como <em>“ni en pedo me banco esas pelotas”</em>, <em>“no rompas las pelotas”</em>, o <em>“las pelotas vas a salir”</em>.</p>",
+                "equivalents": [
+                    "bullshit",
+                    "hell no",
+                    "no fucking way",
+                    "my ass",
+                    "cut the crap"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "Este... ¿te tranquilizás? ¡Cómo me tenés `las pelotas`, pendejo!",
+                        "en": "Um… can you chill out? You’re seriously getting on my nerves, kid!",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Casados con Hijos",
+                            "year": "2005",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "audio": "static/audio/examples/pelotas/ex-pelotas-01.mp3"
+                    },
+                    {
+                        "es": "¿Vos me estás escuchando? Prueba suficiente ¡`las pelotas`!",
+                        "en": "Are you even listening to me? \"Enough evidence\" — my ass!",
+                        "source": {
+                            "kind": "pelicula",
+                            "title": "Relatos Salvajes",
+                            "year": "2014"
+                        },
+                        "audio": "static/audio/examples/pelotas/ex-pelotas-02.mp3"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "pelotudo",
+        "slug": "pelotudo",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-pelotudo.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo masculino y femenino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🤬 insulto",
+                    "😡 malsonante",
+                    "🗣️ coloquial",
+                    "🎤 lenguaje oral"
+                ],
+                "definition": "<p>Insulto muy común en el <strong>español rioplatense</strong> que se refiere a una persona <em>tonta</em>, <em>torpe</em>, <em>ingenua</em> o que actúa de forma <em>molesta</em> o <em>ridícula</em>.</p><p>Su nivel de <strong>ofensividad</strong> varía según el <strong>tono</strong> y el <strong>contexto</strong>: puede ir desde una <em>burla entre amigos</em> hasta una <strong>ofensa grave o violenta</strong>.</p>",
+                "equivalents": [
+                    "asshole",
+                    "idiot",
+                    "dumbass",
+                    "jerk",
+                    "dipshit"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "¿Qué sos, el Presidente de la República, `pelotudo`?",
+                        "en": "What are you, the President of the Republic, you fucking idiot?",
+                        "audio": "static/audio/examples/pelotudo/ex-pelotudo-01.mp3",
+                        "source": {
+                            "kind": "pelicula",
+                            "title": "Relatos Salvajes",
+                            "year": "2014"
+                        },
+                        "linked": []
+                    },
+                    {
+                        "es": "¿Qué hiciste? ¡Nos arruinaste la vida a todos, `pelotudo`!",
+                        "en": "What did you do? You ruined all our lives, you idiot!",
+                        "audio": "static/audio/examples/pelotudo/ex-pelotudo-02.mp3",
+                        "source": {
+                            "kind": "pelicula",
+                            "title": "Relatos Salvajes",
+                            "year": "2014"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "pendejo",
+        "slug": "pendejo",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-pendejo.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo masculino y femenino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🗣️ coloquial",
+                    "😒 insulto leve",
+                    "🎂 edad",
+                    "🤙 informal",
+                    "📈 común"
+                ],
+                "definition": "Término despectivo o burlón para referirse a una persona joven, inmadura o molesta. En Argentina puede usarse con tono agresivo o entre amigos según el contexto y entonación.",
+                "equivalents": [],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "Este... ¿te tranquilizás? ¡Cómo me tenés las pelotas, pendejo!",
+                        "en": "Um… can you chill out? You’re seriously getting on my nerves, kid!",
+                        "audio": "static/audio/examples/pendejo/ex-pendejo-01.mp3",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Casados con Hijos",
+                            "year": "2005",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked": [
+                            "pelotas"
+                        ]
+                    },
+                    {
+                        "es": "¡Uy, pendeja, la concha de tu madre!",
+                        "en": "You little shit — motherfucker!",
+                        "audio": "static/audio/examples/pendejo/ex-pendejo-02.mp3",
+                        "source": {
+                            "kind": "pelicula",
+                            "title": "Relatos Salvajes",
+                            "year": "2014"
+                        },
+                        "linked": [
+                            "la concha de tu madre"
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "pibe",
+        "variants": {
+            "m.s.": [],
+            "m.p.": [],
+            "f.s.": [],
+            "f.p.": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio_word": null,
+        "senses": [
+            {
+                "tag_word_class": [],
+                "tag_general": [],
+                "definition": "",
+                "equivalents": [],
+                "audio": null,
+                "examples": []
+            }
+        ]
+    },
+    {
+        "word": "plata",
+        "slug": "plata",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-plata.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo femenino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "📈 común",
+                    "💸 dinero"
+                ],
+                "definition": "<p>Forma coloquial y ampliamente comprendida en Argentina para referirse al <em>dinero</em> en general, sin importar la moneda. Usada en todo tipo de ámbitos, aunque mantiene un registro <strong>informal</strong> o cotidiano.</p>",
+                "equivalents": [
+                    "money",
+                    "cash",
+                    "dough"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "—¿Caso contrario, le pido que se retire y me deje seguir atendiendo? \r\n—¿Y si no tengo `plata`?",
+                        "en": "—Otherwise, I’ll have to ask you to leave so I can keep working. \r\n—And what if I don’t have any money?",
+                        "audio": "static/audio/examples/plata/ex-plata-01.mp3",
+                        "source": {
+                            "kind": "pelicula",
+                            "title": "Relatos Salvajes",
+                            "year": "2014"
+                        },
+                        "linked": []
+                    },
+                    {
+                        "es": "Pero qué fácil que es todo para vos. ¡Estoy harto de que me roben la `plata`!",
+                        "en": "Well, easy for you to say — I’m sick of getting ripped off!",
+                        "audio": "static/audio/examples/plata/ex-plata-02.mp3",
+                        "source": {
+                            "kind": "pelicula",
+                            "title": "Relatos Salvajes",
+                            "year": "2014"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "plomo",
+        "slug": "plomo",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-plomo.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo masculino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🗣️ coloquial"
+                ],
+                "definition": "<p>Persona o situación que resulta muy molesta, pesada o difícil de soportar. Expresión frecuente en el habla cotidiana argentina para describir a alguien o algo <strong>denso</strong>, <strong>cargoso</strong> o que genera fastidio por su insistencia o monotonía.</p>",
+                "equivalents": [
+                    "a drag",
+                    "a bore",
+                    "a pain",
+                    "annoying person or thing"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "Siempre terminan iguales. Es como que nunca se sabe nada de nadie, qué pasó. Un `plomo`.",
+                        "en": "They always end the same way. It’s like you never find out anything about anyone—what happened. Such a drag.",
+                        "audio": "static/audio/examples/plomo/ex-plomo-01.mp3",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Viudas negras: P*tas y chorras",
+                            "year": "2025",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "porro",
+        "slug": "porro",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-porro.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo masculino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🤙 informal",
+                    "🗣️ coloquial",
+                    "🚬 fumar",
+                    "📈 común",
+                    "💊 droga"
+                ],
+                "definition": "<p>Término coloquial usado en Argentina para referirse a un <em>cigarrillo de marihuana</em>, ya sea armado a mano o con papel de fumar. De uso frecuente en la jerga juvenil y en contextos informales, a veces con tono humorístico o como parte de críticas sociales o generacionales.</p>",
+                "equivalents": [
+                    "joint",
+                    "weed cigarette",
+                    "spliff"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "Ni `porro` fuman estos chicos. Yo no sé qué vida van a tener, eh.",
+                        "en": "These kids don’t even smoke weed. I honestly don’t know what kind of life they’re gonna have.",
+                        "audio": "static/audio/examples/porro/ex-porro-01.mp3",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Viudas negras: P*tas y chorras",
+                            "year": "2025",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "previa",
+        "slug": "previa",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-previa.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo femenino"
+                ],
+                "tag_general": [
+                    "🇦🇷 juventud",
+                    "🗣️ coloquial",
+                    "🍺 bebida",
+                    "👥 popular",
+                    "📈 común"
+                ],
+                "definition": "<p>Reunión social que se realiza antes de salir a un boliche, fiesta o evento nocturno, generalmente en una casa o departamento. Suele incluir consumo de alcohol, música y conversación como forma de <em>calentar motores</em> y ahorrar dinero antes de salir. De uso muy común entre jóvenes y adultos en Argentina.</p>",
+                "equivalents": [
+                    "pregame",
+                    "drinks before going out"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "Che, ¿dónde es la `previa`?",
+                        "en": "Hey, where’s the pregame at?",
+                        "audio": "static/audio/examples/previa/ex-previa-01.mp3",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Viudas negras: P*tas y chorras",
+                            "year": "2025",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "pucho",
+        "slug": "pucho",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-pucho.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo masculino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🚬 fumar",
+                    "🧱 objeto",
+                    "🗣️ coloquial",
+                    "🤙 informal",
+                    "🌦️ cigarrillo / tabaco",
+                    "📈 común"
+                ],
+                "definition": "<p>Forma coloquial y ampliamente usada en Argentina para referirse a un <em>cigarrillo</em>. Puede aludir tanto a uno entero como a un cigarro a medio fumar o a su colilla. Frecuente en el habla cotidiana, especialmente en contextos informales y entre personas mayores.</p>",
+                "equivalents": [
+                    "cigarette",
+                    "smoke",
+                    "cig"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "Micaela, te fumabas los `puchos` del piso.",
+                        "en": "Micaela, you used to smoke cigarette butts off the ground.",
+                        "audio": "static/audio/examples/pucho/ex-pucho-01.mp3",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Viudas negras: P*tas y chorras",
+                            "year": "2025",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "rajar",
+        "slug": "rajar",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-rajar.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "verbo intransitivo"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🧩 lunfardo",
+                    "🗣️ coloquial",
+                    "🎤 lenguaje oral",
+                    "❗ enfático"
+                ],
+                "definition": "<p>Irse de un lugar de manera rápida o abrupta, ya sea por necesidad, peligro, enojo o porque alguien lo exige. En imperativo (<em>¡Rajá!</em>) funciona como orden enfática para que alguien se vaya de inmediato.</p>",
+                "equivalents": [
+                    "leave quickly",
+                    "scram",
+                    "get out"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "¡`Rajá` de acá! ¡Tomátela! ¡`Rajá` de acá!",
+                        "en": "Get the hell out of here! Get lost! I said get out!",
+                        "audio": "static/audio/examples/rajar/ex-rajar-01.mp3",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Viudas Negras: P*tas y Chorras",
+                            "year": "2025",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked": [
+                            "tomársela(s)"
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "rebusque",
+        "slug": "rebusque",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-rebusque.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo masculino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "👥 popular",
+                    "🗣️ coloquial",
+                    "🤙 informal",
+                    "📈 común",
+                    "💼 lenguaje laboral / profesional"
+                ],
+                "definition": "<p>Ingenio, habilidad o estrategia para generar ingresos o resolver problemas en contextos de dificultad económica. Suele implicar creatividad, adaptabilidad y aprovechar oportunidades fuera de lo convencional. Es un rasgo cultural reconocido y valorado en Argentina.</p>",
+                "equivalents": [
+                    "hustling",
+                    "getting by",
+                    "side hustle",
+                    "resourcefulnes"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "Somos Argento. `El rebusque` es lo nuestro.",
+                        "en": "We're the Argentos. Hustling is our thing.",
+                        "audio": "static/audio/examples/rebusque/ex-rebusque-01.mp3",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Casados con Hijos",
+                            "year": "2005",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "romperla",
+        "slug": "romperla",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-romperla.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "verbo idiomático"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🗣️ coloquial",
+                    "🤙 informal",
+                    "🎤 lenguaje oral",
+                    "📈 común",
+                    "❗ enfático"
+                ],
+                "definition": "<p>Expresión coloquial usada para indicar que alguien destaca, impresiona o tiene un rendimiento excelente en una actividad, espectáculo o situación. Transmite admiración y entusiasmo, y se emplea sobre todo en contextos informales.</p>",
+                "equivalents": [
+                    "to nail it",
+                    "to kill it",
+                    "to crush it"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "Están buenos estos. Los hacen de hígado y `la rompen`.",
+                        "en": "These are tasty. They make them with liver and they crush it (they're amazing).",
+                        "audio": "static/audio/examples/romperla/ex-romperla-01.mp3",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Casados con Hijos",
+                            "year": "2005",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "SAME",
+        "slug": "same",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-same.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "acrónimo"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🏢 servicios públicos",
+                    "📈 común"
+                ],
+                "definition": "<p>Acrónimo de <em>Sistema de Atención Médica de Emergencias</em>, servicio público de ambulancias de la Ciudad Autónoma de Buenos Aires. En el habla cotidiana, suele usarse como sinónimo de “ambulancia” cuando se hace referencia a la atención de urgencias.</p>",
+                "equivalents": [
+                    "SAME (Buenos Aires Emergency Medical Service)",
+                    "EMTs",
+                    "ambulance service"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "Bueno, pero hay que mirarle el lado positivo a las cosas, mamita. Ahora sabemos que `el SAME` viene al toque.",
+                        "en": "You gotta look on the bright side, mom. We now know that the paramedics get here real in a jiffy.",
+                        "audio": "static/audio/examples/same/ex-same-01.mp3",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Casados con Hijos",
+                            "year": "2005",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked": [
+                            "al toque"
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "sorete",
+        "slug": "sorete",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-sorete.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "adjetivo"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🤬 insulto",
+                    "😡 malsonante",
+                    "🗣️ coloquial",
+                    "🤙 informal",
+                    "📈 común",
+                    "😒 insulto leve"
+                ],
+                "definition": "<p>Insulto vulgar y frecuente en el habla coloquial argentina para referirse a una persona despreciable, egoísta o muy molesta. <em>Sorete</em> es la forma original (literalmente “excremento”), mientras que <em>soreta</em> es una variante feminizada que, en ciertos contextos entre amigas, puede adquirir un tono más lúdico o irónico.</p>",
+                "equivalents": [
+                    "asshole",
+                    "jerk",
+                    "piece of shit"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "—El último favor que te pido en la vida, amiga. \r\n—¿Amiga? Subite al auto, `soreta`.",
+                        "en": "—This is the last favor I’ll ever ask you, girl.\r\n—Girl? Get in the car, you little bitch.",
+                        "audio": "static/audio/examples/sorete/ex-sorete-01.mp3",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Viudas negras: P*tas y chorras",
+                            "year": "2025",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "tarado",
+        "slug": "tarado",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-tarado.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo masculino y femenino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🤬 insulto",
+                    "😒 insulto leve",
+                    "🎤 lenguaje oral",
+                    "🗣️ coloquial"
+                ],
+                "definition": "<p>Persona tonta, molesta o que actúa de forma torpe o irracional. Puede emplearse como insulto directo con carga ofensiva o, en contextos informales, con un tono más ligero o burlón entre personas de confianza.</p>",
+                "equivalents": [
+                    "idiot",
+                    "moron",
+                    "dummy",
+                    "jerk"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "¡Soltame, mierda! ¡Soltame! ¡Soltame, `tarada`!",
+                        "en": "Let go of me, dammit! Let go! Let go, you idiot!",
+                        "audio": "static/audio/examples/tarado/ex-tarado-01.mp3",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Viudas Negras: P*tas y Chorras",
+                            "year": "2025",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "tenencia",
+        "slug": "tenencia",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-tenencia.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo femenino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "👨‍👩‍👧‍👦 familia",
+                    "📊 política / economía",
+                    "📺 medios de comunicación"
+                ],
+                "definition": "<p>Derecho legal de cuidar y hacerse responsable de un hijo u otra persona dependiente, incluyendo decisiones sobre su crianza y bienestar. En Argentina, el término suele referirse a la custodia otorgada o retirada mediante resolución judicial.</p>",
+                "equivalents": [
+                    "custody",
+                    "guardianship"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "No sé si recordás que te sacaron `la tenencia` de tus propios hijos.",
+                        "en": "I don’t know if you remember they took custody of your own kids away from you.",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Viudas Negras: P*tas y Chorras",
+                            "year": "2025",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked_words": [],
+                        "audio": "static/audio/examples/tenencia/ex-tenencia-01.mp3"
+                    },
+                    {
+                        "es": "Así que no vemos ninguna necesidad de otorgarle al señor Fisher la `tenencia` compartida.",
+                        "en": "Therefore, we see no need to grant Mr. Fisher shared custody.",
+                        "source": {
+                            "kind": "pelicula",
+                            "title": "Relatos Salvajes",
+                            "year": "2014"
+                        },
+                        "linked_words": [],
+                        "audio": "static/audio/examples/tenencia/ex-tenencia-02.mp3"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "tomársela(s)",
+        "slug": "tomársela-s-",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-tomarselas.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "verbo idiomático pronominal"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🧩 lunfardo",
+                    "🗣️ coloquial",
+                    "🎤 lenguaje oral",
+                    "❗ enfático"
+                ],
+                "definition": "<p>Irse, escaparse o huir de un lugar o situación. En imperativo (<em>¡Tomátela!</em> o <em>¡Tomátelas!</em>) se usa como orden para que alguien se vaya, a menudo con tono de enojo, rechazo o fastidio.</p>",
+                "equivalents": [
+                    "get lost",
+                    "go away",
+                    "beat it"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "¡Rajá de acá! ¡`Tomátela`! ¡Rajá de acá!",
+                        "en": "Get the hell out of here! Get lost! I said get out!",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Viudas Negras: P*tas y Chorras",
+                            "year": "2025",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked_words": [
+                            "rajar"
+                        ],
+                        "audio": "static/audio/examples/tomarselas/ex-tomarselas-01.mp3"
+                    },
+                    {
+                        "es": "Bueno, basta loco, ya está. Me destrozaste el auto. ¡`Tomátelas`!",
+                        "en": "Alright, that’s enough. You smashed up my car — get the hell out of here!",
+                        "source": {
+                            "kind": "pelicula",
+                            "title": "Relatos Salvajes",
+                            "year": "2014"
+                        },
+                        "linked_words": [],
+                        "audio": "static/audio/examples/tomarselas/ex-tomarselas-02.mp3"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "un mate",
+        "slug": "un-mate",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-un_mate.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo masculino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🍺 bebida",
+                    "🏠 hogar",
+                    "👥 popular"
+                ],
+                "definition": "<p>Porción individual de mate servida y ofrecida a otra persona, habitualmente usando un termo con agua caliente. Forma típica y cotidiana de invitar o compartir la bebida en reuniones familiares, entre amigos o en ámbitos informales.</p>",
+                "equivalents": [
+                    "a serving of mate",
+                    "a cup/gourd of mate",
+                    "a round of mate"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "¿Querés un `mate`?",
+                        "en": "Want some mate?",
+                        "audio": "static/audio/examples/un_mate/ex-un_mate-01.mp3",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Viudas Negras: P*tas y Chorras",
+                            "year": "2025",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "viejo",
+        "slug": "viejo",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-viejo.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "sustantivo masculino y femenino"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "👨‍👩‍👧‍👦 familia",
+                    "❤️ afecto",
+                    "🧑‍🎤 apodo",
+                    "🗣️ coloquial",
+                    "🤙 informal",
+                    "📈 común"
+                ],
+                "definition": "<p>En el habla coloquial argentina, forma familiar y afectuosa para referirse al padre o la madre (<em>mi viejo</em>, <em>mi vieja</em>). Según el contexto, también puede emplearse para aludir a una persona mayor, con o sin matiz afectivo.</p>",
+                "equivalents": [
+                    "dad",
+                    "mom",
+                    "old man",
+                    "old lady"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "Llamó mi `vieja`, todo bien. Clarita estaba chocha.",
+                        "en": "My mom called—everything’s fine. Clarita was thrilled.",
+                        "audio": "static/audio/examples/viejo/ex-viejo-01.mp3",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Viudas negras: P*tas y chorras",
+                            "year": "2025",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked": [
+                            "chocho"
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "voltearse",
+        "slug": "voltearse",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-voltearse.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "verbo pronominal"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🤬 grosero",
+                    "😡 malsonante",
+                    "🗣️ coloquial",
+                    "🤙 informal",
+                    "❗ enfático",
+                    "🫢 eufemismo"
+                ],
+                "definition": "<p>En el español rioplatense, especialmente en Argentina, expresión vulgar que significa mantener relaciones sexuales con alguien. Suelen acompañarla connotaciones machistas o informales, y se emplea mayormente en contextos coloquiales.</p>",
+                "equivalents": [
+                    "to sleep with",
+                    "to bang",
+                    "to hook up with"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "¿Sos feliz `volteándote` todos los días a una mina distinta?",
+                        "en": "Are you really happy sleeping with a different woman every day?",
+                        "audio": "static/audio/examples/voltearse/ex-voltearse-01.mp3",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Casados con Hijos",
+                            "year": "2005",
+                            "season": "1",
+                            "episode": "1"
+                        },
+                        "linked": [
+                            "mina"
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "word": "whisky",
+        "slug": "whisky",
+        "variants": {
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
+            "diminutivo": [],
+            "aumentativo": []
+        },
+        "audio": "static/audio/word/w-whisky.mp3",
+        "senses": [
+            {
+                "id": "s1",
+                "tag_word_class": [
+                    "interjección"
+                ],
+                "tag_general": [
+                    "🇦🇷 Argentina",
+                    "🗣️ coloquial"
+                ],
+                "definition": "<p>Expresión usada en Argentina, especialmente al tomar una fotografía, para que la persona sonría mostrando los dientes, de forma similar a <em>cheese</em> en inglés. Aprovecha el sonido final “-qui” para generar una expresión sonriente.</p>",
+                "equivalents": [
+                    "Say cheese!"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "—¡`Whisky`!  \r\n—¡`Whisky`!",
+                        "en": "—Say cheese!\r\n—Cheese!",
+                        "audio": "static/audio/examples/whisky/ex-whisky-01.mp3",
+                        "source": {
+                            "kind": "pelicula",
+                            "title": "Relatos Salvajes",
+                            "year": "2014"
+                        },
+                        "linked": []
+                    }
+                ]
+            }
+        ]
+    }
+]

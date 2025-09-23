@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Publicaciones · ProfePanda{% endblock %}
+
+{% block content %}
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+  .wrap{max-width:980px;margin:1.25rem auto 2.5rem;font-family:'Montserrat',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;}
+  .head{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin:0 0 1rem;}
+  .head h1{margin:0;font-size:clamp(1.6rem,1.2rem + 1vw,2.2rem);font-weight:800;color:#0f172a;}
+
+  .grid{display:grid;grid-template-columns:1fr;gap:12px;}
+  @media (min-width:720px){ .grid{grid-template-columns:1fr 1fr;} }
+
+  .item{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:1rem 1.1rem;box-shadow:0 6px 18px rgba(0,0,0,.06);}
+  .item h2{margin:.1rem 0 .35rem;font-size:1.15rem;}
+  .item h2 a{color:#0f172a;text-decoration:none;}
+  .item h2 a:hover{color:#2563eb;text-decoration:underline;}
+  .meta{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;color:#64748b;font-size:.92rem;margin:.25rem 0 .6rem;}
+  .tag{display:inline-block;padding:.15rem .55rem;border-radius:999px;background:#eef2ff;color:#1e40af;font-weight:600;font-size:.8rem;}
+  .more a{display:inline-block;padding:.45rem .75rem;border-radius:10px;background:#2563eb;color:#fff;text-decoration:none;font-weight:700;}
+  .more a:hover{filter:brightness(0.95);}
+  .empty{color:#475569;margin-top:.75rem;}
+</style>
+
+<div class="wrap">
+  <div class="head">
+    <h1>Publicaciones</h1>
+  </div>
+
+  {% if pages and pages|length > 0 %}
+    <div class="grid">
+      {% for p in pages %}
+      <article class="item">
+        <h2><a href="/pages/{{ p.slug }}">{{ p.title }}</a></h2>
+        <div class="meta">
+          {% if p.created_at %}<span>Publicado: {{ p.created_at }}</span>{% endif %}
+          {% if p.tags and p.tags|length > 0 %}
+            <span>•</span>
+            <span>
+              {% for t in p.tags %}
+                <span class="tag">{{ t }}</span>
+              {% endfor %}
+            </span>
+          {% endif %}
+        </div>
+        <div class="more">
+          <a href="/pages/{{ p.slug }}">Leer</a>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="empty">Aún no hay publicaciones.</p>
+  {% endif %}
+</div>
+{% endblock %}

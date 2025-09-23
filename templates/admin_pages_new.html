@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block title %}Admin · New Page{% endblock %}
+
+{% block content %}
+<style>
+  /* Use Montserrat for this page (base.css may already do this, but enforce here) */
+  @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+  .pages-wrapper { font-family: 'Montserrat', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+  .pages-card {
+    max-width: 980px; margin: 1.5rem auto; background: #fff; border: 1px solid #e5e7eb;
+    border-radius: 14px; box-shadow: 0 6px 18px rgba(0,0,0,.06);
+  }
+  .pages-head {
+    padding: 1rem 1.25rem; border-bottom: 1px solid #eef2f7; display:flex; align-items:center; justify-content:space-between;
+  }
+  .pages-head h1 { font-size: 1.25rem; margin: 0; font-weight: 700; color: #0f172a; }
+  .pages-body { padding: 1.25rem; }
+  .field { margin-bottom: 1rem; }
+  .label { display:block; font-weight:600; margin-bottom:.4rem; color:#334155; }
+  .input, .tags-input {
+    width:100%; padding:.625rem .75rem; border:1px solid #cbd5e1; border-radius:10px; font-size:1rem; outline:none;
+  }
+  .input:focus, .tags-input:focus { border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.15); }
+  .help { color:#64748b; font-size:.9rem; margin-top:.25rem; }
+  .toolbar-note{ color:#475569; font-size:.9rem; margin:.25rem 0 1rem; }
+  .actions { display:flex; gap:.6rem; justify-content:flex-end; border-top:1px solid #eef2f7; padding:1rem 1.25rem; }
+  .btn {
+    appearance:none; border:0; padding:.65rem 1rem; border-radius:10px; font-weight:600; cursor:pointer;
+  }
+  .btn.primary { background:#2563eb; color:#fff; }
+  .btn.secondary { background:#e2e8f0; color:#0f172a; }
+  .success-pill {
+    display:none; margin-left:auto; margin-right:.5rem; align-items:center; gap:.4rem;
+    padding:.35rem .6rem; border-radius:999px; background:#dcfce7; color:#166534; font-weight:600; font-size:.9rem;
+  }
+  .success-pill.show{ display:inline-flex; }
+</style>
+
+<!-- TinyMCE (rich text editor) -->
+<script src="https://cdn.jsdelivr.net/npm/tinymce@6.8.3/tinymce.min.js" referrerpolicy="origin"></script>
+
+<div class="pages-wrapper">
+  <div class="pages-card">
+    <div class="pages-head">
+      <h1>New Page</h1>
+      <span id="saveOk" class="success-pill">✓ Saved</span>
+    </div>
+
+    <div class="pages-body">
+      <form id="pageForm">
+        <!-- Title -->
+        <div class="field">
+          <label class="label" for="title">Title</label>
+          <input class="input" id="title" name="title" type="text" placeholder="Add a page title…" required />
+        </div>
+
+        <!-- Tags -->
+        <div class="field">
+          <label class="label" for="tags">Tags</label>
+          <input class="tags-input" id="tags" name="tags" type="text" placeholder="ser/estar, beginner, A2" />
+          <div class="help">Comma-separated (e.g., <em>ser/estar, beginner, A2</em>).</div>
+        </div>
+
+        <!-- Editor -->
+        <div class="field">
+          <label class="label">Content</label>
+          <div class="toolbar-note">
+            Headings H1–H5, paragraphs, lists, links, tables, code, and media embeds are enabled.
+            You can paste **iframe** snippets (H5P, YouTube, Canva, Genially, etc.) directly.
+          </div>
+          <textarea id="editor" name="html"></textarea>
+        </div>
+      </form>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="btn secondary" id="resetBtn">Reset</button>
+      <button type="button" class="btn primary" id="publishBtn">Publish</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Initialize TinyMCE
+  tinymce.init({
+    selector: '#editor',
+    base_url: 'https://cdn.jsdelivr.net/npm/tinymce@6.8.3',  // ← ADD
+    suffix: '.min',                                          // ← ADD
+    height: 520,
+    menubar: 'file edit view insert format tools table',
+    plugins: 'code link lists table media image autoresize',
+    toolbar: [
+      'undo redo | blocks | bold italic underline removeformat |',
+      'alignleft aligncenter alignright alignjustify | bullist numlist outdent indent |',
+      'link image media table | code'
+    ].join(' '),
+    // Limit block formats to H1–H5 + paragraph
+    block_formats: 'Paragraph=p; H1=h1; H2=h2; H3=h3; H4=h4; H5=h5',
+    // Allow iframes and common attributes to support H5P/YouTube/Canva/Genially embeds
+    extended_valid_elements: 'iframe[src|frameborder|allow|allowfullscreen|width|height|style|loading],script[src|type],div[*],span[*]',
+    valid_children: '+body[style],+div[iframe|div|span|p|h1|h2|h3|h4|h5|ul|ol|table],+p[iframe|span|strong|em|a|img|code]',
+    // Don’t strip styles on paste (useful for some providers)
+    paste_data_images: true,
+    content_style: `
+      @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+      body { font-family: 'Montserrat', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; font-size:16px; color:#0f172a; }
+      h1,h2,h3,h4,h5 { font-weight:700; color:#0f172a; margin: 1.1em 0 .5em; }
+      p { line-height: 1.7; margin: .6em 0; }
+      pre, code { background:#0b102026; padding:.15rem .35rem; border-radius:6px; }
+      table { width:100%; border-collapse: collapse; }
+      table, th, td { border:1px solid #e2e8f0; }
+      th, td { padding:.5rem .6rem; }
+      iframe { display:block; max-width:100%; border:0; margin: .75rem 0; }
+      img { max-width:100%; height:auto; }
+      ul,ol { padding-left: 1.35rem; }
+      a { color:#2563eb; text-decoration: underline; }
+    `,
+    // Keep iframes on paste
+    paste_remove_elements: '',
+    // Optional: convert URLs to absolute left as-is
+    convert_urls: false
+  });
+
+  // Helpers
+  const $ = sel => document.querySelector(sel);
+  const showSaved = () => {
+    const pill = $('#saveOk');
+    pill.classList.add('show');
+    setTimeout(() => pill.classList.remove('show'), 2200);
+  };
+
+  // Reset form
+  $('#resetBtn').addEventListener('click', () => {
+    $('#pageForm').reset();
+    if (tinymce.get('editor')) tinymce.get('editor').setContent('');
+  });
+
+  // Publish (POST to /admin/pages)
+  $('#publishBtn').addEventListener('click', async () => {
+    const title = $('#title').value.trim();
+    const tags = $('#tags').value.trim();
+    const html = tinymce.get('editor') ? tinymce.get('editor').getContent() : '';
+
+    if (!title || !html) {
+      alert("Please add both a Title and Content.");
+      return;
+    }
+
+    const form = new FormData();
+    form.append('title', title);
+    form.append('tags', tags);
+    form.append('html', html);
+
+    try {
+      const res = await fetch('/admin/pages', { method: 'POST', body: form });
+      const data = await res.json();
+      if (!data.success) {
+        console.error(data);
+        alert(data.error || 'Failed to save page.');
+        return;
+      }
+      showSaved();
+      // Optionally clear fields after save:
+      // $('#pageForm').reset(); tinymce.get('editor').setContent('');
+      // Or keep content for further edits—your call.
+    } catch (e) {
+      console.error(e);
+      alert('Network error while saving page.');
+    }
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,16 @@
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <img src="{{ url_for('static', filename='assets/logo.png') }}" alt="Profe Panda">
+      <span>Profe Panda</span>
+    </div>
+    <div class="custom-dropdown">
+      <button class="dropdown-button">Menú ▾</button>
+      <div class="dropdown-content">
+        <a href="{{ url_for('public.index') }}">🏠 ProfePanda</a>
+        <a href="{{ url_for('public.glosarios_index') }}">📚 Glosarios Regionales</a>
+        <a href="{{ url_for('public.public_pages_index') }}">🧭 Guías</a>
+      </div>
+    </div>
+  </div>
+</header>

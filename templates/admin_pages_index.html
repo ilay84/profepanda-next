@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Admin · Pages{% endblock %}
+
+{% block content %}
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+  .pages-wrap { font-family: 'Montserrat', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+  .card {
+    max-width: 1100px; margin: 1.5rem auto; background:#fff; border:1px solid #e5e7eb;
+    border-radius:14px; box-shadow:0 6px 18px rgba(0,0,0,.06); overflow:hidden;
+  }
+  .card-head {
+    padding: 1rem 1.25rem; border-bottom:1px solid #eef2f7; display:flex; align-items:center; justify-content:space-between;
+  }
+  .card-head h1 { font-size:1.25rem; margin:0; font-weight:700; color:#0f172a; }
+  .btn { appearance:none; border:0; padding:.6rem .9rem; border-radius:10px; font-weight:600; cursor:pointer; }
+  .btn.primary { background:#2563eb; color:#fff; }
+  .btn.light { background:#e2e8f0; color:#0f172a; }
+  .body { padding: 0; }
+  table { width:100%; border-collapse:collapse; }
+  th, td { padding:.8rem 1rem; border-bottom:1px solid #eef2f7; text-align:left; vertical-align:top; }
+  th { font-weight:700; color:#0f172a; background:#f8fafc; }
+  td .tag {
+    display:inline-block; margin:.1rem .25rem .1rem 0; padding:.15rem .5rem; border-radius:999px;
+    background:#eef2ff; color:#1e40af; font-weight:600; font-size:.82rem;
+  }
+  .muted { color:#64748b; font-size:.92rem; }
+  .row-actions { display:flex; gap:.4rem; flex-wrap:wrap; }
+  .link { color:#2563eb; text-decoration:underline; font-weight:600; }
+  .link.danger { color:#b91c1c; }
+  .empty { padding:1rem; color:#475569; }
+</style>
+
+<div class="pages-wrap">
+  <div class="card">
+    <div class="card-head">
+      <h1>Pages</h1>
+      <div>
+        <a href="/admin/pages/new" class="btn primary">+ New Page</a>
+      </div>
+    </div>
+
+    <div class="body">
+      {% if pages and pages|length > 0 %}
+      <table>
+        <thead>
+          <tr>
+            <th style="width:36%;">Title</th>
+            <th style="width:28%;">Tags</th>
+            <th style="width:18%;">Created</th>
+            <th style="width:18%;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in pages %}
+            <tr data-slug="{{ p.slug }}">
+            <td>
+              <div style="font-weight:700; color:#0f172a; margin-bottom:.15rem;">{{ p.title }}</div>
+              <div class="muted">/pages/{{ p.slug }}</div>
+            </td>
+            <td>
+              {% if p.tags and p.tags|length > 0 %}
+                {% for t in p.tags %}
+                  <span class="tag">{{ t }}</span>
+                {% endfor %}
+              {% else %}
+                <span class="muted">—</span>
+              {% endif %}
+            </td>
+            <td>
+              <div class="muted">{{ p.created_at or "—" }}</div>
+            </td>
+            <td>
+              <div class="row-actions">
+                <a class="link" href="/pages/{{ p.slug }}" target="_blank" rel="noopener">View</a>
+                <span class="muted">·</span>
+                <a class="link" href="/admin/pages/new" title="Duplicate by opening editor and pasting content">New</a>
+                <span class="muted">·</span>
+                <a href="#" class="link danger delete-page" data-slug="{{ p.slug }}" data-title="{{ p.title }}">Delete</a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+        <div class="empty">No pages yet. Click <strong>+ New Page</strong> to create your first one.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script>
+  // Handle Delete clicks
+  document.addEventListener('click', async (e) => {
+    const el = e.target.closest('.delete-page');
+    if (!el) return;
+    e.preventDefault();
+
+    const slug = el.getAttribute('data-slug');
+    const title = el.getAttribute('data-title') || slug;
+    if (!slug) return;
+
+    if (!confirm(`Delete “${title}”? This cannot be undone.`)) return;
+
+    try {
+      const res = await fetch(`/admin/pages/${encodeURIComponent(slug)}/delete`, { method: 'POST' });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Failed');
+
+      // Remove the row from the table
+      const row = el.closest('tr');
+      if (row) row.remove();
+    } catch (err) {
+      console.error(err);
+      alert('Delete failed: ' + err.message);
+    }
+  });
+</script>
+
+{% endblock %}

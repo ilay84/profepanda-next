@@ -1,0 +1,162 @@
+<form id="addEntryForm">
+  <!-- Word -->
+  <label for="word"><strong>Palabra / expresión</strong></label>
+  <input type="text" id="word" name="word" required>
+
+  <!-- Main word audio -->
+  <label for="audio_word"><strong>Audio principal</strong></label>
+  <input type="file" id="audio_word" name="audio_word" accept="audio/*">
+
+  <!-- Variantes -->
+  <fieldset>
+    <legend><strong>Variantes (opcional)</strong></legend>
+    <div class="variants-2col">
+      <div>
+        <label for="variant_ms">(m.s.)</label>
+        <input type="text" id="variant_ms" name="variant_ms" placeholder="ej. pibe">
+      </div>
+      <div>
+        <label for="variant_mp">(m.p.)</label>
+        <input type="text" id="variant_mp" name="variant_mp" placeholder="ej. pibes">
+      </div>
+      <div>
+        <label for="variant_fs">(f.s.)</label>
+        <input type="text" id="variant_fs" name="variant_fs" placeholder="ej. piba">
+      </div>
+      <div>
+        <label for="variant_fp">(f.p.)</label>
+        <input type="text" id="variant_fp" name="variant_fp" placeholder="ej. pibas">
+      </div>
+      <div>
+        <label for="variant_diminutivo">Diminutivo</label>
+        <input type="text" id="variant_diminutivo" name="variant_diminutivo" placeholder="ej. pibito, pibita">
+      </div>
+      <div>
+        <label for="variant_aumentativo">Aumentativo</label>
+        <input type="text" id="variant_aumentativo" name="variant_aumentativo" placeholder="ej. pibón, pibona">
+      </div>
+    </div>
+  </fieldset>
+
+  <!-- ===== Sentido 1 ===== -->
+  <div class="sentido-block" data-sentido="1">
+    <h4>Sentido 1</h4>
+
+    <label for="clase_1"><strong>Clase</strong></label>
+    <input type="text" id="clase_1" name="clase_1" list="claseSuggestions" placeholder="Escribir clase (ej. sustantivo masculino)">
+    <datalist id="claseSuggestions"></datalist>
+
+    <label for="etiquetas_1"><strong>Etiquetas</strong></label>
+    <input type="text" id="etiquetas_1" name="etiquetas_1" list="etiquetasSuggestions" placeholder="Separar con comas">
+    <datalist id="etiquetasSuggestions"></datalist>
+
+    <label for="definicion_1"><strong>Definición</strong></label>
+    <div id="editor_definicion_1" class="quill-editor"></div>
+    <input type="hidden" id="definicion_1" name="definicion_1">
+
+    <label for="equivalentes_1"><strong>Equivalentes en inglés</strong></label>
+    <input type="text" id="equivalentes_1" name="equivalentes_1" placeholder="Separar con comas">
+
+    <div class="examples-container">
+      <h5>Ejemplos</h5>
+      <div class="example-item">
+        <label>Texto del ejemplo (ES)</label>
+        <textarea name="example_sentence_1[]" rows="2"></textarea>
+
+        <label>Traducción al inglés (EN)</label>
+        <textarea name="example_translation_1[]" rows="2"></textarea>
+
+        <label>Audio del ejemplo</label>
+        <input type="file" name="example_audio_1[]" accept="audio/*">
+
+        <!-- 🆕 Vincular palabras del glosario -->
+        <label><strong>Vincular palabras del glosario</strong></label>
+        <div class="linked-words">
+          <!-- Selected items appear here as chips -->
+          <div class="chips" aria-live="polite"></div>
+
+          <!-- Typeahead input limited to existing entries (populated via JS with <datalist>) -->
+          <input
+            type="text"
+            name="example_linked_input_1[]"
+            class="linked-input"
+            list="linkedWordsList"
+            placeholder="Escribí y elegí de la lista…">
+
+          <!-- Hidden field that will hold a comma-separated list of selected words -->
+          <input
+            type="hidden"
+            name="example_linked_words_1[]"
+            class="linked-hidden"
+            value="">
+        </div>
+
+        <label><strong>Fuente</strong></label>
+        <select name="example_source_kind_1[]" class="source-kind">
+          <option value="">-- Seleccionar tipo --</option>
+          <option value="pelicula">🎞️ Película</option>
+          <option value="serie">📺 Serie</option>
+          <option value="redes">🌐 Redes</option>
+          <option value="cancion">🎵 Canción</option>
+          <option value="otro">🛈 Otro</option>
+        </select>
+
+        <!-- Película -->
+        <div class="source-fields source-pelicula" style="display:none;">
+          <input type="text" name="example_source_title_1[]" placeholder="Título">
+          <input type="number" name="example_source_year_1[]" placeholder="Año">
+        </div>
+
+        <!-- Serie -->
+        <div class="source-fields source-serie" style="display:none;">
+          <input type="text" name="example_source_title_1[]" placeholder="Título">
+          <input type="number" name="example_source_year_1[]" placeholder="Año">
+          <input type="number" name="example_source_season_1[]" placeholder="Temporada">
+          <input type="number" name="example_source_episode_1[]" placeholder="Capítulo">
+        </div>
+
+        <!-- Redes -->
+        <div class="source-fields source-redes" style="display:none;">
+          <input type="text" name="example_source_handle_1[]" placeholder="Usuario / handle">
+          <input type="url" name="example_source_url_1[]" placeholder="URL">
+        </div>
+
+        <!-- Canción -->
+        <div class="source-fields source-cancion" style="display:none;">
+          <input type="text" name="example_source_song_1[]" placeholder="Canción">
+          <input type="text" name="example_source_artist_1[]" placeholder="Artista">
+        </div>
+
+        <!-- Otro -->
+        <div class="source-fields source-otro" style="display:none;">
+          <input type="text" name="example_source_text_1[]" placeholder="Descripción libre">
+        </div>
+
+        <button type="button" class="remove-example">Eliminar ejemplo</button>
+      </div>
+    </div>
+
+    <button type="button" class="add-example" data-sentido="1">Agregar ejemplo</button>
+    
+    <!-- 🆕 New delete sentido button -->
+    <button type="button" class="remove-sentido" style="background-color: #dc3545; color: white; border: none; padding: 0.4rem 0.75rem; border-radius: 4px; cursor: pointer; margin-top: 0.5rem;">
+      Eliminar sentido
+    </button>
+  </div>
+
+  <!-- ✅ New container for dynamically added sentidos -->
+  <div id="extra-sentidos"></div>
+
+  <!-- ✅ Button to add another sentido -->
+  <div style="margin-top: 1em;">
+    <button type="button" id="addSentidoBtn" class="add-sentido">Agregar sentido</button>
+  </div>
+
+  <!-- 🆕 Datalist (will be populated via JS with existing entry words) -->
+  <datalist id="linkedWordsList"></datalist>
+
+  <!-- Submit -->
+  <div style="margin-top: 1em;">
+    <button type="submit">Guardar</button>
+  </div>
+</form>

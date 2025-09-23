@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}{{ page.title }} · ProfePanda{% endblock %}
+
+{% block content %}
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+  .page-wrap{max-width:980px;margin:1.25rem auto 2.5rem; font-family:'Montserrat', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;}
+  .page-title{margin:.25rem 0 .35rem; font-size:clamp(1.6rem, 1.2rem + 1.2vw, 2.2rem); font-weight:800; color:#0f172a;}
+  .meta{display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; color:#64748b; font-size:.95rem; margin:.25rem 0 1rem;}
+  .tag{display:inline-block; padding:.15rem .55rem; border-radius:999px; background:#eef2ff; color:#1e40af; font-weight:600; font-size:.82rem;}
+  .page-content{font-size:1.05rem; line-height:1.8; color:#0f172a;}
+  .page-content img{max-width:100%; height:auto;}
+  .page-content iframe{max-width:100%; width:100%; border:0; margin:.75rem 0;}
+  .divider{margin:1rem 0 1.25rem; border:0; border-top:1px solid #e5e7eb;}
+</style>
+
+<div class="page-wrap">
+  <h1 class="page-title">{{ page.title }}</h1>
+
+  <div class="meta">
+    {% if page.created_at %}
+      <span>Publicado: {{ page.created_at }}</span>
+    {% endif %}
+    {% if page.tags %}
+      <span>•</span>
+      <span>
+        {% for t in page.tags %}
+          <span class="tag">{{ t }}</span>
+        {% endfor %}
+      </span>
+    {% endif %}
+  </div>
+
+  <hr class="divider">
+
+  <div class="page-content">
+    {{ page.html | safe }}
+  </div>
+</div>
+{% endblock %}

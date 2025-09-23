@@ -1,0 +1,1325 @@
+{% extends "base.html" %}
+
+{% block title %}Glosario Regional: {{ country_code|capitalize }}{% endblock %}
+
+{% block content %}
+
+<div style="--accent-color: {{ accent_color }};">
+
+<!-- 🔹 Modal container for entry pop-ups -->
+<div id="entryModal" class="modal" style="--accent-color: {{ accent_color or country_color or '#2563eb' }};">
+  <div class="modal-content large-modal">
+    <div class="modal-header">
+      <h2 id="modalWordTitle" style="display:flex;align-items:center;gap:0.5rem;"></h2>
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <button id="shareButton" class="share-btn">
+          <img src="{{ url_for('static', filename='assets/share-icon.png') }}" alt="Compartir" class="share-icon">
+          <span>Compartir</span>
+        </button>
+        <span id="closeEntryModal" class="close">&times;</span>
+      </div>
+    </div>
+    <div class="modal-body" style="max-height: calc(100vh - 180px); overflow:auto; padding-bottom:.5rem;">
+      <!-- 🔹 Tab headers -->
+      <div id="entryTabs" class="tab-header"
+          style="position:sticky; top:0; z-index:10; background:#fff;
+                  padding:.25rem 0 .5rem; border-bottom:1px solid #e6eef5;">
+        <button class="tab-btn active" data-tab="main">Principal</button>
+      </div>
+
+      <!-- 🔹 Tab content panels -->
+      <div id="entryTabContents" class="tab-contents">
+        <div class="tab-panel active" data-tab="main" id="modalWordContent">
+          <!-- Word details will be injected here -->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 🌐 Global Search Results Modal -->
+<div id="globalSearchModal" class="modal" style="display:none;">
+  <div class="modal-content large-modal">
+    <div class="modal-header">
+      <h2 style="display:flex;align-items:center;gap:.5rem;">
+        <span>🌐 Búsqueda global</span>
+        <small id="globalSearchQuery" style="font-weight:normal;opacity:.7;"></small>
+      </h2>
+      <span id="closeGlobalSearchModal" class="close">&times;</span>
+    </div>
+    <div class="modal-body" id="globalResults" style="max-height:65vh; overflow:auto;">
+      <!-- results render here -->
+    </div>
+  </div>
+</div>
+
+<!-- 📚 Two-column layout: left = glossary list, right = tabbed main area -->
+<div class="glossary-shell" style="display:flex; gap:1rem; align-items:flex-start; margin-left:calc(50% - 50vw); margin-right:calc(50% - 50vw); box-sizing:border-box; padding-left:2rem; padding-right:2rem;">
+  <!-- LEFT: Sidebar list of glossaries -->
+  <aside class="glossary-sidebar" style="flex:0 0 260px; background:#fff; border:1px solid #e6eef5; border-radius:10px; padding:0.75rem;">
+    <h3 style="margin:0 0 .5rem; font-size:1.05rem;">Glosarios Regionales</h3>
+        <ul style="list-style:none; padding:0; margin:0;">
+          {% set enabled = enabled_glossaries|default([country_code]) %}
+          {% set names = {
+            'ar':'Argentina','bo':'Bolivia','cl':'Chile','co':'Colombia','cr':'Costa Rica',
+            'cu':'Cuba','do':'República Dominicana','ec':'Ecuador','sv':'El Salvador',
+            'gq':'Guinea Ecuatorial','gt':'Guatemala','hn':'Honduras','mx':'México',
+            'ni':'Nicaragua','pa':'Panamá','py':'Paraguay','pe':'Perú','pr':'Puerto Rico',
+            'es':'España','uy':'Uruguay','ve':'Venezuela'
+          } %}
+
+          {% for cc in enabled %}
+            {% set is_active = (cc == country_code) %}
+            <li style="margin-top:.25rem;">
+              <a
+                class="sidebar-link{% if is_active %} active{% endif %}"
+                href="/{{ cc }}/glosario"
+                style="display:flex; align-items:center; gap:.5rem; width:100%; text-decoration:none; color:inherit; padding:.5rem .6rem; border-radius:8px; border:0; background:#fff; cursor:pointer;">
+                <img
+                  src="{{ url_for('static', filename='assets/flags/') }}{{ cc }}.svg"
+                  alt="{{ names.get(cc, cc|upper) }}"
+                  style="width:18px; height:12px; object-fit:cover; border-radius:2px;"
+                  data-fallback="{{ url_for('static', filename='assets/flags/') }}{{ cc }}.png"
+                  onerror="this.onerror=null; this.src=this.dataset.fallback;">
+                <span>{{ names.get(cc, cc|upper) }}</span>
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+  </aside>
+
+  <!-- RIGHT: Tabbed content area -->
+  <section class="glossary-main" style="flex:1 1 auto;">
+    <!-- Top tab bar (Argentina is the only active tab for now) -->
+        <div class="tabs-bar" style="display:flex; align-items:center; justify-content:space-between; gap:.75rem; border-bottom:1px solid #e6eef5; margin-bottom:.75rem;">
+
+          <!-- Left: tabs -->
+          <div style="display:flex; gap:.5rem;">
+            <button class="tab-btn active" data-target="#tab-ar"
+              style="padding:.5rem .9rem; border:1px solid #cfe3fb; border-bottom:0; border-top-left-radius:10px; border-top-right-radius:10px; background:#eaf4ff; font-weight:600; display:flex; align-items:center; gap:.5rem;">
+              <img src="{{ url_for('static', filename='assets/flags/ar.png') }}" alt="Argentina" style="height:16px; width:auto; border-radius:2px;">
+              <span>Argentina</span>
+            </button>
+          </div>
+
+          <!-- Right: Global search -->
+          <form id="global-search-form" onsubmit="return false;" style="display:flex; align-items:center; gap:.5rem; padding:.25rem 0;">
+            <input id="global-search-input" type="text" placeholder="🔎 Buscar en todos los glosarios…" autocomplete="off"
+                  style="min-width:260px; padding:.5rem .7rem; border:1px solid #cfe3fb; border-radius:8px;">
+            <button id="global-search-btn" type="button" class="btn-primary" style="padding:.5rem .8rem;">Buscar</button>
+          </form>
+        </div>
+
+    <!-- Tab panels -->
+    <div class="tabs-panels" style="background:#fff; border:1px solid #e6eef5; border-radius:10px; padding:1rem;">
+      <!-- 🇦🇷 Argentina panel (active) -->
+      <div id="tab-ar" class="tab-panel" style="display:block;">
+
+        <!-- 🔍 Centered search bar -->
+        <!-- 🔁 Make the tab its own scroll area so sticky works reliably -->
+        <div class="panel-scroll" style="max-height:70vh; overflow:auto;">
+
+          <!-- 🔍 Sticky, with country flag -->
+          <div class="glossary-search-container"
+              style="position:sticky; top:0; z-index:5; background:#fff; padding:.5rem 0; margin-bottom:.75rem; border-bottom:1px solid #e6eef5; display:flex; align-items:center; gap:.5rem;">
+            <img src="{{ url_for('static', filename='assets/flags/' + country_code + '.png') }}"
+                alt="{{ country_code|upper }}"
+                style="height:16px; width:auto; border-radius:2px;">
+            <input type="text" id="glossarySearch" placeholder="Buscar..." oninput="filterGlossary()" />
+          </div>
+
+          <!-- 🔹 Grid of word/phrase cards -->
+          <div class="glossary-grid">
+            {% for entry in entries %}
+              <div class="entry-card"
+                  data-entry="{{ entry | tojson | forceescape }}"
+                  onclick="openEntryModalFromCard(this)">
+                {{ entry.word }}
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+
+      <!-- Future panels (hidden / disabled) -->
+      <div id="tab-mx" class="tab-panel" style="display:none;">
+        <p style="margin:0;">El glosario de México estará disponible próximamente.</p>
+      </div>
+      <div id="tab-es" class="tab-panel" style="display:none;">
+        <p style="margin:0;">El glosario de España estará disponible próximamente.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+console.log('public_glosario script loaded');
+
+let CURRENT_ENTRY = null;
+
+/* ---------- helpers ---------- */
+function slugify(text) {
+  return (text || "")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/ñ/g, "n")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)+/g, "");
+}
+
+function buildShareUrl(entry) {
+  const url = new URL(window.location.href);
+  const slug = entry.slug || slugify(entry.word);
+  url.searchParams.set("w", slug);
+  return url.toString();
+}
+
+function removeShareParamFromUrl() {
+  const url = new URL(window.location.href);
+  url.searchParams.delete("w");
+  history.replaceState(null, "", url.toString());
+}
+
+function pathFor(p) {
+  if (!p) return "";
+  if (/^https?:\/\//i.test(p)) return p;   // leave absolute urls alone
+  return p.startsWith("/") ? p : "/" + p;  // ensure leading slash for /static/...
+}
+
+/* Highlight `backticked` text in examples with a neutral, cross-glossary blue */
+function highlightBackticks(s) {
+  if (!s) return "";
+  const esc = String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;");
+    return esc.replace(/`([^`]+)`/g, '<span style="color:#004aad; font-weight:700;">$1</span>');
+}
+
+function getLinkedWords(ex){
+  if (Array.isArray(ex.linked_words) && ex.linked_words.length) return ex.linked_words;
+  if (Array.isArray(ex.linked) && ex.linked.length) return ex.linked; // legacy support
+  return [];
+}
+
+function findEntryBySlug(slug) {
+  const cards = document.querySelectorAll(".entry-card");
+  for (const card of cards) {
+    try {
+      const obj = JSON.parse(card.getAttribute("data-entry"));
+      const s = obj.slug || slugify(obj.word);
+      if (s === slug) return obj;
+    } catch (_) {}
+  }
+  return null;
+}
+
+function findEntryByWord(word) {
+  const targetSlug = slugify(word || "");
+  const cards = document.querySelectorAll(".entry-card");
+  for (const card of cards) {
+    try {
+      const obj = JSON.parse(card.getAttribute("data-entry"));
+      const s = slugify(obj.word || obj.slug || "");
+      if (s === targetSlug) return obj;
+    } catch (_) {}
+  }
+  return null;
+}
+
+/* ---------- open from card ---------- */
+window.openEntryModalFromCard = function(card) {
+  try {
+    const entry = JSON.parse(card.getAttribute('data-entry'));
+    openEntryModal(entry);
+  } catch (e) {
+    console.error("Failed to parse entry data:", e);
+  }
+};
+
+/* ---------- modal rendering ---------- */
+window.openEntryModal = function(entry) {
+  CURRENT_ENTRY = entry;
+
+  const title = document.getElementById("modalWordTitle");
+  const body  = document.getElementById("modalWordContent");
+  title.textContent = "";
+  title.style.display = "none";
+
+  // Main audio right under the word
+  const mainAudio = (entry.audio && String(entry.audio).trim() !== "")
+    ? `<audio controls preload="none" src="${pathFor(entry.audio)}" onerror="this.remove()" style="margin:.5rem 0;"></audio>`
+    : "";
+
+  // Variants only if exist
+  const variantsSection = (entry.variants && Object.keys(entry.variants).some(k => (entry.variants[k]||[]).length))
+    ? (() => {
+        const masc = []
+            .concat(entry.variants.ms || [])
+            .concat(entry.variants.mp || []);
+        const fem  = []
+            .concat(entry.variants.fs || [])
+            .concat(entry.variants.fp || []);
+        const dim  = entry.variants.diminutivo || [];
+        const aug  = entry.variants.aumentativo || [];
+
+        const row = (label, vals) => !vals.length ? "" : `
+            <tr style="border:0!important;">
+            <td style="border:0!important; padding:4px 8px; white-space:nowrap; vertical-align:top;">
+                <strong>${label}</strong>
+            </td>
+            <td style="border:0!important; padding:4px 8px;">
+                <em>${vals.join(", ")}</em>
+            </td>
+            </tr>
+        `;
+
+        return `
+            <details>
+            <summary class="collapsible-summary examples-summary">Formas variantes</summary>
+            <div style="display:inline-block;">
+                <table class="variants-table"
+                    style="border-collapse:collapse; border-spacing:0; width:auto; margin-top:0.5rem; border:0!important;">
+                <tbody>
+                    ${row("Femenino:", fem)}
+                    ${row("Masculino:", masc)}
+                    ${row("Diminutivo:", dim)}
+                    ${row("Aumentativo:", aug)}
+                </tbody>
+                </table>
+            </div>
+            </details>
+        `;
+        })()
+    : "";
+
+  // Senses
+  const sensesSection = (Array.isArray(entry.senses) && entry.senses.length)
+    ? entry.senses.map((sense, idx) => {
+        const wordClass = (Array.isArray(sense.tag_word_class) && sense.tag_word_class.length)
+          ? `<span class="tag-btn tag-class">${sense.tag_word_class[0]}</span>`
+          : "";
+
+        const definition = sense.definition ? `<div class="sense-definition">${sense.definition}</div>` : "";
+
+        const equivalents = (Array.isArray(sense.equivalents) && sense.equivalents.length)
+          ? `<div style="margin-top:.5rem;"><strong>🇺🇸 Equivalentes en inglés:</strong>
+               <ul class="us-equivalents">
+                 ${sense.equivalents.map(eq => `<li>${eq}</li>`).join("")}
+               </ul>
+             </div>`
+          : "";
+
+        const generalTags = (Array.isArray(sense.tag_general) && sense.tag_general.length)
+          ? `<div style="margin:.5rem 0;">
+               ${sense.tag_general.map(tag => `<span class="tag-btn tag-general">${tag}</span>`).join(" ")}
+             </div>`
+          : "";
+
+        const examples = (Array.isArray(sense.examples) && sense.examples.length)
+          ? `<details class="ex-collapsible" style="margin-top:0.5rem;">
+               <summary class="collapsible-summary examples-summary">👀 🎧 Ver y escuchar ejemplos auténticos</summary>
+               <div>
+                 ${sense.examples.map(ex => `
+                   <div class="example-block" style="margin:.75rem 0; background:#f9fcff; border-left:4px solid #d0e7ff; padding:0.75rem; border-radius:4px;">
+                     <div style="font-weight:bold; white-space:pre-line;">${highlightBackticks(ex.es || "")}</div>
+                     ${ex.en ? `<div style="color:#555;font-style:italic; white-space:pre-line;">${ex.en}</div>` : ``}
+                     ${ex.audio && String(ex.audio).trim() !== "" 
+                      ? `<audio controls preload="none" src="${pathFor(ex.audio)}" onerror="this.remove()" style="margin:.25rem 0;width:100%;"></audio>` 
+                      : ``}
+                     ${ex.source
+                      ? (() => {
+                          const kind = ex.source.kind || '';
+                          let label = 'Fuente';
+                          let emoji = '';
+
+                          if (kind === 'pelicula') {
+                            emoji = '🎞️';
+                            const title = ex.source.title || 'Película';
+                            const year  = ex.source.year ? ` (${ex.source.year})` : '';
+                            label = `${title}${year}`;
+                          } else if (kind === 'serie') {
+                            emoji = '📺';
+                            const title   = ex.source.title || 'Serie';
+                            const year    = ex.source.year ? ` (${ex.source.year})` : '';
+                            const season  = ex.source.season ? ` T${ex.source.season}` : '';
+                            const episode = ex.source.episode ? ` E${ex.source.episode}` : '';
+                            label = `${title}${year}${season}${episode}`;
+                          } else if (kind === 'redes') {
+                            emoji = '🌐';
+                            label = ex.source.handle || 'Redes';
+                          } else if (kind === 'cancion') {
+                            emoji = '🎵';
+                            const song   = ex.source.song || 'Canción';
+                            const artist = ex.source.artist ? ` — ${ex.source.artist}` : '';
+                            label = `${song}${artist}`;
+                          } else if (kind === 'otro') {
+                            emoji = '🛈';
+                            label = ex.source.text || 'Fuente';
+                          } else {
+                            // Fallback for older entries without kind
+                            emoji = '';
+                            label = ex.source.title || ex.source.song || ex.source.handle || ex.source.text || 'Fuente';
+                            if (ex.source.year) label += ` (${ex.source.year})`;
+                          }
+
+                          const pillText = `${emoji ? emoji + ' ' : ''}${label}`;
+                          const href = ex.source.url && String(ex.source.url).trim() !== "" ? ex.source.url : null;
+                          const inner = href ? `<a href="${href}" target="_blank">${pillText}</a>` : pillText;
+
+                          return `
+                            <div class="example-source">
+                              🔖 Fuente:
+                              <span class="source-chip js-source-chip"
+                                data-kind="${kind}"
+                                data-title="${(ex.source.title || '').replace(/"/g,'&quot;')}"
+                                data-year="${ex.source.year || ''}"
+                                data-season="${ex.source.season || ''}"
+                                data-episode="${ex.source.episode || ''}"
+                                data-handle="${(ex.source.handle || '').replace(/"/g,'&quot;')}"
+                                data-song="${(ex.source.song || '').replace(/"/g,'&quot;')}"
+                                data-artist="${(ex.source.artist || '').replace(/"/g,'&quot;')}"
+                                data-text="${(ex.source.text || '').replace(/"/g,'&quot;')}">
+                                ${pillText}
+                                ${kind === 'serie'
+                                  ? `<span class="source-chevron" aria-hidden="true" style="margin-left:.35rem; opacity:.6;">▾</span>`
+                                  : ``}
+                              </span>
+                            </div>`;
+                        })()
+                      : ``}
+
+                     ${(() => {
+                      const linkedWords = getLinkedWords(ex);
+                      return linkedWords.length ? `
+                        <div class="example-linked" style="margin-top:.5rem;">
+                          <span style="opacity:.85; margin-right:.35rem;">🔗 Otras palabras en el ejemplo:</span>
+                          ${linkedWords.map(w => {
+                            const s = slugify(w || "");
+                            const safe = (w || "").replace(/"/g, '&quot;');
+                            return `<button class="linked-chip"
+                                          data-linked-slug="${s}"
+                                          data-linked-word="${safe}">${safe}</button>`;
+                          }).join("")}
+                        </div>
+                      ` : ``;
+                    })()}
+                   </div>
+                 `).join("")}
+               </div>
+             </details>`
+          : "";
+
+        return `
+          <section class="sense-block" style="margin-top:1rem;">
+            <h3 style="margin:.25rem 0 0.25rem;">(${idx + 1}) ${wordClass}</h3>
+            ${definition}
+            ${equivalents}
+            ${generalTags}
+            ${examples}
+          </section>
+        `;
+      }).join("")
+    : "";
+
+  // Render the main tab ("Principal")
+  body.innerHTML = `${mainAudio}${variantsSection}${sensesSection}`;
+
+  // ===== In-modal tab helpers =====
+  const tabsHeader   = document.getElementById('entryTabs');
+  const tabsContent  = document.getElementById('entryTabContents');
+
+  // Put the current word into the first tab (no “Principal” label)
+  const mainTabBtn = tabsHeader.querySelector('.tab-btn[data-tab="main"]');
+  if (mainTabBtn) {
+    const label = entry.word || "";
+    mainTabBtn.textContent = label;         // visible label in the tab
+    mainTabBtn.setAttribute('data-label', label); // helper for code that reads it
+  }
+
+  function activateInnerTab(key){
+    // clear active states
+    tabsHeader.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    tabsContent.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+
+    const btn   = tabsHeader.querySelector(`.tab-btn[data-tab="${key}"]`);
+    const panel = tabsContent.querySelector(`.tab-panel[data-tab="${key}"]`);
+
+    if (btn)   btn.classList.add('active');
+    if (panel) panel.classList.add('active');
+
+    // move the active tab (and its panel) to the far left
+    if (btn && tabsHeader) {
+      tabsHeader.insertBefore(btn, tabsHeader.firstChild);
+    }
+    if (panel && tabsContent) {
+      tabsContent.insertBefore(panel, tabsContent.firstChild);
+    }
+
+    // update the (hidden) title element for screen readers / consistency
+    const titleEl = document.getElementById('modalWordTitle');
+    if (titleEl && btn) {
+      const labelFromAttr = btn.getAttribute('data-label');
+      let label = labelFromAttr && labelFromAttr.trim();
+      if (!label) {
+        const firstText = Array.from(btn.childNodes).find(n => n.nodeType === Node.TEXT_NODE);
+        label = (firstText ? firstText.textContent : btn.textContent || '').replace('×','').trim();
+      }
+      if (!label && key === 'main') label = entry.word || '';
+      titleEl.textContent = label || '';
+    }
+
+    // keep the strip scrolled all the way left after reordering
+    if (tabsHeader) tabsHeader.scrollLeft = 0;
+  }
+
+  function ensureInnerTab(key, title){
+    // If exists, just activate and return the panel
+    let panel = tabsContent.querySelector(`.tab-panel[data-tab="${key}"]`);
+    if (panel) { activateInnerTab(key); return panel; }
+
+    // Create tab button with close "×"
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn';
+    btn.setAttribute('data-tab', key);
+    btn.style.cssText = "padding:.35rem .7rem; border:1px solid #cfe3fb; border-bottom:0; border-top-left-radius:10px; border-top-right-radius:10px; background:#f7fbff; font-weight:600; display:inline-flex; align-items:center; gap:.4rem;";
+    btn.innerHTML = `${title}<span class="tab-close" style="margin-left:.35rem; cursor:pointer;">×</span>`;
+    tabsHeader.appendChild(btn);
+
+    // Create content panel
+    panel = document.createElement('div');
+    panel.className = 'tab-panel';
+    panel.setAttribute('data-tab', key);
+    panel.style.display = ""; // use class switching
+    tabsContent.appendChild(panel);
+
+    // Clicks: switch or close
+    btn.addEventListener('click', (ev) => {
+      if (ev.target.classList.contains('tab-close')) {
+        // Close this tab
+        const isActive = btn.classList.contains('active');
+        btn.remove();
+        panel.remove();
+        // If we closed the active tab, fall back to "main"
+        if (isActive) activateInnerTab('main');
+      } else {
+        activateInnerTab(key);
+      }
+    });
+
+    activateInnerTab(key);
+    return panel;
+  }
+
+    // Make the default "Principal" tab switch correctly
+  const mainBtn = tabsHeader.querySelector('.tab-btn[data-tab="main"]');
+  if (mainBtn && !mainBtn.dataset.bound) {
+    mainBtn.addEventListener('click', () => activateInnerTab('main'));
+    mainBtn.dataset.bound = '1';
+  }
+
+  // Build just the inner HTML for an entry (same layout as main)
+  function renderEntryInnerHTML(e){
+    const wordClass = (s) => (Array.isArray(s.tag_word_class) && s.tag_word_class.length)
+      ? `<span class="tag-btn tag-class">${s.tag_word_class[0]}</span>` : "";
+
+    const buildSource = (ex) => {
+      if (!ex.source) return ``;
+      const kind = ex.source.kind || '';
+      let label = 'Fuente', emoji = '';
+
+      if (kind === 'pelicula') {
+        emoji = '🎞️';
+        const title = ex.source.title || 'Película';
+        const year  = ex.source.year ? ` (${ex.source.year})` : '';
+        label = `${title}${year}`;
+      } else if (kind === 'serie') {
+        emoji = '📺';
+        const title   = ex.source.title || 'Serie';
+        const year    = ex.source.year ? ` (${ex.source.year})` : '';
+        const season  = ex.source.season ? ` T${ex.source.season}` : '';
+        const episode = ex.source.episode ? ` E${ex.source.episode}` : '';
+        label = `${title}${year}${season}${episode}`;
+      } else if (kind === 'redes') {
+        emoji = '🌐';
+        label = ex.source.handle || 'Redes';
+      } else if (kind === 'cancion') {
+        emoji = '🎵';
+        const song   = ex.source.song || 'Canción';
+        const artist = ex.source.artist ? ` — ${ex.source.artist}` : '';
+        label = `${song}${artist}`;
+      } else if (kind === 'otro') {
+        emoji = '🛈';
+        label = ex.source.text || 'Fuente';
+      } else {
+        label = ex.source.title || ex.source.song || ex.source.handle || ex.source.text || 'Fuente';
+        if (ex.source.year) label += ` (${ex.source.year})`;
+      }
+
+      const pillText = `${emoji ? emoji + ' ' : ''}${label}`;
+
+      return `
+        <div class="example-source">
+          🔖 Fuente:
+          <span class="source-chip js-source-chip"
+            data-kind="${kind}"
+            data-title="${(ex.source.title || '').replace(/"/g,'&quot;')}"
+            data-year="${ex.source.year || ''}"
+            data-season="${ex.source.season || ''}"
+            data-episode="${ex.source.episode || ''}"
+            data-handle="${(ex.source.handle || '').replace(/"/g,'&quot;')}"
+            data-song="${(ex.source.song || '').replace(/"/g,'&quot;')}"
+            data-artist="${(ex.source.artist || '').replace(/"/g,'&quot;')}"
+            data-text="${(ex.source.text || '').replace(/"/g,'&quot;')}">
+            ${pillText}
+            ${kind === 'serie'
+              ? `<span class="source-chevron" aria-hidden="true" style="margin-left:.35rem; opacity:.6;">▾</span>`
+              : ``}
+          </span>
+        </div>`;
+    };
+
+    const mainAudio = (e.audio && String(e.audio).trim() !== "")
+      ? `<audio controls preload="none" src="${pathFor(e.audio)}" onerror="this.remove()" style="margin:.5rem 0;"></audio>` : "";
+
+    const variants = (e.variants && Object.keys(e.variants).some(k => (e.variants[k]||[]).length)) ? (() => {
+      const masc = [].concat(e.variants.ms||[]).concat(e.variants.mp||[]);
+      const fem  = [].concat(e.variants.fs||[]).concat(e.variants.fp||[]);
+      const dim  = e.variants.diminutivo||[];
+      const aug  = e.variants.aumentativo||[];
+      const row = (label, vals) => !vals.length ? "" : `
+        <tr style="border:0!important;">
+          <td style="border:0!important; padding:4px 8px; white-space:nowrap; vertical-align:top;"><strong>${label}</strong></td>
+          <td style="border:0!important; padding:4px 8px;"><em>${vals.join(", ")}</em></td>
+        </tr>`;
+      return `<details>
+          <summary class="collapsible-summary examples-summary">Formas variantes</summary>
+          <div style="display:inline-block;">
+            <table class="variants-table" style="border-collapse:collapse; border-spacing:0; width:auto; margin-top:0.5rem; border:0!important;">
+              <tbody>
+                ${row("Femenino:", fem)}${row("Masculino:", masc)}${row("Diminutivo:", dim)}${row("Aumentativo:", aug)}
+              </tbody>
+            </table>
+          </div>
+        </details>`;
+    })() : "";
+
+    const senses = (Array.isArray(e.senses) && e.senses.length) ? e.senses.map((s, idx) => {
+      const definition = s.definition ? `<div class="sense-definition">${s.definition}</div>` : "";
+      const equivalents = (Array.isArray(s.equivalents) && s.equivalents.length)
+        ? `<div style="margin-top:.5rem;"><strong>🇺🇸 Equivalentes en inglés:</strong>
+             <ul class="us-equivalents">${s.equivalents.map(eq => `<li>${eq}</li>`).join("")}</ul>
+           </div>` : "";
+      const generalTags = (Array.isArray(s.tag_general) && s.tag_general.length)
+        ? `<div style="margin:.5rem 0;">${s.tag_general.map(tag => `<span class="tag-btn tag-general">${tag}</span>`).join(" ")}</div>` : "";
+      const examples = (Array.isArray(s.examples) && s.examples.length) ? `
+        <details class="ex-collapsible" style="margin-top:0.5rem;">
+          <summary class="collapsible-summary examples-summary">👀 🎧 Ver y escuchar ejemplos auténticos</summary>
+          <div>
+            ${s.examples.map(ex => `
+              <div class="example-block" style="margin:.75rem 0; background:#f9fcff; border-left:4px solid #d0e7ff; padding:0.75rem; border-radius:4px;">
+                <div style="font-weight:bold; white-space:pre-line;">${highlightBackticks(ex.es || "")}</div>
+                ${ex.en ? `<div style="color:#555;font-style:italic; white-space:pre-line;">${ex.en}</div>` : ``}
+                ${ex.audio && String(ex.audio).trim() !== "" ? `<audio controls preload="none" src="${pathFor(ex.audio)}" onerror="this.remove()" style="margin:.25rem 0;width:100%;"></audio>` : ``}
+                ${buildSource(ex)}
+                ${(() => {
+                const linkedWords = getLinkedWords(ex);
+                return linkedWords.length ? `
+                  <div class="example-linked" style="margin-top:.5rem;">
+                    <span style="opacity:.85; margin-right:.35rem;">🔗 Otras palabras en el ejemplo:</span>
+                    ${linkedWords.map(w => {
+                      const sslug = slugify(w || "");
+                      const safe  = (w || "").replace(/"/g, '&quot;');
+                      return `<button class="linked-chip" data-linked-slug="${sslug}" data-linked-word="${safe}">${safe}</button>`;
+                    }).join("")}
+                  </div>
+                ` : ``;
+              })()}
+              </div>`).join("")}
+          </div>
+        </details>` : "";
+      return `<section class="sense-block" style="margin-top:1rem;">
+          <h3 style="margin:.25rem 0 0.25rem;">(${idx + 1}) ${wordClass(s)}</h3>
+          ${definition}${equivalents}${generalTags}${examples}
+        </section>`;
+    }).join("") : "";
+
+    return `${mainAudio}${variants}${senses}`;
+  }
+
+  // Wire up clicks on linked chips → open in NEW tab within the modal (recursive)
+  function bindLinkedChips(container){
+    container.querySelectorAll('.linked-chip').forEach(btn => {
+      btn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        const slug = btn.getAttribute('data-linked-slug') || '';
+        const word = btn.getAttribute('data-linked-word') || '';
+        const target = findEntryBySlug(slug) || findEntryByWord(word);
+        if (!target) return alert('Entrada vinculada no encontrada en este glosario.');
+
+        const key   = target.slug || slugify(target.word);
+        const title = target.word || key;
+
+        const panel = ensureInnerTab(key, title);
+        panel.innerHTML = renderEntryInnerHTML(target);
+
+        // 🔁 Re-bind for chips inside this new panel so you can keep going deeper
+        bindLinkedChips(panel);
+
+        activateInnerTab(key);
+      });
+    });
+  }
+
+  // Initial bind for the main body content
+  bindLinkedChips(body);
+
+  /* ===== Source-chips: popover + API fetch → new modal tab ===== */
+function closeAnySourceMenus(container){
+  (container || document).querySelectorAll('.source-menu').forEach(m => m.remove());
+}
+function emojiForKind(k){
+  switch ((k||'').toLowerCase()){
+    case 'pelicula': return '🎞️';
+    case 'serie':    return '📺';
+    case 'redes':    return '🌐';
+    case 'cancion':  return '🎵';
+    case 'otro':     return '🛈';
+    default:         return '🔖';
+  }
+}
+
+function buildSourceQueryFromChip(chip, scope){
+  const kind    = (chip.getAttribute('data-kind') || '').toLowerCase();
+  const title   = chip.getAttribute('data-title')  || '';
+  const year    = chip.getAttribute('data-year')   || '';
+  const season  = chip.getAttribute('data-season') || '';
+  const episode = chip.getAttribute('data-episode')|| '';
+  const handle  = chip.getAttribute('data-handle') || '';
+  const song    = chip.getAttribute('data-song')   || '';
+  const artist  = chip.getAttribute('data-artist') || '';
+  const text    = chip.getAttribute('data-text')   || '';
+
+  const params = new URLSearchParams();
+  if (kind) params.set('kind', kind);
+
+  if (kind === 'serie'){
+    if (title) params.set('title', title);
+    if (scope === 'episode'){
+      if (season)  params.set('season', season);
+      if (episode) params.set('episode', episode);
+    }
+  } else if (kind === 'pelicula'){
+    if (title) params.set('title', title);
+    if (year)  params.set('year', year);
+  } else if (kind === 'redes'){
+    if (handle) params.set('handle', handle);
+    else if (title) params.set('title', title);
+  } else if (kind === 'cancion'){
+    if (song || title) params.set('song', song || title);
+    if (artist) params.set('artist', artist);
+  } else if (kind === 'otro'){
+    if (text) params.set('text', text);
+    else if (title) params.set('title', title);
+  } else {
+    if (title) params.set('title', title);
+  }
+
+  return params.toString();
+}
+
+function sourceModeUrlFromChip(chip, scope){
+  const qs = buildSourceQueryFromChip(chip, scope);
+  return `/${CURRENT_COUNTRY}/glosario?${qs}`;
+}
+
+async function openSourceTabFromChip(chip, scope){
+  try {
+    const cc   = CURRENT_COUNTRY;
+    const qs   = buildSourceQueryFromChip(chip, scope);
+    const url  = `/api/${cc}/by-source?${qs}`;
+
+    const kind = (chip.getAttribute('data-kind') || '').toLowerCase();
+    const title= chip.getAttribute('data-title') || chip.textContent.trim();
+    const season  = chip.getAttribute('data-season') || '';
+    const episode = chip.getAttribute('data-episode') || '';
+    const emoji   = emojiForKind(kind);
+
+    let tabKey, tabTitle;
+    if (kind === 'serie' && scope === 'episode' && (season || episode)) {
+      const se = `${season ? 'T'+season : ''}${episode ? 'E'+episode : ''}`.trim();
+      tabKey   = `src_${kind}_${title.replace(/\s+/g,'-').toLowerCase()}_${se || 'ep'}`;
+      tabTitle = `${emoji} ${title} — ${se}`;
+    } else if (kind === 'serie' && scope === 'series'){
+      tabKey   = `src_${kind}_${title.replace(/\s+/g,'-').toLowerCase()}_all`;
+      tabTitle = `${emoji} ${title} — Toda la serie`;
+    } else {
+      tabKey   = `src_${kind}_${(title||'').replace(/\s+/g,'-').toLowerCase()}`;
+      tabTitle = `${emoji} ${title}`;
+    }
+
+    const panel = ensureInnerTab(tabKey, tabTitle);
+    panel.innerHTML = `<p style="opacity:.8;">Cargando…</p>`;
+
+    const resp = await fetch(url, { headers: { "Accept":"application/json" } });
+
+    let data;
+    if (!resp.ok) {
+      const text = await resp.text().catch(()=>"(no body)");
+      console.error("by-source API error", { url, status: resp.status, body: text });
+      throw new Error("HTTP " + resp.status);
+    }
+    try {
+      data = await resp.json();
+    } catch (e) {
+      const text = await resp.text().catch(()=>"(no body)");
+      console.error("by-source JSON parse error", { url, error: e, raw: text });
+      throw e;
+    }
+
+    if (!data.results || !data.results.length){
+      panel.innerHTML = `<p>No hay más palabras de esta fuente (todavía).</p>`;
+      activateInnerTab(tabKey);
+      return;
+    }
+
+    // Render results as a mini glossary grid
+    let html = `<div class="glossary-grid">`;
+    data.results.forEach(r => {
+      html += `
+        <div class="entry-card src-result" data-slug="${r.slug}">
+          ${r.word}
+          ${r.matches ? `<span style="opacity:.6; font-weight:400;"> · ${r.matches}</span>` : ``}
+        </div>`;
+    });
+    html += `</div>`;
+    panel.innerHTML = html;
+
+    // Click → open that entry as another inner tab
+    panel.querySelectorAll('.src-result').forEach(card => {
+      card.addEventListener('click', () => {
+        const slug = card.getAttribute('data-slug');
+        const entry = findEntryBySlug(slug);
+        if (!entry){
+          alert('Entrada no encontrada en este glosario.');
+          return;
+        }
+        const key   = entry.slug || slugify(entry.word);
+        const title = entry.word || key;
+        const p2    = ensureInnerTab(key, title);
+        p2.innerHTML = renderEntryInnerHTML(entry);
+        bindLinkedChips(p2);
+        bindSourceChips(p2);
+        activateInnerTab(key);
+      });
+    });
+
+    activateInnerTab(tabKey);
+
+  } catch (err){
+    console.error(err);
+    alert('No se pudo cargar la fuente.');
+  }
+}
+
+function makeSourceMenu(chip){
+  const menu = document.createElement('div');
+  menu.className = 'source-menu';
+  const kind = (chip.getAttribute('data-kind') || '').toLowerCase();
+
+  const canEpisode = (kind === 'serie') && (chip.getAttribute('data-season') || chip.getAttribute('data-episode'));
+  let inner = '';
+
+  if (canEpisode){
+    inner += `<button type="button" data-scope="episode">🔹 Este episodio</button>`;
+    inner += `<button type="button" data-scope="series">📺 Toda la serie</button>`;
+  } else if (kind === 'serie'){
+    inner += `<button type="button" data-scope="series">📺 Toda la serie</button>`;
+  } else {
+    inner += `<button type="button" data-scope="series">🔎 Ver todas de esta fuente</button>`;
+  }
+  menu.innerHTML = inner;
+
+  menu.querySelectorAll('button').forEach(b => {
+    b.addEventListener('click', (e) => {
+      const scope = b.getAttribute('data-scope') === 'episode' ? 'episode' : 'series';
+      closeAnySourceMenus(chip.closest('.modal-body') || document);
+      window.open(sourceModeUrlFromChip(chip, scope), '_blank');
+      e.stopPropagation();
+    });
+  });
+
+  return menu;
+}
+
+function bindSourceChips(container){
+  if (!container) return;
+  container.querySelectorAll('.js-source-chip').forEach(chip => {
+    if (chip.dataset.bound === '1') return;
+    chip.dataset.bound = '1';
+
+    // click on chip → default to episode (if available) else series
+    chip.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const kind = (chip.getAttribute('data-kind') || '').toLowerCase();
+
+      if (kind === 'serie') {
+        // For series: clicking anywhere on the pill toggles the drop-down menu.
+        const existing = chip.querySelector('.source-menu');
+        if (existing) { existing.remove(); return; }
+        closeAnySourceMenus(chip.closest('.modal-body') || document);
+        const menu = makeSourceMenu(chip); // offers "Este episodio" / "Toda la serie"
+        if (menu) chip.appendChild(menu);
+      } else {
+        // For non-series: open Source Mode directly in a new tab (single option).
+        window.open(sourceModeUrlFromChip(chip, 'series'), '_blank');
+      }
+    });
+
+    // click on chevron → open small popover
+    const chev = chip.querySelector('.source-chevron');
+    if (chev){
+      chev.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const existing = chip.querySelector('.source-menu');
+        if (existing){ existing.remove(); return; }
+        closeAnySourceMenus(chip.closest('.modal-body') || document);
+        const menu = makeSourceMenu(chip);
+        chip.appendChild(menu);
+      });
+    }
+  });
+
+  // click elsewhere in modal → dismiss popovers
+  (container.closest('.modal-body') || container).addEventListener('click', () => {
+    closeAnySourceMenus(container);
+  }, { capture:true });
+}
+
+// Enable source-chips in the main panel now
+bindSourceChips(body);
+
+  // Wire up the share button for this entry
+  const shareBtn = document.getElementById("shareButton");
+  if (shareBtn) {
+    shareBtn.onclick = async () => {
+      const url = buildShareUrl(entry);
+      try {
+        if (navigator.share) {
+          await navigator.share({
+            title: entry.word,
+            text: `Entrada: ${entry.word}`,
+            url
+          });
+        } else if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(url);
+          alert("Enlace copiado al portapapeles ✅");
+        } else {
+          // Fallback
+          const ta = document.createElement("textarea");
+          ta.value = url;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          document.body.removeChild(ta);
+          alert("Enlace copiado al portapapeles ✅");
+        }
+      } catch (err) {
+        console.error("Share failed:", err);
+      }
+    };
+  }
+
+  // Update URL so it can be shared/opened directly
+  history.replaceState(null, "", buildShareUrl(entry));
+
+  document.getElementById("entryModal").style.display = "block";
+};
+
+/* ---------- close modal behaviors ---------- */
+document.getElementById("closeEntryModal").onclick = function() {
+  const modal = document.getElementById("entryModal");
+  modal.style.display = "none";
+
+  // ✅ Reset the inner tabs back to a clean state
+  const tabsHeader  = document.getElementById("entryTabs");
+  const tabsContent = document.getElementById("entryTabContents");
+  if (tabsHeader) {
+    tabsHeader.innerHTML = '<button class="tab-btn active" data-tab="main">Principal</button>';
+  }
+  if (tabsContent) {
+    tabsContent.innerHTML = '<div class="tab-panel active" data-tab="main" id="modalWordContent"></div>';
+  }
+
+  // ✅ Clear title and main content
+  const titleEl = document.getElementById("modalWordTitle");
+  if (titleEl) {
+    titleEl.textContent = "";         // we keep it hidden elsewhere
+  }
+  const mainPanel = document.getElementById("modalWordContent");
+  if (mainPanel) {
+    mainPanel.innerHTML = "";
+  }
+
+  // ✅ Reset current entry + URL
+  CURRENT_ENTRY = null;
+  removeShareParamFromUrl();
+};
+
+window.onclick = function(event) {
+  if (event.target && event.target.id === "entryModal") {
+    document.getElementById("entryModal").style.display = "none";
+    removeShareParamFromUrl();
+  }
+};
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    document.getElementById("entryModal").style.display = "none";
+    removeShareParamFromUrl();
+  }
+});
+
+/* ---------- event delegation for cards ---------- */
+document.addEventListener('click', function (e) {
+  const card = e.target.closest('.entry-card');
+  if (card) {
+    e.preventDefault();
+    e.stopPropagation();
+    window.openEntryModalFromCard(card);
+  }
+});
+
+/* ---------- open modal if URL has ?w=slug ---------- */
+document.addEventListener("DOMContentLoaded", () => {
+  const params = new URLSearchParams(window.location.search);
+  const slug = params.get("w");
+  if (slug) {
+    const entry = findEntryBySlug(slug);
+    if (entry) openEntryModal(entry);
+  }
+});
+
+/* ---------- per-glossary search: Argentina ---------- */
+function debounce(fn, ms){ let t; return (...args)=>{ clearTimeout(t); t = setTimeout(()=>fn(...args), ms); }; }
+
+function textOfEntry(entryObj){
+  let haystack = (entryObj.word || "");
+  if (entryObj.variants){
+    ["ms","mp","fs","fp","diminutivo","aumentativo"].forEach(k=>{
+      const arr = entryObj.variants[k] || [];
+      haystack += " " + arr.join(" ");
+    });
+  }
+  if (Array.isArray(entryObj.senses)){
+    entryObj.senses.forEach(s=>{
+      if (s.definition) haystack += " " + s.definition;
+      if (Array.isArray(s.equivalents)) haystack += " " + s.equivalents.join(" ");
+    });
+  }
+  return haystack.toLowerCase();
+}
+
+let arIndex = [];
+function buildArIndex(){
+  const arGrid = document.querySelector('#tab-ar .glossary-grid');
+  arIndex = [];
+  if (!arGrid) return;
+  arGrid.querySelectorAll('.entry-card').forEach(card=>{
+    try {
+      const obj = JSON.parse(card.getAttribute('data-entry'));
+      arIndex.push({ card, text: textOfEntry(obj) });
+    } catch (_) {
+      arIndex.push({ card, text: (card.textContent || "").toLowerCase() });
+    }
+  });
+}
+
+function applyArFilter(q){
+  const needle = (q || "").trim().toLowerCase();
+  if (!arIndex.length) buildArIndex();
+  arIndex.forEach(({card, text})=>{
+    card.style.display = !needle || text.includes(needle) ? "" : "none";
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const arSearch = document.getElementById('search-ar');
+  const arClear  = document.getElementById('clear-search-ar');
+  buildArIndex();
+  if (arSearch){
+    arSearch.addEventListener('input', debounce(()=> applyArFilter(arSearch.value), 120));
+  }
+  if (arClear){
+    arClear.addEventListener('click', ()=>{
+      if (!arSearch) return;
+      arSearch.value = "";
+      applyArFilter("");
+      arSearch.focus();
+    });
+  }
+});
+
+/* ---------- global search (all glossaries) ---------- */
+const CURRENT_COUNTRY = "{{ country_code }}";
+
+// ===== In-page Source Mode (reads query params, calls /api/<cc>/by-source, replaces grid) =====
+let ALL_ENTRIES_MAP = null;
+function buildAllEntriesMap(){
+  if (ALL_ENTRIES_MAP) return ALL_ENTRIES_MAP;
+  ALL_ENTRIES_MAP = {};
+  document.querySelectorAll('#tab-ar .glossary-grid .entry-card').forEach(card=>{
+    try {
+      const obj = JSON.parse(card.getAttribute('data-entry'));
+      const slug = obj.slug || slugify(obj.word);
+      ALL_ENTRIES_MAP[slug] = obj;
+    } catch(_) {}
+  });
+  return ALL_ENTRIES_MAP;
+}
+
+async function applySourceModeFromURL(){
+  const p = new URLSearchParams(window.location.search);
+  // Recognize source-mode links if 'kind' is present (serie, pelicula, etc.)
+  if (!p.has('kind')) return;
+
+  const allowed = ['kind','title','year','season','episode','handle','song','artist','text'];
+  const qs = new URLSearchParams();
+  allowed.forEach(k => { const v = p.get(k); if (v) qs.set(k, v); });
+  if (!qs.has('kind')) return;
+
+  const grid = document.querySelector('#tab-ar .glossary-grid');
+  const panelScroll = document.querySelector('#tab-ar .panel-scroll');
+  if (!grid || !panelScroll) return;
+
+  buildAllEntriesMap(); // cache all entries before we clear the grid
+  grid.innerHTML = `<p style="margin:.5rem 0; opacity:.8;">Cargando…</p>`;
+
+  const url = `/api/${CURRENT_COUNTRY}/by-source?` + qs.toString();
+
+  try {
+    const resp = await fetch(url, { headers: { "Accept": "application/json" } });
+    if (!resp.ok) {
+      const text = await resp.text().catch(()=>"(no body)");
+      console.error('Source mode fetch error', resp.status, text);
+      grid.innerHTML = `<p>Ups, no se pudo cargar esta fuente.</p>`;
+      return;
+    }
+    const data = await resp.json();
+
+    // 🔶 Sticky banner
+    const old = document.getElementById('sourceModeBanner');
+    if (old) old.remove();
+    const banner = document.createElement('div');
+    banner.id = 'sourceModeBanner';
+    banner.style.cssText = 'position:sticky; top:0; z-index:6; background:#fff7e6; border:1px solid #f7d8a1; border-radius:10px; padding:.5rem .75rem; margin:.5rem 0; display:flex; align-items:center; gap:.5rem;';
+    const k = (p.get('kind') || '').toLowerCase();
+    const emoji = k==='serie' ? '📺' : k==='pelicula' ? '🎞️' : k==='cancion' ? '🎵' : k==='redes' ? '🌐' : '🔖';
+    const label = p.get('title') || p.get('song') || p.get('handle') || p.get('text') || 'Fuente';
+    banner.innerHTML = `<strong>${emoji} ${label}</strong><span style="opacity:.7">— vista filtrada</span><span style="flex:1"></span><button id="clearSourceMode" style="padding:.35rem .65rem; border:1px solid #d0e7ff; border-radius:8px; background:#fff; color:#0f172a; font-weight:700; line-height:1; display:inline-flex; align-items:center; gap:.35rem;">✖ <span>Quitar filtro</span></button>`;
+    const beforeNode = panelScroll.querySelector('.glossary-search-container') || panelScroll.firstChild;
+    panelScroll.insertBefore(banner, beforeNode);
+
+    // 🔁 Replace grid with only the results (reusing existing entry JSON so click → modal works)
+    buildAllEntriesMap();
+    if (!data.results || !data.results.length){
+      grid.innerHTML = `<p>No hay entradas de esta fuente (todavía).</p>`;
+      return;
+    }
+    let html = '';
+    data.results.forEach(r => {
+      const obj = ALL_ENTRIES_MAP[r.slug] || { word: r.word, slug: r.slug };
+      const payload = JSON.stringify(obj).replace(/</g,'&lt;');
+      html += `<div class="entry-card" data-entry='${payload}' onclick="openEntryModalFromCard(this)">${r.word}</div>`;
+    });
+    grid.innerHTML = html;
+
+    // Clear filter button
+    const clearBtn = document.getElementById('clearSourceMode');
+    if (clearBtn){
+      clearBtn.addEventListener('click', () => {
+        const clean = new URL(window.location.href);
+        ['kind','title','year','season','episode','handle','song','artist','text'].forEach(k => clean.searchParams.delete(k));
+        window.location.href = clean.pathname; // back to full glossary
+      });
+    }
+  } catch (e){
+    console.error(e);
+    grid.innerHTML = `<p>Ups, no se pudo cargar esta fuente.</p>`;
+  }
+}
+
+// Run Source Mode (if URL has kind=...) after DOM is ready
+document.addEventListener('DOMContentLoaded', applySourceModeFromURL);
+
+function openGlobalSearchModal() {
+  document.getElementById("globalSearchModal").style.display = "block";
+}
+function closeGlobalSearchModal() {
+  document.getElementById("globalSearchModal").style.display = "none";
+}
+
+function groupBy(arr, key) {
+  return arr.reduce((acc, item) => {
+    const k = item[key] || "";
+    (acc[k] = acc[k] || []).push(item);
+    return acc;
+  }, {});
+}
+
+async function runGlobalSearch(query) {
+  const q = (query || "").trim();
+  const resultsBox = document.getElementById("globalResults");
+  const qLabel = document.getElementById("globalSearchQuery");
+  if (!q) {
+    qLabel.textContent = "";
+    resultsBox.innerHTML = "<p>Escribí una palabra o frase para buscar.</p>";
+    openGlobalSearchModal();
+    return;
+  }
+  qLabel.textContent = `“${q}”`;
+  resultsBox.innerHTML = "<p>Buscando…</p>";
+  openGlobalSearchModal();
+
+  try {
+    const resp = await fetch(`/search?q=${encodeURIComponent(q)}`, { headers: { "Accept": "application/json" } });
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+    const data = await resp.json();
+    const groups = groupBy(data.results || [], "country_name");
+
+    if (!data.results || !data.results.length) {
+      resultsBox.innerHTML = "<p>No se encontraron resultados.</p>";
+      return;
+    }
+
+    // Render grouped by country — now using the same grid + .entry-card style
+    let html = "";
+    Object.keys(groups).sort().forEach(countryName => {
+      html += `<h3 style="margin:.75rem 0 .25rem;">${countryName}</h3>`;
+      html += `<div class="glossary-grid" style="margin-bottom:.75rem;">`;
+      groups[countryName].forEach(r => {
+        html += `
+          <div class="entry-card global-result"
+              data-cc="${r.country_code}"
+              data-slug="${r.slug}"
+              style="cursor:pointer;">
+            ${r.word}
+            <span style="opacity:.7; font-weight:400;"> · ${r.country_code.toUpperCase()}</span>
+          </div>`;
+      });
+      html += `</div>`;
+    });
+    resultsBox.innerHTML = html;
+
+    // Wire result clicks (cards behave like the grid)
+    resultsBox.querySelectorAll(".global-result").forEach(card => {
+      card.addEventListener("click", () => {
+        const cc   = card.getAttribute("data-cc");
+        const slug = card.getAttribute("data-slug");
+        if (cc === CURRENT_COUNTRY) {
+          const entry = findEntryBySlug(slug);
+          if (entry) {
+            closeGlobalSearchModal();
+            openEntryModal(entry);
+          } else {
+            window.location.search = `?w=${encodeURIComponent(slug)}`;
+          }
+        } else {
+          window.location.href = `/${cc}/glosario?w=${encodeURIComponent(slug)}`;
+        }
+      });
+    });
+
+  } catch (err) {
+    console.error(err);
+    resultsBox.innerHTML = "<p>Ocurrió un error al buscar. Probá de nuevo.</p>";
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("global-search-form");
+  const input = document.getElementById("global-search-input");
+  const btn   = document.getElementById("global-search-btn");
+  const closeBtn = document.getElementById("closeGlobalSearchModal");
+
+  if (closeBtn) {
+    closeBtn.addEventListener("click", closeGlobalSearchModal);
+  }
+  window.addEventListener("click", (e) => {
+    if (e.target && e.target.id === "globalSearchModal") closeGlobalSearchModal();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeGlobalSearchModal();
+  });
+
+  if (form && input && btn) {
+    form.addEventListener("submit", () => runGlobalSearch(input.value));
+    btn.addEventListener("click", () => runGlobalSearch(input.value));
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        runGlobalSearch(input.value);
+      }
+    });
+  }
+});
+
+/* ---------- dynamic tabs with close buttons ---------- */
+document.querySelectorAll('.sidebar-link').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    const target = btn.getAttribute('data-target');
+    if (!target || btn.disabled) return;
+
+    const tabsBar = document.querySelector('.tabs-bar');
+    if (!tabsBar) return;
+
+    // Check if tab already exists
+    let tab = tabsBar.querySelector(`[data-target="${target}"]`);
+    if (!tab) {
+      // Create new tab with close button
+      tab = document.createElement('button');
+      tab.className = 'tab-btn active';
+      tab.setAttribute('data-target', target);
+      tab.style.cssText = "padding:.5rem .9rem; border:1px solid #cfe3fb; border-bottom:0; border-top-left-radius:10px; border-top-right-radius:10px; background:#eaf4ff; font-weight:600; display:flex; align-items:center; gap:.5rem;";
+
+      // Clone the flag + text from the sidebar
+      tab.innerHTML = btn.innerHTML + '<span class="tab-close" style="margin-left:6px; cursor:pointer;">×</span>';
+
+      // Insert new tab
+      tabsBar.appendChild(tab);
+
+      // Wire tab switching
+      tab.addEventListener('click', (ev) => {
+        if (ev.target.classList.contains('tab-close')) {
+          // Close clicked
+          const panel = document.querySelector(target);
+          if (panel) panel.style.display = 'none';
+          tab.remove();
+        } else {
+          // Switch tab
+          document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+          document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+          tab.classList.add('active');
+          const panel = document.querySelector(target);
+          if (panel) panel.style.display = 'block';
+        }
+      });
+    }
+
+    // Activate this tab
+    tab.click();
+  });
+});
+
+function filterGlossary() {
+  const query = document.getElementById("glossarySearch").value.toLowerCase();
+  document.querySelectorAll(".entry-card").forEach(card => {
+    const word = card.textContent.toLowerCase();
+    card.style.display = word.includes(query) ? "" : "none";
+  });
+}
+</script>
+{% endblock %}

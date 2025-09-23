@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Inicio – ProfePanda{% endblock %}
+
+{% block content %}
+<h2>Bienvenido a ProfePanda</h2>
+<p>Tu portal para recursos de aprendizaje del español.</p>
+
+<style>
+  /* 🔷 Simple responsive 3-col grid */
+  .tiles-grid{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-top:1.25rem;
+  }
+  @media (max-width: 992px){
+    .tiles-grid{ grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 640px){
+    .tiles-grid{ grid-template-columns: 1fr; }
+  }
+
+  .tile-card{
+    background:#ffffff;
+    border:1px solid #e5e7eb;
+    border-radius:16px;
+    overflow:hidden;
+    box-shadow: 0 4px 16px rgba(0,0,0,.05);
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .tile-card:hover{
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,.08);
+  }
+
+  /* Make image area perfectly square */
+  .tile-media{
+    aspect-ratio: 1 / 1;
+    width:100%;
+    overflow:hidden;
+    background:#f3f4f6;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .tile-media img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+  }
+
+  .tile-body{
+    padding:0.9rem 1rem 1.1rem;
+  }
+  .tile-title{
+    margin:0 0 .35rem 0;
+    font-size:1.05rem;
+    font-weight:700;
+    color:#0f172a; /* slate-900 */
+  }
+  .tile-desc{
+    margin:0;
+    color:#475569; /* slate-600 */
+    font-size:.95rem;
+    line-height:1.35rem;
+  }
+
+  .tile-link{
+    text-decoration:none;
+    color:inherit;
+    display:block;
+  }
+</style>
+
+{# ✅ Fallback data so the page works even before we wire the admin/route #}
+{% set local_tiles = tiles if tiles is defined else [
+  {
+    "title": "Glosarios Regionales",
+    "desc": "Con ejemplos sacados de la cultura popular y acompañados de audio.",
+    "href": url_for('public.glosarios_index'),
+    "image": "assets/tiles/glosarios.png",
+    "enabled": True,
+    "order": 1
+  },
+  {
+    "title": "Guías",
+    "desc": "Temas clave del español explicados de forma clara y práctica.",
+    "href": "#",
+    "image": "assets/tiles/guias.png",
+    "enabled": True,
+    "order": 2
+  },
+  {
+    "title": "Novedades",
+    "desc": "Actualizaciones y nuevos recursos de ProfePanda.",
+    "href": "#",
+    "image": "assets/tiles/novedades.png",
+    "enabled": True,
+    "order": 3
+  }
+] %}
+
+<div class="tiles-grid">
+  {% for t in (local_tiles | selectattr('enabled') | selectattr('enabled') | list | sort(attribute='order')) %}
+    <a class="tile-link" href="{{ t.href }}">
+      <article class="tile-card">
+        <div class="tile-media">
+          <img src="{{ url_for('static', filename=t.image) }}" alt="{{ t.title }}">
+        </div>
+        <div class="tile-body">
+          <h3 class="tile-title">{{ t.title }}</h3>
+          <p class="tile-desc">{{ t.desc }}</p>
+        </div>
+      </article>
+    </a>
+  {% endfor %}
+</div>
+{% endblock %}

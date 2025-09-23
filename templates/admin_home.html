@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}Panel de Administración · Glosarios{% endblock %}
+
+{% block content %}
+<style>
+  .admin-wrap {max-width: 960px; margin: 0 auto;}
+  .admin-head {display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1rem;}
+  .country-list {background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden;}
+  .row {display:grid; grid-template-columns: 1fr auto auto; align-items:center; gap:1rem; padding:.9rem 1rem; border-top:1px solid #f1f5f9;}
+  .row:first-child {border-top:none;}
+  .row:hover {background:#f8fafc;}
+  .badge {font-size:.75rem; padding:.2rem .5rem; border-radius:999px; border:1px solid #cbd5e1; background:#f8fafc;}
+  .btn-edit {
+    font-weight:600; border:1px solid #cfe3fb; background:#f7fbff; color:#1e40af;
+    padding:.4rem .7rem; border-radius:8px; text-decoration:none;
+  }
+  .btn-edit:hover {background:#eef6ff;}
+  .switch {position: relative; display:inline-block; width: 48px; height: 26px;}
+  .switch input {opacity: 0; width: 0; height: 0;}
+  .slider {position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background:#cbd5e1; transition:.2s; border-radius:26px;}
+  .slider:before {position:absolute; content:""; height:20px; width:20px; left:3px; bottom:3px; background:white; transition:.2s; border-radius:50%;}
+  input:checked + .slider {background:#22c55e;}
+  input:checked + .slider:before {transform: translateX(22px);}
+  .save-status {font-size:.875rem; color:#334155;}
+  .save-status.success {color:#16a34a;}
+  .save-status.error {color:#b91c1c;}
+</style>
+
+<div class="admin-wrap">
+  <div class="admin-head">
+    <h1 style="margin:0;">Glosarios regionales</h1>
+    <div class="save-status" id="saveStatus" aria-live="polite"></div>
+  </div>
+
+  <!-- Admin · Pages quick links (inline styles to avoid CSS collisions) -->
+  <div style="max-width:960px;margin:0 auto 1rem;display:flex;gap:.6rem;flex-wrap:wrap;">
+    <a href="/admin/pages"
+      style="appearance:none;border:0;padding:.65rem 1rem;border-radius:10px;font-weight:700;cursor:pointer;
+              text-decoration:none;display:inline-block;background:#2563eb;color:#fff;">
+      Manage Pages
+    </a>
+    <a href="/admin/pages/new"
+      style="appearance:none;border:0;padding:.65rem 1rem;border-radius:10px;font-weight:700;cursor:pointer;
+              text-decoration:none;display:inline-block;background:#e2e8f0;color:#0f172a;">
+      + New Page
+    </a>
+  </div>
+
+  <div class="country-list">
+    <div class="row" style="background:#f8fafc; font-weight:700;">
+      <div>País</div>
+      <div>Visible</div>
+      <div>Acciones</div>
+    </div>
+
+    {% for c in countries %}
+    {% set enabled = (settings.get(c.code) if settings is defined else (c.code == 'ar')) %}
+    <div class="row" data-code="{{ c.code }}">
+      <div>
+        <div style="display:flex; align-items:center; gap:.5rem;">
+          <img src="{{ url_for('static', filename='assets/flags/' + c.code + '.svg') }}"
+               alt="{{ c.name }}" width="20" height="14"
+               onerror="this.style.display='none'">
+          <strong>{{ c.name }}</strong>
+          <span class="badge">{{ c.code|upper }}</span>
+        </div>
+      </div>
+
+      <div>
+        <label class="switch" title="Habilitar/Deshabilitar {{ c.name }}">
+          <input type="checkbox" class="toggle"
+                 {% if enabled %}checked{% endif %}
+                 aria-label="Habilitar/Deshabilitar {{ c.name }}">
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div>
+        <a class="btn-edit" href="{{ url_for('admin.glosario', country_code=c.code) }}">
+          Abrir editor
+        </a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- INSERTED: Páginas & Publicaciones -->
+  <hr style="margin:2rem 0; border:0; border-top:1px solid #e5e7eb;">
+
+  <h2 style="margin:0 0 0.5rem;">📄 Páginas & Publicaciones</h2>
+  <p>Crear y administrar páginas de tipo blog con editor enriquecido.</p>
+
+  <div style="margin:1rem 0;">
+    <a href="/admin/pages"
+       style="display:inline-block; padding:0.6rem 1.2rem; background:#2563eb; color:#fff;
+              border-radius:8px; font-weight:600; text-decoration:none; box-shadow:0 2px 6px rgba(0,0,0,0.1);">
+      ✍️ Abrir editor de páginas
+    </a>
+  </div>
+</div>
+
+<script>
+(function(){
+  const statusEl = document.getElementById('saveStatus');
+
+  function showStatus(text, kind){
+    statusEl.textContent = text || '';
+    statusEl.className = 'save-status' + (kind ? (' ' + kind) : '');
+    if (text) {
+      clearTimeout(showStatus._t);
+      showStatus._t = setTimeout(()=>{ statusEl.textContent=''; statusEl.className='save-status'; }, 1800);
+    }
+  }
+
+  async function updateSetting(code, enabled){
+    try {
+      const res = await fetch("{{ url_for('admin.update_glossary_settings') }}", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, enabled })
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Unknown error');
+      showStatus(`Guardado: ${code.toUpperCase()} ${enabled ? 'visible' : 'oculto'}`, 'success');
+    } catch (err) {
+      console.error(err);
+      showStatus('Error al guardar', 'error');
+    }
+  }
+
+  document.querySelectorAll('.row[data-code]').forEach(row=>{
+    const code = row.getAttribute('data-code');
+    const cb = row.querySelector('input.toggle');
+    cb.addEventListener('change', () => updateSetting(code, cb.checked));
+  });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,120 @@
+[
+  {
+    "word": "pibe",
+    "variants": {
+      "m.s.": [],
+      "m.p.": [],
+      "f.s.": [],
+      "f.p.": [],
+      "diminutivo": [],
+      "aumentativo": []
+    },
+    "audio_word": null,
+    "senses": [
+      {
+        "tag_word_class": [],
+        "tag_general": [],
+        "definition": "Persona joven",
+        "equivalents": [],
+        "audio": null,
+        "examples": [
+          {
+            "es": "Ese pibe es un crack.",
+            "en": "",
+            "audio": null,
+            "source": {
+              "kind": "otro",
+              "text": ""
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "word": "sorete",
+    "variants": {
+      "m.s.": [],
+      "m.p.": [],
+      "f.s.": [],
+      "f.p.": [],
+      "diminutivo": [],
+      "aumentativo": []
+    },
+    "audio_word": null,
+    "senses": [
+      {
+        "tag_word_class": [],
+        "tag_general": [],
+        "definition": "Pedazo de caca, imbécil.",
+        "equivalents": [],
+        "audio": null,
+        "examples": [
+          {
+            "es": "Sos un sorete, Ariel.",
+            "en": "",
+            "audio": null,
+            "source": {
+              "kind": "otro",
+              "text": ""
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "word": "culo",
+    "variants": {
+      "m.s.": [],
+      "m.p.": [],
+      "f.s.": [],
+      "f.p.": [],
+      "diminutivo": [],
+      "aumentativo": []
+    },
+    "audio_word": null,
+    "senses": [
+      {
+        "tag_word_class": [],
+        "tag_general": [],
+        "definition": "ass",
+        "equivalents": [],
+        "audio": null,
+        "examples": [
+          {
+            "es": "sos un culo",
+            "en": "",
+            "audio": null,
+            "source": {
+              "kind": "otro",
+              "text": ""
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "word": "cagada",
+    "variants": {
+      "m.s.": [],
+      "m.p.": [],
+      "f.s.": [],
+      "f.p.": [],
+      "diminutivo": [],
+      "aumentativo": []
+    },
+    "audio_word": null,
+    "senses": [
+      {
+        "tag_word_class": [],
+        "tag_general": [],
+        "definition": "",
+        "equivalents": [],
+        "audio": null,
+        "examples": []
+      }
+    ]
+  }
+]
