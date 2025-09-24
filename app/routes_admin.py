@@ -684,6 +684,59 @@ def admin_tiles_save():
     save_home_tiles(tiles)
 
     return jsonify({"success": True, "tile": _coerce_tile_shape(current)})
+
+@bp.route("/tiles/reorder", methods=["POST"])
+def admin_tiles_reorder():
+    """
+    Reorder homepage tiles.
+    Body JSON:
+      { "order": ["id1","id2","id3", ...] }  # array of tile ids in desired order
+    Any tiles not listed will be appended in their previous relative order.
+    Also normalizes each tile's 'order' field to match the new index.
+    """
+    data = request.get_json(silent=True) or {}
+    new_order = data.get("order")
+
+    if not isinstance(new_order, list):
+        return jsonify({"success": False, "error": "Body must include array 'order'"}), 400
+
+    tiles = load_home_tiles()
+
+    # Map by normalized id
+    by_id = {}
+    for t in tiles:
+        nid = str(_coerce_tile_shape(t).get("id"))
+        by_id[nid] = t
+
+    # Build the reordered list
+    result = []
+    seen = set()
+    for tid in new_order:
+        sid = str(tid)
+        if sid in by_id and sid not in seen:
+            result.append(by_id[sid])
+            seen.add(sid)
+
+    # Append any leftover tiles preserving their prior order
+    for t in tiles:
+        nid = str(_coerce_tile_shape(t).get("id"))
+        if nid not in seen:
+            result.append(t)
+
+    # Normalize 'order' field to match new index
+    for i, t in enumerate(result):
+        try:
+            t["order"] = i
+        except Exception:
+            pass
+
+    save_home_tiles(result)
+
+    return jsonify({
+        "success": True,
+        "tiles": [_coerce_tile_shape(t) for t in result]
+    })
+
 # === END: Tiles admin API (used by admin_home.html) ===
 
 def _slugify(text: str):

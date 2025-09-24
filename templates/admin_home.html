@@ -3,17 +3,58 @@
 
 {% block content %}
 <style>
-  .admin-wrap {max-width: 960px; margin: 0 auto;}
+  /* ====== Layout: sidebar + main ====== */
+  .admin-shell{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:220px 1fr;gap:1.25rem;}
+  @media (max-width: 900px){ .admin-shell{grid-template-columns:1fr;} }
+
+  /* Sticky sidebar that stays in view and scrolls internally if tall */
+  .admin-sidebar{
+    --admin-sticky-top: 72px; /* adjust if your header is taller/shorter */
+    background:#fff; border:1px solid #e5e7eb; border-radius:14px; padding:.6rem;
+    position: sticky; top: var(--admin-sticky-top);
+    align-self: start;
+    max-height: calc(100vh - var(--admin-sticky-top) - 12px);
+    overflow: auto;
+    scrollbar-width: thin;
+  }
+  .side-title{font-weight:800;color:#0f172a;margin:.25rem .5rem .35rem;}
+  .tablist{display:flex;flex-direction:column;gap:.35rem;margin:.4rem 0;}
+  .tab-btn{
+    width:100%;text-align:left;padding:.6rem .75rem;border-radius:10px;border:1px solid #e5e7eb;
+    background:#fff;color:#0f172a;font-weight:700;cursor:pointer;
+  }
+  .tab-btn:hover{background:#f8fafc;}
+  .tab-btn[aria-selected="true"]{
+    background:#f7fbff;border-color:#cfe3fb;color:#1e40af;
+  }
+
+  /* Clear keyboard focus ring for accessibility */
+  .tab-btn:focus-visible{
+    outline: 3px solid #93c5fd; /* light blue */
+    outline-offset: 2px;
+  }
+
+  /* Stronger active affordance in the sidebar */
+  .tab-btn[aria-selected="true"]{
+    box-shadow: inset 3px 0 0 #1e40af; /* left accent bar */
+  }
+
+  /* Main panel wrapper */
+  .admin-main{min-height:400px;}
+
+  /* Reuse existing styles */
   .admin-head {display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1rem;}
+  .save-status {font-size:.875rem; color:#334155;}
+  .save-status.success {color:#16a34a;}
+  .save-status.error {color:#b91c1c;}
+
+  /* Glossaries table */
   .country-list {background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden;}
   .row {display:grid; grid-template-columns: 1fr auto auto; align-items:center; gap:1rem; padding:.9rem 1rem; border-top:1px solid #f1f5f9;}
   .row:first-child {border-top:none;}
   .row:hover {background:#f8fafc;}
   .badge {font-size:.75rem; padding:.2rem .5rem; border-radius:999px; border:1px solid #cbd5e1; background:#f8fafc;}
-  .btn-edit {
-    font-weight:600; border:1px solid #cfe3fb; background:#f7fbff; color:#1e40af;
-    padding:.4rem .7rem; border-radius:8px; text-decoration:none;
-  }
+  .btn-edit {font-weight:600; border:1px solid #cfe3fb; background:#f7fbff; color:#1e40af; padding:.4rem .7rem; border-radius:8px; text-decoration:none;}
   .btn-edit:hover {background:#eef6ff;}
   .switch {position: relative; display:inline-block; width: 48px; height: 26px;}
   .switch input {opacity: 0; width: 0; height: 0;}
@@ -21,84 +62,501 @@
   .slider:before {position:absolute; content:""; height:20px; width:20px; left:3px; bottom:3px; background:white; transition:.2s; border-radius:50%;}
   input:checked + .slider {background:#22c55e;}
   input:checked + .slider:before {transform: translateX(22px);}
-  .save-status {font-size:.875rem; color:#334155;}
-  .save-status.success {color:#16a34a;}
-  .save-status.error {color:#b91c1c;}
+
+  /* Panels hidden by default except active */
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+
+  /* Minor helpers */
+  .inline-links{max-width:960px;margin:0 0 1rem;display:flex;gap:.6rem;flex-wrap:wrap;}
+
+  /* Breadcrumb crumb next to H1 */
+  .crumb{font-weight:700; color:#475569; margin-left:.25rem;}
+
+  /* === Drag & drop (Tiles) === */
+  .handle{cursor:grab; user-select:none; font-weight:900; color:#64748b; display:flex; align-items:center; justify-content:center;}
+  .row.dragging{opacity:.6;}
+  .drop-target{outline:2px dashed #93c5fd; outline-offset:-6px;}
+
+  /* Make Tiles rows use the same 4-column grid as the header */
+  #panel-tiles #tilesList .row{
+    grid-template-columns: 28px 80px 1fr auto; /* handle · image · text · actions */
+    align-items: center;
+  }
+  #panel-tiles #tilesList .handle{
+    line-height: 1; /* center the dots nicely */
+  }
 </style>
 
-<div class="admin-wrap">
-  <div class="admin-head">
-    <h1 style="margin:0;">Glosarios regionales</h1>
-    <div class="save-status" id="saveStatus" aria-live="polite"></div>
-  </div>
+<div class="admin-shell">
+  <!-- ===== Sidebar ===== -->
+  <aside class="admin-sidebar" role="tablist" aria-label="Admin sections">
+    <div class="side-title">Panel</div>
+    <div class="tablist">
+      <button class="tab-btn" role="tab" aria-selected="true" aria-controls="panel-glossaries" id="tab-glossaries">📚 Glosarios</button>
+      <button class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-pages" id="tab-pages">📄 Páginas</button>
+      <button class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-tiles" id="tab-tiles">🏠 Inicio – Tiles</button>
+    </div>
+  </aside>
 
-  <!-- Admin · Pages quick links (inline styles to avoid CSS collisions) -->
-  <div style="max-width:960px;margin:0 auto 1rem;display:flex;gap:.6rem;flex-wrap:wrap;">
-    <a href="/admin/pages"
-      style="appearance:none;border:0;padding:.65rem 1rem;border-radius:10px;font-weight:700;cursor:pointer;
-              text-decoration:none;display:inline-block;background:#2563eb;color:#fff;">
-      Manage Pages
-    </a>
-    <a href="/admin/pages/new"
-      style="appearance:none;border:0;padding:.65rem 1rem;border-radius:10px;font-weight:700;cursor:pointer;
-              text-decoration:none;display:inline-block;background:#e2e8f0;color:#0f172a;">
-      + New Page
-    </a>
-  </div>
-
-  <div class="country-list">
-    <div class="row" style="background:#f8fafc; font-weight:700;">
-      <div>País</div>
-      <div>Visible</div>
-      <div>Acciones</div>
+  <!-- ===== Main content ===== -->
+  <main class="admin-main">
+    <div class="admin-head">
+      <h1 style="margin:0;">Panel de Administración <span id="adminCrumb" class="crumb">· Glosarios</span></h1>
+      <div class="save-status" id="saveStatus" aria-live="polite"></div>
     </div>
 
-    {% for c in countries %}
-    {% set enabled = (settings.get(c.code) if settings is defined else (c.code == 'ar')) %}
-    <div class="row" data-code="{{ c.code }}">
-      <div>
-        <div style="display:flex; align-items:center; gap:.5rem;">
-          <img src="{{ url_for('static', filename='assets/flags/' + c.code + '.svg') }}"
-               alt="{{ c.name }}" width="20" height="14"
-               onerror="this.style.display='none'">
-          <strong>{{ c.name }}</strong>
-          <span class="badge">{{ c.code|upper }}</span>
+    <!-- === Panel: Glossaries === -->
+    <section id="panel-glossaries" class="tab-panel active" role="tabpanel" aria-labelledby="tab-glossaries">
+      <h2 style="margin:0 0 .5rem;">📚 Glosarios regionales</h2>
+      <div class="country-list">
+        <div class="row" style="background:#f8fafc; font-weight:700;">
+          <div>País</div>
+          <div>Visible</div>
+          <div>Acciones</div>
         </div>
-      </div>
 
-      <div>
-        <label class="switch" title="Habilitar/Deshabilitar {{ c.name }}">
-          <input type="checkbox" class="toggle"
-                 {% if enabled %}checked{% endif %}
-                 aria-label="Habilitar/Deshabilitar {{ c.name }}">
-          <span class="slider"></span>
-        </label>
+        {% for c in countries %}
+        {% set enabled = (settings.get(c.code) if settings is defined else (c.code == 'ar')) %}
+        <div class="row" data-code="{{ c.code }}">
+          <div>
+            <div style="display:flex; align-items:center; gap:.5rem;">
+              <img src="{{ url_for('static', filename='assets/flags/' + c.code + '.svg') }}"
+                   alt="{{ c.name }}" width="20" height="14"
+                   onerror="this.style.display='none'">
+              <strong>{{ c.name }}</strong>
+              <span class="badge">{{ c.code|upper }}</span>
+            </div>
+          </div>
+          <div>
+            <label class="switch" title="Habilitar/Deshabilitar {{ c.name }}">
+              <input type="checkbox" class="toggle" {% if enabled %}checked{% endif %} aria-label="Habilitar/Deshabilitar {{ c.name }}">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div>
+            <a class="btn-edit" href="{{ url_for('admin.glosario', country_code=c.code) }}">Abrir editor</a>
+          </div>
+        </div>
+        {% endfor %}
       </div>
+    </section>
 
-      <div>
-        <a class="btn-edit" href="{{ url_for('admin.glosario', country_code=c.code) }}">
-          Abrir editor
+    <!-- === Panel: Pages === -->
+    <section id="panel-pages" class="tab-panel" role="tabpanel" aria-labelledby="tab-pages">
+      <h2 style="margin:0 0 .5rem;">📄 Páginas & Publicaciones</h2>
+      <p>Crear y administrar páginas de tipo blog con editor enriquecido.</p>
+      <div class="inline-links">
+        <a href="/admin/pages"
+          style="appearance:none;border:0;padding:.65rem 1rem;border-radius:10px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block;background:#2563eb;color:#fff;">
+          Abrir lista de páginas
+        </a>
+        <a href="/admin/pages/new"
+          style="appearance:none;border:0;padding:.65rem 1rem;border-radius:10px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block;background:#e2e8f0;color:#0f172a;">
+          + Nueva página
         </a>
       </div>
-    </div>
-    {% endfor %}
-  </div>
+    </section>
 
-  <!-- INSERTED: Páginas & Publicaciones -->
-  <hr style="margin:2rem 0; border:0; border-top:1px solid #e5e7eb;">
+    <!-- === Panel: Home Tiles === -->
+    <section id="panel-tiles" class="tab-panel" role="tabpanel" aria-labelledby="tab-tiles">
+      <h2 style="margin:0 0 .5rem;">🏠 Inicio – Tiles</h2>
+      <p>Administrá las tarjetas (tiles) que aparecen en la página de inicio.</p>
 
-  <h2 style="margin:0 0 0.5rem;">📄 Páginas & Publicaciones</h2>
-  <p>Crear y administrar páginas de tipo blog con editor enriquecido.</p>
+      <div style="display:flex; gap:.5rem; margin:.75rem 0 1rem;">
+        <button id="btnNewTile" type="button"
+          style="appearance:none;border:0;padding:.55rem .9rem;border-radius:10px;font-weight:700;cursor:pointer;background:#22c55e;color:#fff;">
+          ➕ Nuevo tile
+        </button>
+        <a href="/" target="_blank"
+          style="appearance:none;border:0;padding:.55rem .9rem;border-radius:10px;font-weight:700;cursor:pointer;background:#e2e8f0;color:#0f172a;text-decoration:none;">
+          🔍 Ver inicio (nueva pestaña)
+        </a>
+      </div>
 
-  <div style="margin:1rem 0;">
-    <a href="/admin/pages"
-       style="display:inline-block; padding:0.6rem 1.2rem; background:#2563eb; color:#fff;
-              border-radius:8px; font-weight:600; text-decoration:none; box-shadow:0 2px 6px rgba(0,0,0,0.1);">
-      ✍️ Abrir editor de páginas
-    </a>
-  </div>
+      <!-- Listado de tiles -->
+      <div id="tilesList" style="background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden;">
+        <div style="display:grid; grid-template-columns: 28px 80px 1fr auto; gap:1rem; padding:.7rem 1rem; background:#f8fafc; font-weight:700;">
+        <div>#</div>
+        <div>Imagen</div>
+        <div>Título · Subtítulo</div>
+        <div>Acciones</div>
+      </div>
+        <!-- filas renderizadas por JS -->
+      </div>
+
+      <!-- Modal: Crear / Editar tile -->
+      <div id="tileModal" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width:720px; height:auto; max-height:90vh;">
+          <div class="modal-header">
+            <h2 id="tileModalTitle" style="margin:0;">Editar tile</h2>
+            <span class="close" id="closeTileModal" style="cursor:pointer;">&times;</span>
+          </div>
+
+          <div class="modal-body">
+            <form id="tileForm">
+              <input type="hidden" name="id" id="tileId">
+
+              <label for="tileImage">Imagen del tile (JPG/PNG)</label>
+              <div style="display:flex; gap:1rem; align-items:flex-start;">
+                <img id="tilePreview" src="" alt="Vista previa" style="width:120px; height:80px; object-fit:cover; border:1px solid #e5e7eb; border-radius:8px; background:#f1f5f9;">
+                <div style="flex:1;">
+                  <input type="file" id="tileImage" name="image" accept="image/*">
+                  <div style="font-size:.85rem; color:#64748b; margin-top:.3rem;">
+                    Recomendado ~ 600×400 px. Si no elegís una imagen nueva, se mantiene la actual.
+                  </div>
+                </div>
+              </div>
+
+              <label for="tileTitle" style="margin-top:1rem;">Título</label>
+              <input type="text" id="tileTitle" name="title" placeholder="Ej.: Glosarios Regionales" required>
+
+              <label for="tileSubtitle" style="margin-top:.8rem;">Subtítulo</label>
+              <input type="text" id="tileSubtitle" name="subtitle" placeholder="Ej.: Argentina, México, España…">
+
+              <div style="display:flex; gap:.5rem; margin-top:1rem; justify-content:flex-end;">
+                <button type="button" id="tileCancel" class="delete" style="background:#e5e7eb; color:#0f172a;">Cancelar</button>
+                <button type="submit" class="add">Guardar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
 </div>
 
+<!-- ===== Tabs + section logic (with memory) ===== -->
+<script>
+(function(){
+  const tabs = [
+    {key:'glossaries', btn: document.getElementById('tab-glossaries'), panel: document.getElementById('panel-glossaries')},
+    {key:'pages',      btn: document.getElementById('tab-pages'),      panel: document.getElementById('panel-pages')},
+    {key:'tiles',      btn: document.getElementById('tab-tiles'),      panel: document.getElementById('panel-tiles')},
+  ];
+  const crumbEl = document.getElementById('adminCrumb');
+  const labels  = ['Glosarios','Páginas','Tiles'];
+
+  function activate(idx, {pushHash=true} = {}){
+    tabs.forEach((t,i)=>{
+      const on = i===idx;
+      t.btn.setAttribute('aria-selected', on ? 'true' : 'false');
+      t.panel.classList.toggle('active', on);
+    });
+    if (crumbEl) crumbEl.textContent = '· ' + labels[idx];
+    try { document.title = 'Panel de Administración · ' + labels[idx]; } catch(e){}
+    // remember
+    try { localStorage.setItem('adminTab', String(idx)); } catch(e){}
+    // reflect in hash (so refresh / share keeps tab)
+    if (pushHash){
+      const key = tabs[idx].key;
+      const newHash = `#tab=${key}`;
+      if (location.hash !== newHash){
+        history.replaceState(null, '', newHash);
+      }
+    }
+    // Lazy load tiles the first time we enter the Tiles tab
+    if (idx === 2 && !activate._tilesLoaded && typeof window.__loadTilesOnce === 'function'){
+      window.__loadTilesOnce();
+      activate._tilesLoaded = true;
+    }
+  }
+
+  // Click handlers
+  tabs.forEach((t,i)=> t.btn.addEventListener('click', ()=>activate(i)));
+
+  // On load: prefer URL hash (#tab=pages/tiles/glossaries), then localStorage, else default 0
+  function initialIndex(){
+    // 1) URL query: ?tab=glossaries|pages|tiles
+    try {
+      const params = new URLSearchParams(location.search);
+      const q = (params.get('tab') || '').toLowerCase();
+      if (q) {
+        const qi = tabs.findIndex(t => t.key === q);
+        if (qi >= 0) return qi;
+      }
+    } catch(e){}
+
+    // 2) URL hash: #tab=glossaries|pages|tiles
+    const hash = (location.hash || '').toLowerCase();
+    const m = hash.match(/#tab=(glossaries|pages|tiles)/);
+    if (m){
+      const key = m[1];
+      const idx = tabs.findIndex(t=>t.key===key);
+      if (idx >= 0) return idx;
+    }
+
+    // 3) Saved preference
+    try {
+      const saved = parseInt(localStorage.getItem('adminTab'), 10);
+      if (!isNaN(saved) && saved >= 0 && saved < tabs.length) return saved;
+    } catch(e){}
+
+    // 4) Default
+    return 0;
+  }
+
+  activate(initialIndex(), {pushHash:false});
+
+  // Keyboard shortcuts: 1 = Glossaries, 2 = Pages, 3 = Tiles
+  document.addEventListener('keydown', (e)=>{
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    if (e.key === '1') activate(0);
+    if (e.key === '2') activate(1);
+    if (e.key === '3') activate(2);
+  });
+})();
+</script>
+
+<!-- ===== Tiles logic (wrapped so we can lazy-run it) ===== -->
+<script>
+(function(){
+  window.__loadTilesOnce = function(){
+    const listEl = document.getElementById('tilesList');
+    const modal  = document.getElementById('tileModal');
+    const closeX = document.getElementById('closeTileModal');
+    const cancel = document.getElementById('tileCancel');
+    const form   = document.getElementById('tileForm');
+    const btnNew = document.getElementById('btnNewTile');
+
+    const fId   = document.getElementById('tileId');
+    const fImg  = document.getElementById('tileImage');
+    const fPrev = document.getElementById('tilePreview');
+    const fTit  = document.getElementById('tileTitle');
+    const fSub  = document.getElementById('tileSubtitle');
+    const h2    = document.getElementById('tileModalTitle');
+
+    // ===== Unsaved-changes guard =====
+    let isDirty = false;
+    const beforeUnloadHandler = (e)=>{
+      if (!isDirty) return;
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    function setDirty(){
+      if (isDirty) return;
+      isDirty = true;
+      window.addEventListener('beforeunload', beforeUnloadHandler);
+    }
+    function clearDirty(){
+      isDirty = false;
+      window.removeEventListener('beforeunload', beforeUnloadHandler);
+    }
+    function guardClose(){
+      if (!isDirty) return true;
+      return confirm('Tenés cambios sin guardar. ¿Cerrar de todos modos?');
+    }
+    const escHandler = (e)=>{ 
+      if (e.key === 'Escape' && modal.style.display === 'block') closeModal(); 
+    };
+
+    // ===== Modal open/close =====
+    function openModal() {
+      modal.style.display = 'block';
+      document.addEventListener('keydown', escHandler);
+      clearDirty(); // start fresh
+    }
+    function closeModal(){
+      if (!guardClose()) return;
+      modal.style.display = 'none';
+      document.removeEventListener('keydown', escHandler);
+      form.reset();
+      fPrev.src = '';
+      fId.value = '';
+      clearDirty();
+    }
+    closeX.addEventListener('click', closeModal);
+    cancel.addEventListener('click', closeModal);
+    window.addEventListener('click', (e)=>{ if (e.target === modal) closeModal(); });
+
+    // ===== Field listeners (mark dirty) =====
+    [fTit, fSub].forEach(el => el.addEventListener('input', setDirty));
+    fImg.addEventListener('change', () => {
+      const file = fImg.files && fImg.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e)=> { fPrev.src = e.target.result || ''; };
+      reader.readAsDataURL(file);
+      setDirty();
+    });
+
+    // ===== Create new tile =====
+    btnNew.addEventListener('click', () => {
+      h2.textContent = 'Nuevo tile';
+      fId.value = ''; fPrev.src = ''; fTit.value = ''; fSub.value = '';
+      openModal();
+    });
+
+    // ===== Row renderer (adds Edit + Delete + draggable) =====
+    function rowHTML(tile){
+      const thumb = tile.image_url
+        ? `<img src="${tile.image_url}" alt="" style="width:80px;height:54px;object-fit:cover;border-radius:8px;border:1px solid #e5e7eb;">`
+        : `<div style="width:80px;height:54px;border-radius:8px;border:1px dashed #cbd5e1;background:#f8fafc;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:.8rem;">Sin img</div>`;
+      return `
+        <div class="row" data-tile-id="${tile.id}" draggable="true" aria-grabbed="false">
+          <div class="handle" title="Arrastrá para reordenar">⋮⋮</div>
+          <div>${thumb}</div>
+          <div>
+            <div style="font-weight:700;">${tile.title || '(sin título)'}</div>
+            <div style="color:#64748b;">${tile.subtitle || ''}</div>
+          </div>
+          <div style="display:flex; gap:.4rem;">
+            <button type="button" class="btn-edit-tile" style="font-weight:600; border:1px solid #cfe3fb; background:#f7fbff; color:#1e40af; padding:.35rem .65rem; border-radius:8px;">Editar</button>
+            <button type="button" class="btn-del-tile"  style="font-weight:600; border:1px solid #fee2e2; background:#fef2f2; color:#b91c1c; padding:.35rem .65rem; border-radius:8px;">Eliminar</button>
+          </div>
+        </div>
+      `;
+    }
+
+    // ===== Drag & drop helpers =====
+    function currentOrder(){
+      return Array.from(listEl.querySelectorAll('.row[data-tile-id]'))
+        .map(r => r.getAttribute('data-tile-id'));
+    }
+
+    let dragSrc = null;
+
+    function addDnDHandlers(row){
+      row.addEventListener('dragstart', (e)=>{
+        dragSrc = row;
+        row.classList.add('dragging');
+        row.setAttribute('aria-grabbed','true');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', row.getAttribute('data-tile-id')); // Firefox needs data
+      });
+
+      row.addEventListener('dragover', (e)=>{
+        e.preventDefault(); // allow drop
+        const target = e.currentTarget;
+        if (!dragSrc || dragSrc === target) return;
+        target.classList.add('drop-target');
+
+        const rect = target.getBoundingClientRect();
+        const before = (e.clientY - rect.top) < rect.height / 2;
+        const parent = target.parentNode;
+        if (before) parent.insertBefore(dragSrc, target);
+        else parent.insertBefore(dragSrc, target.nextSibling);
+      });
+
+      row.addEventListener('dragleave', ()=>{
+        row.classList.remove('drop-target');
+      });
+
+      row.addEventListener('drop', (e)=>{
+        e.preventDefault();
+        row.classList.remove('drop-target');
+      });
+
+      row.addEventListener('dragend', async ()=>{
+        row.classList.remove('dragging');
+        row.setAttribute('aria-grabbed','false');
+        const order = currentOrder();
+        try{
+          const res = await fetch('/admin/tiles/reorder', {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ order })
+          });
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const statusEl = document.getElementById('saveStatus');
+          if (statusEl){
+            const prev = statusEl.textContent;
+            statusEl.textContent = 'Orden guardado';
+            statusEl.className = 'save-status success';
+            setTimeout(()=>{ statusEl.textContent = prev || ''; statusEl.className = 'save-status'; }, 1200);
+          }
+        }catch(err){
+          console.error(err);
+          alert('No se pudo guardar el nuevo orden.');
+        }
+        dragSrc = null;
+      });
+    }
+
+    // ===== Fetch + wire list (Edit + Delete + DnD) =====
+    async function loadTiles(){
+      let data;
+      try{
+        const res = await fetch('/admin/tiles');
+        data = await res.json();
+      }catch(e){
+        console.error('No se pudo cargar tiles', e);
+        return;
+      }
+      const items = (data && data.tiles) ? data.tiles : [];
+      // Clear previous rows
+      listEl.querySelectorAll('.row[data-tile-id]').forEach(r=>r.remove());
+      // Append new rows
+      const frag = document.createElement('div');
+      frag.innerHTML = items.map(rowHTML).join('');
+      frag.querySelectorAll('.row[data-tile-id]').forEach(r=> listEl.appendChild(r));
+
+      // Wire edit buttons
+      listEl.querySelectorAll('.btn-edit-tile').forEach(btn=>{
+        btn.addEventListener('click', (ev)=>{
+          const row = ev.target.closest('.row[data-tile-id]');
+          const id  = row.getAttribute('data-tile-id');
+          const t   = items.find(x=> String(x.id) === String(id));
+          if (!t) return;
+          h2.textContent = 'Editar tile';
+          fId.value = t.id; fTit.value = t.title || ''; fSub.value = t.subtitle || '';
+          fPrev.src  = t.image_url || ''; fImg.value = '';
+          openModal();
+        });
+      });
+
+      // Wire delete buttons
+      listEl.querySelectorAll('.btn-del-tile').forEach(btn=>{
+        btn.addEventListener('click', async (ev)=>{
+          const row = ev.target.closest('.row[data-tile-id]');
+          const id  = row.getAttribute('data-tile-id');
+          if (!id) return;
+          if (!confirm('¿Eliminar este tile?')) return;
+          try{
+            const res = await fetch(`/admin/home/tiles/${encodeURIComponent(id)}/delete`, { method:'POST' });
+            const out = await res.json();
+            if (!res.ok || !out.success) throw new Error(out.error || ('HTTP ' + res.status));
+            row.remove();
+          }catch(err){
+            console.error(err);
+            alert('No se pudo eliminar el tile.');
+          }
+        });
+      });
+
+      // Wire drag & drop to all rows
+      listEl.querySelectorAll('.row[data-tile-id]').forEach(addDnDHandlers);
+    }
+
+    // ===== Save handler =====
+    form.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const fd = new FormData(form);
+      let out;
+      try{
+        const res = await fetch('/admin/tiles/save', { method:'POST', body:fd });
+        out = await res.json();
+        if (!res.ok || !out.success) throw new Error(out && out.error || 'Error al guardar.');
+      }catch(err){
+        console.error(err);
+        alert('Error al guardar.');
+        return;
+      }
+      clearDirty();
+      modal.style.display = 'none';
+      form.reset();
+      fPrev.src = '';
+      fId.value = '';
+      loadTiles();
+    });
+
+    // initial load when tab first opened
+    loadTiles();
+  };
+})();
+</script>
+
+<!-- ===== Glossary visibility toggles ===== -->
 <script>
 (function(){
   const statusEl = document.getElementById('saveStatus');
