@@ -557,6 +557,135 @@ def save_home_tiles(tiles: list):
     return tiles
 # === END: Home tiles storage helpers ===
 
+# === BEGIN: Tiles admin API (used by admin_home.html) ===
+from werkzeug.utils import secure_filename
+
+def _tiles_image_dir():
+    # Where tile images will be stored
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'static', 'assets', 'tiles'))
+
+def _ensure_tiles_image_dir():
+    os.makedirs(_tiles_image_dir(), exist_ok=True)
+
+def _coerce_tile_shape(t):
+    """
+    Normalize tile shape for the admin UI.
+    Frontend expects: id, title, subtitle, image_url
+    We map existing fields if different (e.g., description -> subtitle, image -> image_url).
+    """
+    if not isinstance(t, dict):
+        return {}
+    return {
+        "id": t.get("id") or t.get("slug") or uuid.uuid4().hex,
+        "title": t.get("title") or "",
+        "subtitle": t.get("subtitle") or t.get("description") or "",
+        "image_url": t.get("image_url") or t.get("image") or "",
+        # keep originals too (not used by the current UI, but nice to have)
+        "href": t.get("href") or t.get("link") or "",
+        "order": t.get("order", 9999),
+        "enabled": bool(t.get("enabled", True)),
+        "slug": t.get("slug") or _slugify(t.get("title") or "")
+    }
+
+@bp.route("/tiles", methods=["GET"])
+def admin_tiles_list():
+    """
+    Returns { tiles: [ {id, title, subtitle, image_url, ...}, ... ] }
+    Used by admin_home.html to render the list.
+    """
+    tiles = load_home_tiles()
+    # Normalize and sort by order
+    tiles_norm = [_coerce_tile_shape(t) for t in tiles]
+    tiles_norm.sort(key=lambda x: x.get("order", 9999))
+    return jsonify({"tiles": tiles_norm})
+
+@bp.route("/tiles/save", methods=["POST"])
+def admin_tiles_save():
+    """
+    Create or update a tile (multipart/form-data).
+    Fields:
+      - id?            (optional: if present, we update; otherwise create)
+      - title          (required)
+      - subtitle       (optional)
+      - image          (optional file upload)
+    Behavior:
+      - Saves/updates data/pages/home_tiles.json
+      - Stores image under static/assets/tiles/ and sets image_url to /static/assets/tiles/<file>
+    """
+    _ensure_tiles_image_dir()
+
+    tiles = load_home_tiles()
+    # Normalize list and index by id for quick lookups
+    indexed = {}
+    for t in tiles:
+        norm = _coerce_tile_shape(t)
+        indexed[str(norm["id"])] = {**t, **norm}  # keep originals + normalized
+
+    # Read form fields
+    tile_id = (request.form.get("id") or "").strip()
+    title = (request.form.get("title") or "").strip()
+    subtitle = (request.form.get("subtitle") or "").strip()
+
+    if not title:
+        return jsonify({"success": False, "error": "El título es obligatorio."}), 400
+
+    # If new, create an id
+    is_new = not tile_id
+    if is_new:
+        tile_id = uuid.uuid4().hex
+
+    # Start from existing (if any)
+    existing = indexed.get(tile_id, {})
+    current = {
+        "id": tile_id,
+        "title": title,
+        # store both subtitle and description for compatibility
+        "subtitle": subtitle,
+        "description": subtitle,
+        "order": existing.get("order", 9999),
+        "enabled": existing.get("enabled", True),
+        "href": existing.get("href") or existing.get("link") or "",
+        "slug": existing.get("slug") or _slugify(title)
+    }
+
+    # Handle image upload (optional)
+    if "image" in request.files and request.files["image"].filename:
+        f = request.files["image"]
+        # Keep extension if any
+        filename = secure_filename(f.filename)
+        name, ext = os.path.splitext(filename)
+        safe_ext = ext.lower() if ext.lower() in {".jpg", ".jpeg", ".png", ".webp"} else ".jpg"
+        out_name = f"tile-{tile_id}{safe_ext}"
+        out_path = os.path.join(_tiles_image_dir(), out_name)
+        f.save(out_path)
+        # relative URL for frontend
+        current["image"] = f"/static/assets/tiles/{out_name}"
+        current["image_url"] = current["image"]
+    else:
+        # Keep previous image if present
+        prev_img = existing.get("image_url") or existing.get("image") or ""
+        if prev_img:
+            current["image"] = prev_img
+            current["image_url"] = prev_img
+
+    # Rebuild tiles list: replace if exists, else append
+    replaced = False
+    for i, t in enumerate(tiles):
+        nid = str(_coerce_tile_shape(t).get("id"))
+        if nid == tile_id:
+            tiles[i] = {**t, **current}
+            replaced = True
+            break
+    if not replaced:
+        tiles.append(current)
+
+    # Keep tiles sorted and persist
+    tiles = sorted(tiles, key=lambda t: _coerce_tile_shape(t).get("order", 9999))
+    save_home_tiles(tiles)
+
+    return jsonify({"success": True, "tile": _coerce_tile_shape(current)})
+# === END: Tiles admin API (used by admin_home.html) ===
+
 def _slugify(text: str):
     import re, unicodedata
     text = (text or "").strip().lower()

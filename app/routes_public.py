@@ -121,35 +121,57 @@ def _public_load_pages():
 @bp.route("/")
 def index():
     """
-    Home page: optionally load tiles from data/home_tiles.json.
-    If the file is missing/invalid/empty, we DO NOT pass `tiles`,
-    so the template's fallback (local_tiles) will render instead.
+    Home page: load tiles from data/pages/home_tiles.json (if present),
+    normalize fields to match the template, and pass them in.
+    If the file is missing/empty, we do NOT pass `tiles` so the template's
+    fallback (local_tiles) renders instead.
     """
     tiles = []
     try:
         base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-        tiles_path = os.path.join(base_dir, "data", "home_tiles.json")
+        tiles_path = os.path.join(base_dir, "data", "pages", "home_tiles.json")  # <-- fixed path
         if os.path.exists(tiles_path):
             with open(tiles_path, "r", encoding="utf-8") as f:
-                data = json.load(f) or []
-                if isinstance(data, list):
-                    # keep only dicts marked enabled (or no flag) and sort by 'order' if present
-                    cleaned = []
-                    for t in data:
-                        if isinstance(t, dict):
-                            enabled = t.get("enabled", True)
-                            if enabled:
-                                cleaned.append(t)
-                    tiles = sorted(cleaned, key=lambda x: x.get("order", 9999))
+                raw = json.load(f) or []
+                if isinstance(raw, list):
+                    normd = []
+                    for t in raw:
+                        if not isinstance(t, dict):
+                            continue
+                        # Only enabled tiles (default True)
+                        if not t.get("enabled", True):
+                            continue
+
+                        title = t.get("title") or ""
+                        desc  = t.get("subtitle") or t.get("description") or t.get("desc") or ""
+                        href  = t.get("href") or t.get("link") or "#"
+
+                        # Image: prefer image_url, then image; strip leading /static/ if present
+                        img = (t.get("image_url") or t.get("image") or "").strip()
+                        if img.startswith("/static/"):
+                            img = img[len("/static/"):]
+                        elif img.startswith("static/"):
+                            img = img[len("static/"):]
+                        # At this point `img` should be relative to /static so the template’s
+                        # url_for('static', filename=img) works (e.g., assets/tiles/foo.jpg)
+
+                        normd.append({
+                            "title": title,
+                            "desc": desc,
+                            "href": href,
+                            "image": img,
+                            "enabled": True,
+                            "order": int(t.get("order", 9999)) if str(t.get("order", "")).isdigit() else 9999
+                        })
+
+                    tiles = sorted(normd, key=lambda x: x.get("order", 9999))
     except Exception:
-        # swallow errors and fall back to template defaults
         tiles = []
 
-    # Only pass `tiles` if we actually have some; otherwise let the template fallback run
-    ctx = {}
+    # Only pass tiles if we have any; otherwise let template fallback render
     if tiles:
-        ctx["tiles"] = tiles
-    return render_template("index.html", **ctx)
+        return render_template("index.html", tiles=tiles)
+    return render_template("index.html")
 
 @bp.route("/glosarios")
 def glosarios_index():

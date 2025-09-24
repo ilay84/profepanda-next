@@ -17,16 +17,9 @@
     "href": "/pages",
     "image": "assets/tiles/guias.png",
     "enabled": true,
-    "order": 2
-  },
-  {
-    "id": "novedades",
-    "slug": "novedades",
-    "title": "✨ Novedades",
-    "desc": "Lo último en ProfePanda: lanzamientos, mejoras y recursos nuevos.",
-    "href": "#",
-    "image": "assets/tiles/novedades.png",
-    "enabled": true,
-    "order": 3
+    "order": 2,
+    "subtitle": "Explicaciones claras de estructuras del español para comunicarte mejor.",
+    "description": "Explicaciones claras de estructuras del español para comunicarte mejor.",
+    "image_url": "assets/tiles/guias.png"
   }
 ]
