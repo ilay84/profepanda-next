@@ -1,0 +1,27 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.env
+*.env
+.venv/
+venv/
+env/
+build/
+dist/
+
+# Flask / local data
+instance/
+*.sqlite
+*.db
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Large/local assets (keep ignored unless you really want them in git)
+static/audio/word/
+static/audio/examples/
+data/backups/
