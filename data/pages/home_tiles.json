@@ -1,25 +1,20 @@
 [
   {
-    "id": "glosarios",
-    "slug": "glosarios",
-    "title": "📚 Glosarios Regionales",
-    "desc": "Glosarios con ejemplos auténticos de la cultura popular, siempre con audio.",
-    "href": "/glosarios",
+    "id": "glossaries",
+    "title": "Glosarios Regionales",
+    "subtitle": "Glosarios con ejemplos auténticos de la cultura popular, siempre con audio.",
     "image": "assets/tiles/glosarios.png",
+    "href": "/glosarios",
     "enabled": true,
     "order": 0
   },
   {
-    "id": "guias",
-    "slug": "guias",
-    "title": "📖 Guías",
-    "desc": "Explicaciones claras de estructuras del español para usar en la vida real.",
-    "href": "/pages",
-    "image": "assets/tiles/guias.png",
-    "enabled": true,
-    "order": 1,
+    "id": "guides",
+    "title": "Guías",
     "subtitle": "Explicaciones claras de estructuras del español para comunicarte mejor.",
-    "description": "Explicaciones claras de estructuras del español para comunicarte mejor.",
-    "image_url": "assets/tiles/guias.png"
+    "image": "assets/tiles/guias.png",
+    "href": "/pages",
+    "enabled": true,
+    "order": 1
   }
 ]

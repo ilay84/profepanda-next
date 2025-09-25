@@ -99,12 +99,20 @@ def glosario(country_code):
 
     entries.sort(key=lambda e: normalize_for_sort(e.get("word", "")))
 
-    return render_template(
-        "admin_glosario.html",
-        country_code=country_code,
-        country_name=country_name,
-        entries=entries
+    # --- TEMP PROBE: shows a yellow badge if this route is hit ---
+    probe_html = (
+        f"<!-- probe -->\n"
+        f"<div id='__route_probe__' "
+        f"style='position:fixed;bottom:8px;left:8px;z-index:99999;"
+        f"background:#fef3c7;border:1px solid #f59e0b;color:#78350f;"
+        f"padding:6px 8px;border-radius:8px;font:12px/1.1 system-ui'>"
+        f"ROUTE HIT: /admin/glosario/{country_code}</div>"
     )
+    page = render_template("admin_glosario.html",
+                           country_code=country_code,
+                           country_name=country_name,
+                           entries=entries)
+    return probe_html + page
 
 @bp.route("/glosario/<country_code>/delete", methods=["POST"])
 def delete_glosario(country_code):
@@ -948,3 +956,35 @@ def serve_glossary_json(country_code):
         return f"No glossary found for {country_code}", 404
 
     return send_from_directory(glossary_dir, filename)
+
+# ==== Admin: Home Tiles (list page) ==========================================
+def _tiles_json_path():
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data', 'pages', 'home_tiles.json'))
+
+def _load_home_tiles():
+    path = _tiles_json_path()
+    if not os.path.exists(path):
+        return []
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f) or []
+        # keep only enabled tiles; normalize and sort by "order"
+        tiles = []
+        for t in data:
+            if not isinstance(t, dict):
+                continue
+            if t.get("enabled", True) is False:
+                continue
+            # Back-compat: if JSON uses "image_url", map it to "image"
+            if "image" not in t and "image_url" in t:
+                t["image"] = t.get("image_url")
+            tiles.append(t)
+        tiles.sort(key=lambda x: x.get("order", 0))
+        return tiles
+    except Exception:
+        return []
+
+@bp.route("/home/tiles")
+def admin_home_tiles():
+    """Admin tiles screen: show enabled tiles from home_tiles.json."""
+    return render_template("admin_tiles.html", tiles=_load_home_tiles())

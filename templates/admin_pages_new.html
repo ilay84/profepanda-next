@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Admin · New Page{% endblock %}
 
+{% block admin_nav %}
+  {% include "_admin_bar.html" %}
+{% endblock %}
+
 {% block content %}
 <style>
   /* Use Montserrat for this page (base.css may already do this, but enforce here) */

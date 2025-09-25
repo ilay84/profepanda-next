@@ -11,6 +11,9 @@
 <body>
     {% include "_header.html" %}
 
+    {# Optional admin-only top bar slot #}
+    {% block admin_nav %}{% endblock %}
+
     <main>
         {% block content %}{% endblock %}
     </main>

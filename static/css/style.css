@@ -847,3 +847,23 @@ html, body {
   background: #eaf4ff;
 }
 
+.admin-bar {
+  background:#f1f5f9;
+  padding:.5rem 1rem;
+  border-bottom:1px solid #e2e8f0;
+}
+.admin-bar ul {
+  list-style:none;
+  display:flex;
+  gap:1rem;
+  margin:0;
+  padding:0;
+}
+.admin-bar a {
+  text-decoration:none;
+  font-weight:600;
+  color:#334155;
+}
+.admin-bar a:hover {
+  color:#2563eb;
+}

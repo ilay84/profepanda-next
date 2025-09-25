@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Admin · Pages{% endblock %}
 
+{% block admin_nav %}
+  {% include "_admin_bar.html" %}
+{% endblock %}
+
 {% block content %}
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');

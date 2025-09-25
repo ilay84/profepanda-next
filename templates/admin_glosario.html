@@ -2,56 +2,39 @@
 
 {% block title %}Admin – Glosario {{ country_code|upper }}{% endblock %}
 
+{% block admin_nav %}
+  {% include "_admin_bar.html" %}
+{% endblock %}
+
 {% block content %}
-<h2>Administrar Glosario – {{ country_code|upper }}</h2>
+<h2 style="margin:1rem auto;max-width:1100px">Glosario — {{ country_code|upper }}</h2>
 
-<!-- Add Entry button with spacing and + emoji -->
-<div class="add-entry-container">
-  <button class="btn-add-entry" onclick="openAddEntryModal()">➕ Agregar nueva entrada</button>
+<div class="admin-toolbar" style="max-width:1100px;margin:.25rem auto 1rem;display:flex;gap:.5rem;align-items:center;">
+  <a href="{{ url_for('admin.admin_home') }}" style="text-decoration:none;border:1px solid #e5e7eb;border-radius:10px;padding:.5rem .75rem;background:#fff;display:inline-block;">⬅ Volver</a>
+  <button id="btnNewEntry" type="button" style="appearance:none;border:1px solid #cfe3fb;border-radius:10px;padding:.5rem .75rem;background:#f7fbff;color:#1e40af;font-weight:700;cursor:default;" disabled>➕ Nueva entrada</button>
+  <span style="color:#64748b;">(el editor lo conectamos en el siguiente paso)</span>
 </div>
 
-<!-- 🔹 Modal container for Add/Edit forms -->
-<div id="formModal" class="modal" style="display:none;">
-  <div class="modal-content">
-    <div class="modal-header">
-      <span class="close" onclick="closeFormModal()">&times;</span>
-      <h2>Formulario de entrada</h2>
-    </div>
-    <div class="modal-body">
-      <p>(Aquí irá el formulario dinámico para agregar o editar entradas)</p>
-    </div>
-  </div>
-</div>
-<!-- 🔹 End modal container -->
+<p style="max-width:1100px;margin:.25rem auto 1rem;color:#64748b;">
+  Total: {{ entries|length }} entradas
+</p>
 
-<!-- 🔹 Admin grid of cards -->
 <div class="admin-glossary-grid">
-  {% for entry in entries %}
-    <div class="admin-entry-card"
-        data-entry="{{ entry | tojson | forceescape }}"
-        onclick="editEntryFromCard(this)">
-      <span class="admin-entry-word">{{ entry.word }}</span>
-
-      <!-- 🔧 Actions (right) -->
-      <div class="card-actions">
-        <!-- Edit -->
+  {% for e in entries %}
+    <div class="admin-entry-card" title="Entrada del glosario" data-entry='{{ e|tojson|safe }}'>
+      <div class="left">
+        <div class="admin-entry-word">{{ e.word }}</div>
+        <div class="meta">
+          <span class="badge">{{ (e.senses or [])|length }} acep.</span>
+          <span class="badge">{{ (e.variants or {})|length }} variantes</span>
+        </div>
+      </div>
+      <div class="right">
         <button type="button"
-                class="admin-edit-btn btn-icon"
-                aria-label="Editar"
+                class="admin-edit-btn"
                 title="Editar"
-                onclick="event.stopPropagation(); editEntryFromCard(this.closest('.admin-entry-card')); ">
-          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1.003 1.003 0 0 0 0-1.42l-2.34-2.34a1.003 1.003 0 0 0-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.82z"/>
-          </svg>
-        </button>
-
-        <!-- Delete -->
-        <button type="button"
-                class="admin-delete-btn btn-icon"
-                aria-label="Eliminar"
-                title="Eliminar"
-                onclick="event.stopPropagation(); deleteEntry('{{ entry.word }}');">
-          🗑️
+                onclick='editEntry({{ e.word|tojson }}, {{ e|tojson|safe }})'>
+          ✎
         </button>
       </div>
     </div>
@@ -61,307 +44,115 @@
 
 {% block scripts %}
 <style>
-/* Shake animation for invalid delete */
-@keyframes shake {
-  0% { transform: translateX(0); }
-  20% { transform: translateX(-5px); }
-  40% { transform: translateX(5px); }
-  60% { transform: translateX(-5px); }
-  80% { transform: translateX(5px); }
-  100% { transform: translateX(0); }
+/* Grid of entry cards */
+.admin-glossary-grid{
+  max-width:1100px;
+  margin:0 auto 2rem;
+  display:grid;
+  gap: .75rem;
+  grid-template-columns: repeat(2, minmax(0,1fr));
 }
-.shake {
-  animation: shake 0.4s;
+@media (min-width: 900px){ .admin-glossary-grid{ grid-template-columns: repeat(3, minmax(0,1fr)); } }
+@media (min-width: 1280px){ .admin-glossary-grid{ grid-template-columns: repeat(4, minmax(0,1fr)); } }
+
+/* Card */
+.admin-entry-card{
+  background:#fff;
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+  box-shadow:0 1px 4px rgba(0,0,0,.06);
+  padding:.7rem .8rem;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:.75rem;
 }
-input.error, textarea.error {
-  border: 2px solid #dc3545;
-  background-color: #ffe6e6;
+.admin-entry-card .left{min-width:0;}
+.admin-entry-word{
+  font-weight:800;
+  color:#0f172a;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.meta{display:flex;gap:.35rem;margin-top:.2rem; color:#64748b; font-size:.85rem;}
+.badge{border:1px solid #cbd5e1;border-radius:999px;padding:.05rem .5rem;background:#f8fafc;}
+
+.admin-edit-btn{
+  border:1px solid #d7e3f3; background:#f6fbff; border-radius:8px;
+  padding:.35rem .55rem; cursor:pointer; color:#1e40af; font-weight:700;
 }
 
-/* Admin grid (denser than public) */
-.admin-glossary-grid {
-  display: grid;
-  gap: 0.75rem;
-  grid-template-columns: repeat(2, 1fr);
-}
-@media (min-width: 800px) {
-  .admin-glossary-grid { grid-template-columns: repeat(4, 1fr); }
-}
-@media (min-width: 1200px) {
-  .admin-glossary-grid { grid-template-columns: repeat(6, 1fr); }
-}
-
-.admin-entry-card {
-  background: #fff;
-  padding: 0.6rem 0.75rem;
-  border-radius: 10px;
-  border-left: 5px solid #3498db;
-  box-shadow: 0 1px 4px rgba(0,0,0,.06);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: .5rem;
-  cursor: pointer;
-  transition: transform .12s ease, box-shadow .12s ease;
-}
-
-.admin-entry-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 22px rgba(0,0,0,.12);
-}
-
-.admin-entry-word {
-  font-weight: 700;
-  font-size: .95rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.admin-edit-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid #d7e3f3;
-  background: #f6fbff;
-  border-radius: 8px;
-  padding: .25rem .4rem;
-  line-height: 0;
-  cursor: pointer;
-}
-.admin-edit-btn:hover {
-  background: #eaf4ff;
-  border-color: #bcd6f5;
-}
-.admin-edit-btn svg path {
-  fill: #1d3557;
-}
-
-/* Linked glossary chips */
-.linked-words {
-  display: grid;
-  gap: .4rem;
-  margin: .25rem 0 .75rem;
-}
-.linked-words .chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: .35rem;
-}
-.linked-words .chip {
-  display: inline-flex;
-  align-items: center;
-  gap: .35rem;
-  padding: .15rem .5rem;
-  border-radius: 999px;
-  background: #eef6ff;
-  border: 1px solid #cfe3ff;
-  font-size: .85rem;
-}
-.linked-words .chip-x {
-  line-height: 1;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-  font-size: 1rem;
-}
-.linked-words .linked-input.error {
-  border: 2px solid #dc3545;
-  background: #ffe6e6;
-}
 </style>
 
-<!-- Quill CSS and JS -->
+<!-- Quill (form needs it even to render); saving wire-up is next step -->
 <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+
+<style>
+  /* Keep our rules after Quill's so they win */
+  #formModal .ql-container{
+    height:auto !important;
+    max-height:300px;         /* fallback cap on the container */
+    overflow-y:auto;
+  }
+  #formModal .ql-editor{
+    min-height:140px;         /* comfy start size */
+    max-height:260px;         /* cap the editor itself */
+    overflow-y:auto;
+  }
+  /* keep toolbar visible while the editor scrolls */
+  #formModal .ql-toolbar.ql-snow{ position: sticky; top:0; z-index:1; }
+</style>
+
 <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
 
-
 <script>
-console.log("admin_glosario.html scripts loaded");
+/* ---------- Modal bootstrap ---------- */
+function ensureModal() {
+  let m = document.getElementById('formModal');
+  if (m) return m;
 
-/* ---------- linked glossary words (typeahead + chips) ---------- */
-let _ppWordList = [];
+  const css = `
+    #formModal{position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.45);display:none;}
+    #formModal .modal-content{background:#fff;margin:5vh auto;max-width:960px;border-radius:12px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.25);}
+    #formModal .modal-header{display:flex;align-items:center;justify-content:space-between;padding:.8rem 1rem;border-bottom:1px solid #e5e7eb;}
+    #formModal .modal-body{padding:1rem;max-height:70vh;overflow:auto;}
+    #formModal .close{appearance:none;border:0;background:#f1f5f9;border-radius:8px;padding:.3rem .55rem;font-weight:700;cursor:pointer;}
+  `;
+  const style = document.createElement('style');
+  style.textContent = css;
+  document.head.appendChild(style);
 
-function collectExistingWords() {
-  // Build a unique, sorted list of existing entry words from the admin cards
-  const set = new Set();
-  document.querySelectorAll('.admin-entry-card').forEach(card => {
-    try {
-      const obj = JSON.parse(card.getAttribute('data-entry') || '{}');
-      if (obj?.word) set.add(obj.word);
-      // If you ever want to include variants as selectable targets, uncomment:
-      // (obj?.variants?.ms || []).forEach(w => set.add(w));
-      // (obj?.variants?.mp || []).forEach(w => set.add(w));
-      // (obj?.variants?.fs || []).forEach(w => set.add(w));
-      // (obj?.variants?.fp || []).forEach(w => set.add(w));
-    } catch (e) {}
-  });
-  return [...set].sort((a, b) => a.localeCompare(b, 'es'));
+  m = document.createElement('div');
+  m.id = 'formModal';
+  m.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modalTitle" style="margin:0;font-weight:800;">Editar entrada</h3>
+        <button class="close" type="button" onclick="closeFormModal()">×</button>
+      </div>
+      <div class="modal-body"><div style="color:#64748b">Cargando editor…</div></div>
+    </div>
+  `;
+  document.body.appendChild(m);
+  return m;
+}
+function openFormWithHTML(html, title) {
+  const m = ensureModal();
+  m.querySelector('#modalTitle').textContent = title || 'Editar entrada';
+  m.querySelector('.modal-body').innerHTML = html;
+  m.style.display = 'block';
+}
+function closeFormModal() {
+  const m = document.getElementById('formModal');
+  if (m) m.style.display = 'none';
 }
 
-function populateLinkedWordsDatalist(root = document) {
-  const dl = root.querySelector('#linkedWordsList');
-  if (!dl) return;
-  dl.innerHTML = '';
-  _ppWordList.forEach(w => {
-    const opt = document.createElement('option');
-    opt.value = w;
-    dl.appendChild(opt);
-  });
-}
-
-function addLinkedChip(container, value) {
-  if (!value) return;
-  const hidden = container.querySelector('.linked-hidden');
-  const chipsWrap = container.querySelector('.chips');
-  if (!hidden || !chipsWrap) return;
-
-  const current = (hidden.value || '')
-    .split(',')
-    .map(s => s.trim())
-    .filter(Boolean);
-
-  if (current.includes(value)) return; // avoid duplicates
-
-  const chip = document.createElement('span');
-  chip.className = 'chip';
-  chip.textContent = value;
-
-  const x = document.createElement('button');
-  x.type = 'button';
-  x.className = 'chip-x';
-  x.setAttribute('aria-label', 'Eliminar');
-  x.textContent = '×';
-  chip.appendChild(x);
-
-  chipsWrap.appendChild(chip);
-  current.push(value);
-  hidden.value = current.join(', ');
-}
-
-function removeLinkedChip(btn) {
-  const chip = btn.closest('.chip');
-  const container = btn.closest('.linked-words');
-  if (!chip || !container) return;
-
-  const value = chip.firstChild?.textContent || ''; // text before the × button
-  const hidden = container.querySelector('.linked-hidden');
-  if (!hidden) return;
-
-  let current = (hidden.value || '')
-    .split(',')
-    .map(s => s.trim())
-    .filter(Boolean);
-
-  current = current.filter(v => v !== value);
-  hidden.value = current.join(', ');
-  chip.remove();
-}
-
-/**
- * Attach delegated listeners to handle:
- * - selecting a value from the datalist (or pressing Enter)
- * - removing chips
- * Works for initial + dynamically added example blocks.
- */
-function initLinkedWordsDelegates(root = document) {
-  // When user picks a value (datalist) or presses Enter in the input
-  root.addEventListener('change', e => {
-    const inp = e.target.closest('input.linked-input');
-    if (!inp) return;
-
-    const val = (inp.value || '').trim();
-    if (!val) return;
-
-    // Only allow words that exist in our dictionary
-    if (!_ppWordList.includes(val)) {
-      // Optional: gently reject non-matches
-      inp.value = '';
-      inp.classList.add('error');
-      setTimeout(() => inp.classList.remove('error'), 400);
-      return;
-    }
-
-    const container = inp.closest('.linked-words');
-    if (container) addLinkedChip(container, val);
-    inp.value = '';
-  });
-
-  // Also allow Enter to add (useful when datalist is open or not)
-  root.addEventListener('keydown', e => {
-    if (e.key !== 'Enter') return;
-    const inp = e.target.closest('input.linked-input');
-    if (!inp) return;
-
-    e.preventDefault();
-    const val = (inp.value || '').trim();
-    if (!val) return;
-    if (!_ppWordList.includes(val)) return;
-
-    const container = inp.closest('.linked-words');
-    if (container) addLinkedChip(container, val);
-    inp.value = '';
-  });
-
-  // Remove chip
-  root.addEventListener('click', e => {
-    const btn = e.target.closest('.chip-x');
-    if (!btn) return;
-    removeLinkedChip(btn);
-  });
-}
-
-/* ---------- utils ---------- */
-function slugify(text) {
-  return text.toString().normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/ñ/g, "n")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)+/g, "");
-}
-
-function editEntryFromCard(cardEl) {
-  try {
-    const e = JSON.parse(cardEl.getAttribute('data-entry'));
-    if (e && e.word) editEntry(e.word, e);   // pass full entry to avoid refetch
-  } catch (err) {
-    console.error('Failed to parse entry data from card:', err);
-  }
-}
-
-/* ---------- modal open (ADD) ---------- */
-function openAddEntryModal() {
-  fetch("{{ url_for('static', filename='admin_forms/add_entry_form.html') }}")
-    .then(r => r.text())
-    .then(html => {
-      document.querySelector("#formModal .modal-body").innerHTML = html;
-      document.getElementById("formModal").style.display = "block";
-      // wait one tick so DOM is in
-      setTimeout(() => {
-        initAddFormHandlers();
-        initQuillEditors();
-        initExampleSourceToggles(document);
-
-        // 🆕 Linked words: build list from current admin cards, populate datalist, and wire delegates
-        _ppWordList = collectExistingWords();
-        populateLinkedWordsDatalist(document);
-        initLinkedWordsDelegates(document);
-      }, 0);
-    })
-    .catch(err => {
-      console.error("Error loading form:", err);
-      alert("No se pudo cargar el formulario");
-    });
-
-}
-
-/* ---------- Quill bootstrap for any present field ---------- */
-function initQuillEditors() {
-  // 1) Editors that ship as <div class="quill-editor"> + hidden <input id="definicion_X">
-  document.querySelectorAll('.quill-editor[id^="editor_definicion_"]').forEach(div => {
+/* ---------- Quill init (for all sense definition editors) ---------- */
+function initQuillEditors(root = document){
+  root.querySelectorAll('[id^="editor_definicion_"]').forEach(div => {
     const n = div.id.replace('editor_definicion_', '');
-    const hidden = document.getElementById('definicion_' + n);
+    const hidden = (root.getElementById ? root.getElementById('definicion_' + n)
+                                        : document.getElementById('definicion_' + n));
+    if (div.__quill) return; // already initialized
     const q = new Quill('#' + div.id, {
       theme: 'snow',
       modules: {
@@ -373,688 +164,383 @@ function initQuillEditors() {
         ]
       }
     });
-    q.on('text-change', () => { if (hidden) hidden.value = q.root.innerHTML; });
-  });
-
-  // 2) Editors that start life as <textarea id="definicion_X">
-  document.querySelectorAll('textarea[id^="definicion_"]').forEach(textarea => {
-    const editorDiv = document.createElement('div');
-    editorDiv.id = 'editor_' + textarea.id;
-    textarea.style.display = 'none';
-    textarea.parentNode.insertBefore(editorDiv, textarea);
-    const q = new Quill('#' + editorDiv.id, {
-      theme: 'snow',
-      modules: {
-        toolbar: [
-          ['bold','italic','underline','strike'],
-          [{ list:'ordered' }, { list:'bullet' }],
-          [{ color:[] }, { background:[] }],
-          ['link','clean']
-        ]
-      }
-    });
-    if (textarea.value.trim()) q.root.innerHTML = textarea.value;
-    q.on('text-change', () => { textarea.value = q.root.innerHTML; });
+    div.__quill = q;
+    if (hidden) q.on('text-change', () => { hidden.value = q.root.innerHTML; });
   });
 }
 
-// --- Example source field toggles (single delegated handler) ---
-function hideAllSourceGroups(exBlock, n) {
-  // Hide all source sections within this example block by class
-  exBlock.querySelectorAll('.source-fields').forEach(el => {
-    el.style.display = 'none';
-  });
+/* ---------- Examples: builder + behaviors (add/remove/toggle source) ---------- */
+function buildExampleRow(n){
+  const div = document.createElement('div');
+  div.className = 'example-item';
+  div.innerHTML = `
+    <label>Oración (ES)</label>
+    <textarea name="example_sentence_${n}[]" rows="2"></textarea>
+
+    <label>Traducción (EN)</label>
+    <textarea name="example_translation_${n}[]" rows="2"></textarea>
+
+    <label>Audio del ejemplo</label>
+    <input type="file" name="example_audio_${n}[]" accept="audio/*">
+
+    <label>Fuente</label>
+    <select name="example_source_kind_${n}[]" class="source-kind">
+      <option value="">-- Seleccionar --</option>
+      <option value="pelicula">Película</option>
+      <option value="serie">Serie</option>
+      <option value="redes">Redes sociales</option>
+      <option value="cancion">Canción</option>
+      <option value="otro">Otro</option>
+    </select>
+
+    <div class="source-fields source-pelicula" style="display:none;">
+      <label>Título</label>
+      <input type="text" name="example_source_title_${n}[]">
+      <label>Año</label>
+      <input type="text" name="example_source_year_${n}[]">
+    </div>
+
+    <div class="source-fields source-serie" style="display:none;">
+      <label>Título</label>
+      <input type="text" name="example_source_title_${n}[]">
+      <label>Año</label>
+      <input type="text" name="example_source_year_${n}[]">
+      <label>Temporada</label>
+      <input type="text" name="example_source_season_${n}[]">
+      <label>Episodio</label>
+      <input type="text" name="example_source_episode_${n}[]">
+    </div>
+
+    <div class="source-fields source-redes" style="display:none;">
+      <label>Usuario/Handle</label>
+      <input type="text" name="example_source_handle_${n}[]">
+      <label>URL</label>
+      <input type="text" name="example_source_url_${n}[]">
+    </div>
+
+    <div class="source-fields source-cancion" style="display:none;">
+      <label>Canción</label>
+      <input type="text" name="example_source_song_${n}[]">
+      <label>Artista</label>
+      <input type="text" name="example_source_artist_${n}[]">
+    </div>
+
+    <div class="source-fields source-otro" style="display:none;">
+      <label>Fuente</label>
+      <input type="text" name="example_source_text_${n}[]">
+    </div>
+
+    <button type="button" class="remove-example">Eliminar ejemplo</button>
+  `;
+  return div;
 }
 
-function toggleExampleSourceFields(exBlock, kind, n) {
-  hideAllSourceGroups(exBlock, n);
-  if (!kind) return;
+function attachExampleBehaviors(root = document){
+  if (window.__ppExamplesWired) return;           // avoid multiple listeners on re-open
+  window.__ppExamplesWired = true;
 
-  // Map kind -> class selector (works for initial and dynamically added examples)
-  const classMap = {
-    pelicula: '.source-pelicula',
-    serie: '.source-serie',
-    redes: '.source-redes',
-    cancion: '.source-cancion',
-    otro: '.source-otro'
-  };
-
-  const sel = classMap[kind];
-  if (!sel) return;
-
-  const showEl = exBlock.querySelector(sel);
-  if (showEl) showEl.style.display = '';
-}
-
-// Attach one listener that works for all (existing and future) example rows
-function initExampleSourceToggles(root = document) {
-  // Change handler for kind dropdowns
-  root.addEventListener('change', (e) => {
-    const sel = e.target;
-    if (!sel.matches('select[name^="example_source_kind_"]')) return;
-
-    // find which sentido block we are in
-    const block = sel.closest('.sentido-block');
-    if (!block) return;
-    const n = block?.dataset?.sentido;
-    const exBlock = sel.closest('.example-item');
-    if (!n || !exBlock) return;
-
-    toggleExampleSourceFields(exBlock, sel.value, n);
-  });
-
-  // When user clicks "add example", ensure the new block starts clean/hidden
-  root.addEventListener('click', (e) => {
+  // Add example
+  root.addEventListener('click', e=>{
     const btn = e.target.closest('.add-example');
     if (!btn) return;
-    // allow the form's own add handler to inject the new example row
-    setTimeout(() => {
-      const block = btn.closest('.sentido-block');
-      const n = block?.dataset?.sentido;
-      const container = block?.querySelector('.examples-container');
-      const exBlock = container?.lastElementChild;
-      if (n && exBlock) {
-        hideAllSourceGroups(exBlock, n);
-        const kindSel = exBlock.querySelector(`select[name="example_source_kind_${n}[]"]`);
-        if (kindSel) toggleExampleSourceFields(exBlock, kindSel.value, n);
-      }
-    }, 0);
+    const block = btn.closest('.sentido-block');
+    const n = block?.dataset?.sentido;
+    const container = block?.querySelector('.examples-container');
+    if (!n || !container) return;
+    container.appendChild(buildExampleRow(n));
+  });
+
+  // Remove example
+  root.addEventListener('click', e=>{
+    const btn = e.target.closest('.remove-example');
+    if (!btn) return;
+    const item = btn.closest('.example-item');
+    if (item) item.remove();
+  });
+
+  // Toggle source-fields groups by kind
+  root.addEventListener('change', e=>{
+    const sel = e.target.closest('select[name^="example_source_kind_"]');
+    if (!sel) return;
+    const ex = sel.closest('.example-item');
+    if (!ex) return;
+    ex.querySelectorAll('.source-fields').forEach(x => x.style.display = 'none');
+    const map = { pelicula:'.source-pelicula', serie:'.source-serie', redes:'.source-redes', cancion:'.source-cancion', otro:'.source-otro' };
+    const show = ex.querySelector(map[sel.value]);
+    if (show) show.style.display = '';
   });
 }
 
-/* ---------- Form handlers for ADD (and used by EDIT too) ---------- */
-function initAddFormHandlers() {
-  const form = document.getElementById("addEntryForm");
-  if (!form) return;
+/* ---------- Prefill from entry (senses + examples) ---------- */
+function prefillFromEntry(entry) {
+  const form = document.getElementById('addEntryForm');
+  if (!form) { console.warn('addEntryForm not found'); return; }
 
-  // 🔹 Add Example button click handling + Remove Example (delegated)
-  document.addEventListener('click', function (e) {
-    // Add example
-    if (e.target.classList.contains('add-example')) {
-      const sentidoBlock = e.target.closest('.sentido-block');
-      const container = sentidoBlock.querySelector('.examples-container');
+  const setVal = (sel, val, root=form) => {
+    const el = root.querySelector(sel);
+    if (el) el.value = val ?? '';
+  };
 
-      const newExample = document.createElement('div');
-      newExample.classList.add('example-item');
+  // Top-level
+  setVal('[name="word"]', entry.word || '');
+  const v = entry.variants || {};
+  setVal('[name="variant_ms"]',          (v.ms || []).join(', '));
+  setVal('[name="variant_mp"]',          (v.mp || []).join(', '));
+  setVal('[name="variant_fs"]',          (v.fs || []).join(', '));
+  setVal('[name="variant_fp"]',          (v.fp || []).join(', '));
+  setVal('[name="variant_diminutivo"]',  (v.diminutivo || []).join(', '));
+  setVal('[name="variant_aumentativo"]', (v.aumentativo || []).join(', '));
 
-      // Basic fields (kept like your structure) + delete button
-      const sentidoNum = sentidoBlock.dataset.sentido;
-      newExample.innerHTML = `
-        <label>Oración (ES)</label>
-        <textarea name="example_sentence_${sentidoNum}[]" rows="2"></textarea>
+  // Senses
+  const senses = Array.isArray(entry.senses) ? entry.senses : [];
+  const targetCount = Math.max(1, senses.length);
 
-        <label>Traducción (EN)</label>
-        <textarea name="example_translation_${sentidoNum}[]" rows="2"></textarea>
+  // Try to grow sense blocks via the "+" button if present
+  const addSenseBtn = document.getElementById('addSentidoBtn');
+  const currentBlocks = () => document.querySelectorAll('.sentido-block').length;
+  while (addSenseBtn && currentBlocks() < targetCount) addSenseBtn.click();
 
-        <label>Audio del ejemplo</label>
-        <input type="file" name="example_audio_${sentidoNum}[]" accept="audio/*">
+  senses.forEach((s, i) => {
+    const n = i + 1;
+    const block = document.querySelector(`.sentido-block[data-sentido="${n}"]`);
+    if (!block) return;
 
-        <!-- 🆕 Vincular palabras del glosario -->
-        <label><strong>Vincular palabras del glosario</strong></label>
-        <div class="linked-words">
-          <div class="chips" aria-live="polite"></div>
-          <input
-            type="text"
-            name="example_linked_input_${sentidoNum}[]"
-            class="linked-input"
-            list="linkedWordsList"
-            placeholder="Escribí y elegí de la lista…">
-          <input
-            type="hidden"
-            name="example_linked_words_${sentidoNum}[]"
-            class="linked-hidden"
-            value="">
-        </div>
+    // Definition (hidden + Quill)
+    const defHTML = s.definition || '';
+    const hiddenDef = block.querySelector(`#definicion_${n}`);
+    if (hiddenDef) hiddenDef.value = defHTML;
 
-        <label>Fuente</label>
-        <select name="example_source_kind_${sentidoNum}[]" class="source-kind">
-            <option value="">-- Seleccionar --</option>
-            <option value="pelicula">Película</option>
-            <option value="serie">Serie</option>
-            <option value="redes">Redes sociales</option>
-            <option value="cancion">Canción</option>
-            <option value="otro">Otro</option>
-        </select>
+    const quillDiv = document.getElementById(`editor_definicion_${n}`);
+    (function setDefIntoQuill(attempts = 0){
+      const q = quillDiv && quillDiv.__quill;
+      if (!q) { if (attempts < 40) setTimeout(()=>setDefIntoQuill(attempts+1), 25); return; }
+      q.clipboard.dangerouslyPasteHTML(defHTML || '');
+      if (hiddenDef) {
+        q.off?.('text-change');
+        q.on('text-change', () => { hiddenDef.value = q.root.innerHTML; });
+      }
+    })();
 
-        <!-- 🔹 Película -->
-        <div class="source-fields source-pelicula" style="display:none;">
-            <label>Título</label>
-            <input type="text" name="example_source_title_${sentidoNum}[]">
-            <label>Año</label>
-            <input type="text" name="example_source_year_${sentidoNum}[]">
-        </div>
+    // Tags / equivalents
+    setVal(`#clase_${n}, [name="clase_${n}"]`,                 (s.tag_word_class || []).join(', '), block);
+    setVal(`#etiquetas_${n}, [name="etiquetas_${n}"]`,         (s.tag_general || []).join(', '),    block);
+    setVal(`#equivalentes_${n}, [name="equivalentes_${n}"]`,   (s.equivalents || []).join(', '),    block);
 
-        <!-- 🔹 Serie -->
-        <div class="source-fields source-serie" style="display:none;">
-            <label>Título</label>
-            <input type="text" name="example_source_title_${sentidoNum}[]">
-            <label>Año</label>
-            <input type="text" name="example_source_year_${sentidoNum}[]">
-            <label>Temporada</label>
-            <input type="text" name="example_source_season_${sentidoNum}[]">
-            <label>Episodio</label>
-            <input type="text" name="example_source_episode_${sentidoNum}[]">
-        </div>
+    // Examples
+    const examples = Array.isArray(s.examples) ? s.examples : [];
+    const container = block.querySelector('.examples-container');
+    if (container) container.innerHTML = '';
 
-        <!-- 🔹 Redes sociales -->
-        <div class="source-fields source-redes" style="display:none;">
-            <label>Usuario/Handle</label>
-            <input type="text" name="example_source_handle_${sentidoNum}[]">
-            <label>URL</label>
-            <input type="text" name="example_source_url_${sentidoNum}[]">
-        </div>
+    examples.forEach(ex => {
+      const exBlock = buildExampleRow(n);
+      (container || block).appendChild(exBlock);
 
-        <!-- 🔹 Canción -->
-        <div class="source-fields source-cancion" style="display:none;">
-            <label>Canción</label>
-            <input type="text" name="example_source_song_${sentidoNum}[]">
-            <label>Artista</label>
-            <input type="text" name="example_source_artist_${sentidoNum}[]">
-        </div>
+      const esField = exBlock.querySelector(`textarea[name="example_sentence_${n}[]"]`);
+      const enField = exBlock.querySelector(`textarea[name="example_translation_${n}[]"]`);
+      if (esField) esField.value = ex.es || '';
+      if (enField) enField.value = ex.en || '';
 
-        <!-- 🔹 Otro -->
-        <div class="source-fields source-otro" style="display:none;">
-            <label>Fuente</label>
-            <input type="text" name="example_source_text_${sentidoNum}[]">
-        </div>
+      const kindSel = exBlock.querySelector(`select[name="example_source_kind_${n}[]"]`);
+      const kind = ex?.source?.kind || '';
+      if (kindSel) {
+        kindSel.value = kind;
+        kindSel.dispatchEvent(new Event('change'));
+      }
 
-        <!-- ✅ New: delete button -->
-        <button type="button" class="remove-example">Eliminar ejemplo</button>
-      `;
-
-      container.appendChild(newExample);
-      return; // stop here so it doesn't fall through
-    }
-
-    // ✅ Remove example
-    if (e.target.classList.contains('remove-example')) {
-      const item = e.target.closest('.example-item');
-      if (item) item.remove();
-      return;
-    }
+      if (kind === 'pelicula') {
+        const wrap = exBlock.querySelector('.source-pelicula');
+        wrap?.querySelector(`[name="example_source_title_${n}[]"]`)?.setAttribute('value', ex?.source?.title || '');
+        wrap?.querySelector(`[name="example_source_year_${n}[]"]`)?.setAttribute('value',  ex?.source?.year  || '');
+      } else if (kind === 'serie') {
+        const w = exBlock.querySelector('.source-serie');
+        w?.querySelector(`[name="example_source_title_${n}[]"]`)?.setAttribute('value',   ex?.source?.title   || '');
+        w?.querySelector(`[name="example_source_year_${n}[]"]`)?.setAttribute('value',    ex?.source?.year    || '');
+        w?.querySelector(`[name="example_source_season_${n}[]"]`)?.setAttribute('value',  ex?.source?.season  || '');
+        w?.querySelector(`[name="example_source_episode_${n}[]"]`)?.setAttribute('value', ex?.source?.episode || '');
+      } else if (kind === 'redes') {
+        const w = exBlock.querySelector('.source-redes');
+        w?.querySelector(`[name="example_source_handle_${n}[]"]`)?.setAttribute('value', ex?.source?.handle || '');
+        w?.querySelector(`[name="example_source_url_${n}[]"]`)?.setAttribute('value',    ex?.source?.url    || '');
+      } else if (kind === 'cancion') {
+        const w = exBlock.querySelector('.source-cancion');
+        w?.querySelector(`[name="example_source_song_${n}[]"]`)?.setAttribute('value',   ex?.source?.song   || '');
+        w?.querySelector(`[name="example_source_artist_${n}[]"]`)?.setAttribute('value', ex?.source?.artist || '');
+      } else if (kind === 'otro') {
+        const w = exBlock.querySelector('.source-otro');
+        w?.querySelector(`[name="example_source_text_${n}[]"]`)?.setAttribute('value', ex?.source?.text || '');
+      }
+    });
   });
 
-  // 🔹 Form submit handler (now implemented for ADD)
-  form.addEventListener("submit", async (e) => {
+  // If there were no senses, ensure the first is blank/ready
+  if (senses.length === 0) {
+    const block = document.querySelector('.sentido-block[data-sentido="1"]');
+    if (block) {
+      setVal('#definicion_1, [name="definicion_1"]', '', block);
+      const qDiv = block.querySelector('#editor_definicion_1');
+      if (qDiv?.__quill) qDiv.__quill.root.innerHTML = '';
+    }
+  }
+
+  console.debug('Prefilled senses & examples from entry', entry);
+}
+
+function wireEditSubmit(originalWord){
+  const form = document.getElementById('addEntryForm');
+  if (!form) return;
+
+  // avoid double-binding if modal reopens
+  if (form.__wiredSubmit) return;
+  form.__wiredSubmit = true;
+
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const word = (form.word?.value || "").trim();
-    if (!word) { alert("La palabra es requerida"); return; }
+    const word = (form.word?.value || '').trim();
+    if (!word) { alert('La palabra es requerida'); return; }
 
+    // Variants
     const variants = {
-      ms: (form.variant_ms?.value || "").split(",").map(s => s.trim()).filter(Boolean),
-      mp: (form.variant_mp?.value || "").split(",").map(s => s.trim()).filter(Boolean),
-      fs: (form.variant_fs?.value || "").split(",").map(s => s.trim()).filter(Boolean),
-      fp: (form.variant_fp?.value || "").split(",").map(s => s.trim()).filter(Boolean),
-      diminutivo: (form.variant_diminutivo?.value || "").split(",").map(s => s.trim()).filter(Boolean),
-      aumentativo: (form.variant_aumentativo?.value || "").split(",").map(s => s.trim()).filter(Boolean),
+      ms: (form.variant_ms?.value || '').split(',').map(s=>s.trim()).filter(Boolean),
+      mp: (form.variant_mp?.value || '').split(',').map(s=>s.trim()).filter(Boolean),
+      fs: (form.variant_fs?.value || '').split(',').map(s=>s.trim()).filter(Boolean),
+      fp: (form.variant_fp?.value || '').split(',').map(s=>s.trim()).filter(Boolean),
+      diminutivo: (form.variant_diminutivo?.value || '').split(',').map(s=>s.trim()).filter(Boolean),
+      aumentativo: (form.variant_aumentativo?.value || '').split(',').map(s=>s.trim()).filter(Boolean),
     };
 
+    // Senses + examples from the DOM
     const senses = [];
-    document.querySelectorAll(".sentido-block").forEach((block, idx) => {
+    document.querySelectorAll('.sentido-block').forEach((block, idx) => {
       const n = block.dataset.sentido;
-      const def = (document.getElementById(`definicion_${n}`)?.value || "").trim();
+      const def = (document.getElementById(`definicion_${n}`)?.value || '').trim();
 
       const sense = {
-        id: `s${idx + 1}`,
-        tag_word_class: (form[`clase_${n}`]?.value || "").split(",").map(s => s.trim()).filter(Boolean),
-        tag_general: (form[`etiquetas_${n}`]?.value || "").split(",").map(s => s.trim()).filter(Boolean),
+        id: `s${idx+1}`,
+        tag_word_class: (form[`clase_${n}`]?.value || '').split(',').map(s=>s.trim()).filter(Boolean),
+        tag_general:    (form[`etiquetas_${n}`]?.value || '').split(',').map(s=>s.trim()).filter(Boolean),
         definition: def,
-        equivalents: (form[`equivalentes_${n}`]?.value || "").split(",").map(s => s.trim()).filter(Boolean),
+        equivalents:   (form[`equivalentes_${n}`]?.value || '').split(',').map(s=>s.trim()).filter(Boolean),
         see_also: [],
         examples: []
       };
 
-      // Collect examples for this sense
-      block.querySelectorAll(".example-item").forEach(exItem => {
-        const es = exItem.querySelector(`textarea[name="example_sentence_${n}[]"]`)?.value.trim() || "";
-        const en = exItem.querySelector(`textarea[name="example_translation_${n}[]"]`)?.value.trim() || "";
-        const kind = exItem.querySelector(`select[name="example_source_kind_${n}[]"]`)?.value || "";
+      // Examples
+      block.querySelectorAll('.example-item').forEach(ex => {
+        const es   = ex.querySelector(`textarea[name="example_sentence_${n}[]"]`)?.value.trim() || '';
+        const en   = ex.querySelector(`textarea[name="example_translation_${n}[]"]`)?.value.trim() || '';
+        const kind = ex.querySelector(`select[name="example_source_kind_${n}[]"]`)?.value || '';
 
-                const source = {};
-                if (kind) {
-                  source.kind = kind;
-
-                  if (kind === "pelicula") {
-                    const wrap = exItem.querySelector('.source-pelicula');
-                    source.title = wrap?.querySelector(`[name="example_source_title_${n}[]"]`)?.value || "";
-                    source.year  = wrap?.querySelector(`[name="example_source_year_${n}[]"]`)?.value || "";
-                  } else if (kind === "serie") {
-                    const wrap = exItem.querySelector('.source-serie');
-                    source.title   = wrap?.querySelector(`[name="example_source_title_${n}[]"]`)?.value || "";
-                    source.year    = wrap?.querySelector(`[name="example_source_year_${n}[]"]`)?.value || "";
-                    source.season  = wrap?.querySelector(`[name="example_source_season_${n}[]"]`)?.value || "";
-                    source.episode = wrap?.querySelector(`[name="example_source_episode_${n}[]"]`)?.value || "";
-                  } else if (kind === "redes") {
-                    source.handle = exItem.querySelector(`[name="example_source_handle_${n}[]"]`)?.value || "";
-                    source.url    = exItem.querySelector(`[name="example_source_url_${n}[]"]`)?.value || "";
-                  } else if (kind === "cancion") {
-                    source.song   = exItem.querySelector(`[name="example_source_song_${n}[]"]`)?.value || "";
-                    source.artist = exItem.querySelector(`[name="example_source_artist_${n}[]"]`)?.value || "";
-                  } else if (kind === "otro") {
-                    source.text = exItem.querySelector(`[name="example_source_text_${n}[]"]`)?.value || "";
-                  }
-                }
-
-        // Only push if something meaningful exists (text or source or linked words)
-        const linkedCSV = exItem.querySelector('input.linked-hidden')?.value || '';
-        const linked_words = linkedCSV
-          .split(',')
-          .map(s => s.trim())
-          .filter(Boolean);
-
-        if (es || en || Object.keys(source).length || linked_words.length) {
-          const exObj = { es, en, source, linked_words };
-
-          // If a file is attached for this example, include the final saved path
-          const audioInput = exItem.querySelector(`input[type="file"][name="example_audio_${n}[]"]`);
-          if (audioInput?.files?.length) {
-            const orig = audioInput.files[0].name;
-            const safeName = orig.normalize('NFKD').replace(/[^\w.\-]+/g, '_');
-            const serverSlug = word
-              .toLowerCase()
-              .replace(/ñ/g, 'n')
-              .replace(/[^\p{L}\p{N} ]/gu, '-')
-              .replace(/ /g, '-');
-            exObj.audio = `static/audio/examples/${serverSlug}/${safeName}`;
+        const source = {};
+        if (kind) {
+          source.kind = kind;
+          if (kind === 'pelicula') {
+            source.title = ex.querySelector(`[name="example_source_title_${n}[]"]`)?.value || '';
+            source.year  = ex.querySelector(`[name="example_source_year_${n}[]"]`)?.value  || '';
+          } else if (kind === 'serie') {
+            source.title   = ex.querySelector(`[name="example_source_title_${n}[]"]`)?.value   || '';
+            source.year    = ex.querySelector(`[name="example_source_year_${n}[]"]`)?.value    || '';
+            source.season  = ex.querySelector(`[name="example_source_season_${n}[]"]`)?.value  || '';
+            source.episode = ex.querySelector(`[name="example_source_episode_${n}[]"]`)?.value || '';
+          } else if (kind === 'redes') {
+            source.handle = ex.querySelector(`[name="example_source_handle_${n}[]"]`)?.value || '';
+            source.url    = ex.querySelector(`[name="example_source_url_${n}[]"]`)?.value    || '';
+          } else if (kind === 'cancion') {
+            source.song   = ex.querySelector(`[name="example_source_song_${n}[]"]`)?.value   || '';
+            source.artist = ex.querySelector(`[name="example_source_artist_${n}[]"]`)?.value || '';
+          } else if (kind === 'otro') {
+            source.text = ex.querySelector(`[name="example_source_text_${n}[]"]`)?.value || '';
           }
-
-          sense.examples.push(exObj);
         }
+
+        const exObj = { es, en, source };
+
+        // If user selected a new example audio file, predict the saved path (matches server convention)
+        const fileInput = ex.querySelector(`input[type="file"][name="example_audio_${n}[]"]`);
+        if (fileInput?.files?.length) {
+          const orig = fileInput.files[0].name;
+          const safe = orig.normalize('NFKD').replace(/[^\w.\-]+/g, '_');
+          const serverSlug = word.toLowerCase()
+            .replace(/ñ/g,'n')
+            .replace(/[^\p{L}\p{N} ]/gu,'-')
+            .replace(/ /g,'-');
+          exObj.audio = `/static/audio/examples/${serverSlug}/${safe}`;
+        }
+
+        if (es || en || Object.keys(source).length) sense.examples.push(exObj);
       });
 
       if (sense.definition) senses.push(sense);
     });
 
-    if (!senses.length) { alert("Agregá al menos un sentido con definición."); return; }
+    if (!senses.length) { alert('Agregá al menos un sentido con definición.'); return; }
 
-    // Build form-data payload
+    // Build payload
     const fd = new FormData();
-    fd.set("word", word);
-    fd.set("variants", JSON.stringify(variants));
-    fd.set("senses", JSON.stringify(senses));
+    fd.set('original_word', originalWord);
+    fd.set('word', word);
+    fd.set('variants', JSON.stringify(variants));
+    fd.set('senses', JSON.stringify(senses));
 
     if (form.audio_word?.files?.length) {
-      fd.set("audio_word", form.audio_word.files[0]);
+      fd.set('audio_word', form.audio_word.files[0]);
     }
 
-    // Attach any example audios present
+    // Attach any example audio files present
     form.querySelectorAll('input[type="file"][name^="example_audio_"]').forEach(inp => {
-      [...(inp.files || [])].forEach(f => fd.append(inp.name.replace("[]", ""), f));
+      [...(inp.files || [])].forEach(f => fd.append(inp.name.replace('[]',''), f));
     });
 
     try {
-      const res = await fetch(`/admin/glosario/{{ country_code }}/add`, { method: "POST", body: fd });
+      const res = await fetch(`/admin/glosario/{{ country_code }}/update`, { method:'POST', body: fd });
       const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || "No se pudo guardar");
-      alert(`✅ Entrada guardada: ${word}`);
-      // Hard reload with cache-buster so the grid re-renders from disk
-      window.location.href = `/admin/glosario/{{ country_code }}?t=${Date.now()}`;
-    } catch (err) {
-      console.error(err);
-      alert("❌ Error al guardar: " + err.message);
-    }
-  }, { once: true });
-}
-
-async function editEntry(word, entryFromCard = null) {
-  const entry = entryFromCard || null;
-
-  const html = await fetch("{{ url_for('static', filename='admin_forms/add_entry_form.html') }}").then(r => r.text());
-  document.querySelector("#formModal .modal-body").innerHTML = html;
-
-  // Show modal
-  document.getElementById("formModal").style.display = "block";
-
-  setTimeout(() => {
-    initQuillEditors();
-    initAddFormHandlers();
-    initExampleSourceToggles(document);
-
-    // 🆕 Linked words for EDIT modal too
-    _ppWordList = collectExistingWords();
-    populateLinkedWordsDatalist(document);
-    initLinkedWordsDelegates(document);
-
-    if (entry) {
-      // Prefill AFTER datalist/delegates exist so chips & hidden CSV work
-      setTimeout(() => prefillFormForEdit(entry), 0);
-    }
-    wireEditSubmit(word);
-  }, 0);
-}
-
-/* ---------- delete (matches POST /delete) ---------- */
-function deleteEntry(word) {
-  if (!confirm(`⚠️ Esto eliminará la entrada "${word}".\n¿Querés continuar?`)) return;
-  fetch(`/admin/glosario/{{ country_code }}/delete`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ word })
-  })
-  .then(r => r.json())
-  .then(d => d.success ? (alert("Entrada eliminada"), location.reload())
-                       : alert(d.error || "Error al eliminar"))
-  .catch(err => { console.error(err); alert("Error al eliminar la entrada"); });
-}
-
-// ✅ Make globally callable
-window.editEntry = editEntry;
-
-function prefillFormForEdit(entry) {
-  const form = document.getElementById("addEntryForm");
-  if (!form) return;
-  form.word.value = entry.word || "";
-
-  // variants
-  const v = entry.variants || {};
-  form.variant_ms.value = (v.ms || []).join(", ");
-  form.variant_mp.value = (v.mp || []).join(", ");
-  form.variant_fs.value = (v.fs || []).join(", ");
-  form.variant_fp.value = (v.fp || []).join(", ");
-  form.variant_diminutivo.value = (v.diminutivo || []).join(", ");
-  form.variant_aumentativo.value = (v.aumentativo || []).join(", ");
-
-  // sentidos
-  const base = document.querySelector('.sentido-block[data-sentido="1"]');
-  const extra = document.getElementById('extra-sentidos');
-  extra.innerHTML = "";
-
-  (entry.senses || []).forEach((s, i) => {
-    const n = i + 1;
-    let block;
-    if (n === 1) {
-      block = base;
-    } else {
-      document.getElementById('addSentidoBtn').click();
-      block = document.querySelector(`.sentido-block[data-sentido="${n}"]`);
-    }
-
-    // clase / etiquetas / equivalentes
-    const c = block.querySelector(`#clase_${n}`);      if (c) c.value = (s.tag_word_class || []).join(", ");
-    const e = block.querySelector(`#etiquetas_${n}`);  if (e) e.value = (s.tag_general || []).join(", ");
-    const eq = block.querySelector(`#equivalentes_${n}`); if (eq) eq.value = (s.equivalents || []).join(", ");
-
-    // definición
-    const hidden = block.querySelector(`#definicion_${n}`);
-    if (hidden) {
-      hidden.value = s.definition || "";
-      const qDiv = block.querySelector(`#editor_definicion_${n}`);
-      const q = qDiv && qDiv.__quill;
-      if (q) q.root.innerHTML = s.definition || "";
-    }
-
-// examples
-    const examplesContainer = block.querySelector('.examples-container');
-    if (examplesContainer) {
-      // Clear template/blank rows so edit shows ONLY what's saved
-      examplesContainer.innerHTML = "";
-
-      const list = Array.isArray(s.examples) ? s.examples : [];
-      list.forEach(ex => {
-        const addBtn = block.querySelector('.add-example');
-        if (addBtn) addBtn.click();
-
-        const exBlock = examplesContainer.lastElementChild;
-        if (!exBlock) return;
-
-        // Texts + preserve existing audio in a hidden input so Edit doesn't wipe it
-        const esField = exBlock.querySelector(`textarea[name="example_sentence_${n}[]"]`);
-        const enField = exBlock.querySelector(`textarea[name="example_translation_${n}[]"]`);
-        if (esField) esField.value = ex.es || '';
-        if (enField) enField.value = ex.en || '';
-
-        // 🔒 Keep current audio path (used on submit if no new file is uploaded)
-        let hiddenAudio = exBlock.querySelector(`input[type="hidden"][name="example_existing_audio_${n}[]"]`);
-        if (!hiddenAudio) {
-          hiddenAudio = document.createElement('input');
-          hiddenAudio.type = 'hidden';
-          hiddenAudio.name = `example_existing_audio_${n}[]`;
-          exBlock.appendChild(hiddenAudio);
-        }
-        hiddenAudio.value = ex.audio || '';
-
-        // Source kind + reveal relevant fields
-        const kind = ex?.source?.kind || '';
-        const kindField = exBlock.querySelector(`select[name="example_source_kind_${n}[]"]`);
-        if (kindField) {
-          kindField.value = kind;
-          kindField.dispatchEvent(new Event('change'));
-        }
-
-        // Source-specific fields (scope to the visible wrapper so we don't hit the hidden blocks)
-        if (kind === "pelicula") {
-          const wrap  = exBlock.querySelector('.source-pelicula');
-          const title = wrap?.querySelector(`[name="example_source_title_${n}[]"]`);
-          const year  = wrap?.querySelector(`[name="example_source_year_${n}[]"]`);
-          if (title) title.value = ex.source.title || '';
-          if (year)  year.value  = ex.source.year  || '';
-        } else if (kind === "serie") {
-          const wrap    = exBlock.querySelector('.source-serie');
-          const title   = wrap?.querySelector(`[name="example_source_title_${n}[]"]`);
-          const year    = wrap?.querySelector(`[name="example_source_year_${n}[]"]`);
-          const season  = wrap?.querySelector(`[name="example_source_season_${n}[]"]`);
-          const episode = wrap?.querySelector(`[name="example_source_episode_${n}[]"]`);
-          if (title)   title.value   = ex.source.title   || '';
-          if (year)    year.value    = ex.source.year    || '';
-          if (season)  season.value  = ex.source.season  || '';
-          if (episode) episode.value = ex.source.episode || '';
-        } else if (kind === "redes") {
-          const wrap   = exBlock.querySelector('.source-redes');
-          const handle = wrap?.querySelector(`[name="example_source_handle_${n}[]"]`);
-          const url    = wrap?.querySelector(`[name="example_source_url_${n}[]"]`);
-          if (handle) handle.value = ex.source.handle || '';
-          if (url)    url.value    = ex.source.url    || '';
-        } else if (kind === "cancion") {
-          const wrap   = exBlock.querySelector('.source-cancion');
-          const song   = wrap?.querySelector(`[name="example_source_song_${n}[]"]`);
-          const artist = wrap?.querySelector(`[name="example_source_artist_${n}[]"]`);
-          if (song)   song.value   = ex.source.song   || '';
-          if (artist) artist.value = ex.source.artist || '';
-        } else if (kind === "otro") {
-          const wrap = exBlock.querySelector('.source-otro');
-          const text = wrap?.querySelector(`[name="example_source_text_${n}[]"]`);
-          if (text) text.value = ex.source.text || '';
-        }
-        
-        // 🆕 Prefill linked glossary words (chips + hidden CSV)
-        // Accept either ex.linked_words (new) or ex.linked (legacy) if present.
-        const linked = Array.isArray(ex.linked_words)
-          ? ex.linked_words
-          : (Array.isArray(ex.linked) ? ex.linked : []);
-
-        const linkedWrap = exBlock.querySelector('.linked-words');
-        if (linkedWrap && linked.length) {
-          // Reset hidden first, then add chips (which also updates hidden CSV)
-          const hiddenCSV = linkedWrap.querySelector('.linked-hidden');
-          if (hiddenCSV) hiddenCSV.value = '';
-          linked.forEach(w => addLinkedChip(linkedWrap, w));
-        }
-      });
-    }
-  });
-} 
-
-function wireEditSubmit(originalWord) {
-  const form = document.getElementById("addEntryForm");
-  if (!form) return;
-
-  // Capture the submit and stop others (like the ADD handler) from firing.
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    e.stopImmediatePropagation();
-
-    const word = (form.word?.value || "").trim();
-    if (!word) { alert("La palabra es requerida"); return; }
-
-    const variants = {
-      ms: (form.variant_ms?.value || "").split(",").map(s => s.trim()).filter(Boolean),
-      mp: (form.variant_mp?.value || "").split(",").map(s => s.trim()).filter(Boolean),
-      fs: (form.variant_fs?.value || "").split(",").map(s => s.trim()).filter(Boolean),
-      fp: (form.variant_fp?.value || "").split(",").map(s => s.trim()).filter(Boolean),
-      diminutivo: (form.variant_diminutivo?.value || "").split(",").map(s => s.trim()).filter(Boolean),
-      aumentativo: (form.variant_aumentativo?.value || "").split(",").map(s => s.trim()).filter(Boolean),
-    };
-
-    const senses = [];
-    document.querySelectorAll(".sentido-block").forEach((block, idx) => {
-      const n = block.dataset.sentido;
-      const def = (document.getElementById(`definicion_${n}`)?.value || "").trim();
-      const sense = {
-        id: `s${idx + 1}`,
-        tag_word_class: (form[`clase_${n}`]?.value || "").split(",").map(s => s.trim()).filter(Boolean),
-        tag_general: (form[`etiquetas_${n}`]?.value || "").split(",").map(s => s.trim()).filter(Boolean),
-        definition: def,
-        equivalents: (form[`equivalentes_${n}`]?.value || "").split(",").map(s => s.trim()).filter(Boolean),
-        see_also: [],
-        examples: []
-      };
-
-      block.querySelectorAll(".example-item").forEach(exItem => {
-        const es = exItem.querySelector(`textarea[name="example_sentence_${n}[]"]`)?.value.trim() || "";
-        const en = exItem.querySelector(`textarea[name="example_translation_${n}[]"]`)?.value.trim() || "";
-        const kind = exItem.querySelector(`select[name="example_source_kind_${n}[]"]`)?.value || "";
-                const source = {};
-                if (kind) {
-                  source.kind = kind;
-
-                  if (kind === "pelicula") {
-                    const wrap = exItem.querySelector('.source-pelicula');
-                    source.title = wrap?.querySelector(`[name="example_source_title_${n}[]"]`)?.value || "";
-                    source.year  = wrap?.querySelector(`[name="example_source_year_${n}[]"]`)?.value || "";
-                  } else if (kind === "serie") {
-                    const wrap = exItem.querySelector('.source-serie');
-                    source.title   = wrap?.querySelector(`[name="example_source_title_${n}[]"]`)?.value || "";
-                    source.year    = wrap?.querySelector(`[name="example_source_year_${n}[]"]`)?.value || "";
-                    source.season  = wrap?.querySelector(`[name="example_source_season_${n}[]"]`)?.value || "";
-                    source.episode = wrap?.querySelector(`[name="example_source_episode_${n}[]"]`)?.value || "";
-                  } else if (kind === "redes") {
-                    source.handle = exItem.querySelector(`[name="example_source_handle_${n}[]"]`)?.value || "";
-                    source.url    = exItem.querySelector(`[name="example_source_url_${n}[]"]`)?.value || "";
-                  } else if (kind === "cancion") {
-                    source.song   = exItem.querySelector(`[name="example_source_song_${n}[]"]`)?.value || "";
-                    source.artist = exItem.querySelector(`[name="example_source_artist_${n}[]"]`)?.value || "";
-                  } else if (kind === "otro") {
-                    source.text = exItem.querySelector(`[name="example_source_text_${n}[]"]`)?.value || "";
-                  }
-                }
-
-        // Gather linked words from chips (hidden CSV → array)
-        const linkedCSV = exItem.querySelector('input.linked-hidden')?.value || '';
-        const linked_words = linkedCSV
-          .split(',')
-          .map(s => s.trim())
-          .filter(Boolean);
-
-        // Handle audio: set path for new file, otherwise preserve existing
-        const exObj = { es, en, source, linked_words };
-        const audioInput = exItem.querySelector(`input[type="file"][name="example_audio_${n}[]"]`);
-        const existingAudio = exItem.querySelector(`input[name="example_existing_audio_${n}[]"]`)?.value || "";
-
-        if (audioInput?.files?.length) {
-          const orig = audioInput.files[0].name;
-          // Approximate secure_filename
-          const safeName = orig.normalize('NFKD').replace(/[^\w.\-]+/g, '_');
-          // Match server slug logic for the examples folder
-          const serverSlug = word
-            .toLowerCase()
-            .replace(/ñ/g, 'n')
-            .replace(/[^\p{L}\p{N} ]/gu, '-')  // keep letters/numbers/spaces, others -> '-'
-            .replace(/ /g, '-');
-          exObj.audio = `static/audio/examples/${serverSlug}/${safeName}`;
-        } else if (existingAudio) {
-          exObj.audio = existingAudio;
-        }
-
-        if (es || en || Object.keys(source).length || linked_words.length) {
-          sense.examples.push(exObj);
-        }
-      });
-
-      if (sense.definition) senses.push(sense);
-    });
-
-    if (!senses.length) { alert("Agregá al menos un sentido con definición."); return; }
-
-    const fd = new FormData();
-    fd.set("original_word", originalWord);
-    fd.set("word", word);
-    fd.set("variants", JSON.stringify(variants));
-    fd.set("senses", JSON.stringify(senses));
-    if (form.audio_word?.files?.length) fd.set("audio_word", form.audio_word.files[0]);
-
-    form.querySelectorAll('input[type="file"][name^="example_audio_"]').forEach(inp => {
-      [...(inp.files || [])].forEach(f => fd.append(inp.name.replace("[]", ""), f));
-    });
-
-    try {
-      const res = await fetch(`/admin/glosario/{{ country_code }}/update`, { method: "POST", body: fd });
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || "No se pudo actualizar");
-      alert("✅ Entrada actualizada");
+      if (!res.ok || !data.success) throw new Error(data.error || 'No se pudo actualizar');
+      alert('✅ Entrada actualizada');
       location.reload();
     } catch (err) {
       console.error(err);
-      alert("❌ Error al actualizar: " + err.message);
+      alert('❌ Error al actualizar: ' + err.message);
     }
-  }, { once: true, capture: true });
+  });
 }
-
-/* ---------- global helpers ---------- */
-function closeFormModal() {
-  document.getElementById("formModal").style.display = "none";
-}
-
-window.openAddEntryModal = openAddEntryModal;
-
-// === Delete entry helper ===
-function getCountryCodeFromPath() {
-  const parts = (location.pathname || "").split("/").filter(Boolean);
-  const idx = parts.indexOf("admin");
-  return idx >= 0 && parts[idx + 1] ? parts[idx + 1].toLowerCase() : "";
-}
-
-/**
- * Ask for confirmation, then call the backend to delete an entry by word.
- * On success, removes the card from the DOM or reloads as fallback.
- * @param {string} word - The dictionary "word" key to delete.
- * @param {HTMLElement} triggerEl - (Optional) A button inside the card (used to find/remove the card).
- */
-async function confirmAndDelete(word, triggerEl) {
-  if (!word) { alert("Falta la palabra"); return; }
-
-  const ok = confirm(`¿Seguro que querés eliminar “${word}”? Esta acción no se puede deshacer.`);
-  if (!ok) return;
-
-  const country = getCountryCodeFromPath();
-
+</script>
+<script>
+/* ---------- Open the editor ---------- */
+async function editEntry(word, entry) {
   try {
-    const resp = await fetch(`/admin/${country}/glosario/delete/${encodeURIComponent(word)}`, {
-      method: "DELETE",
-      headers: { "Accept": "application/json" }
-    });
+    const resp = await fetch("{{ url_for('static', filename='admin_forms/add_entry_form.html') }}", { cache: "no-store" });
+    const html = await resp.text();
+    openFormWithHTML(html, `Editar: ${word}`);
 
-    if (!resp.ok) {
-      const txt = await resp.text().catch(() => "");
-      throw new Error(`Error ${resp.status}: ${txt || "No se pudo eliminar la entrada"}`);
-    }
+    // After the form DOM is in, wire behaviors + init Quill, then prefill + hook submit
+    setTimeout(() => {
+      attachExampleBehaviors(document);
+      initQuillEditors(document);
+      prefillFromEntry(entry || { word });
+      wireEditSubmit(word);           // ← NEW: make “Guardar” work
+    }, 0);
 
-    // Try to remove the card without reloading
-    if (triggerEl) {
-      const card = triggerEl.closest(".admin-entry-card") || triggerEl.closest(".entry-card");
-      if (card) {
-        card.remove();
-        return;
-      }
-    }
-
-    // Fallback
-    location.reload();
-  } catch (err) {
-    alert(`❌ No se pudo eliminar: ${err.message}`);
-    console.error(err);
+  } catch (e) {
+    console.error(e);
+    alert("No se pudo cargar el editor.");
   }
 }
 
+/* ---------- Optional: open blank form for “Nueva entrada” ---------- */
+document.getElementById('btnNewEntry')?.addEventListener('click', async () => {
+  try {
+    const resp = await fetch("{{ url_for('static', filename='admin_forms/add_entry_form.html') }}", { cache: "no-store" });
+    const html = await resp.text();
+    openFormWithHTML(html, "Nueva entrada");
+    setTimeout(() => {
+      attachExampleBehaviors(document);
+      initQuillEditors(document);
+    }, 0);
+  } catch (e) {
+    console.error(e);
+    alert("No se pudo cargar el editor.");
+  }
+});
 </script>
+
 {% endblock %}
