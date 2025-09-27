@@ -867,3 +867,198 @@ html, body {
 .admin-bar a:hover {
   color:#2563eb;
 }
+
+/* === Exercise Card Styles === */
+.pp-ex-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  margin: .5rem 0;
+}
+.pp-ex-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+.pp-ex-card__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .75rem 1rem;
+}
+.pp-ex-card__icon {
+  flex: 0 0 auto;
+  font-weight: 600;
+  font-size: .9rem;
+  color: #2563eb;
+}
+.pp-ex-card__body {
+  flex: 1 1 auto;
+  padding: 0 .75rem;
+}
+.pp-ex-card__title {
+  font-weight: 600;
+  font-size: 1rem;
+  color: #111827;
+}
+.pp-ex-card__levels {
+  margin-top: .25rem;
+}
+.pp-ex-chip {
+  display: inline-block;
+  padding: 0.15rem .5rem;
+  border-radius: 8px;
+  font-size: .75rem;
+  font-weight: 500;
+  margin-right: .25rem;
+  background: #f3f4f6;
+  color: #374151;
+}
+.pp-ex-chip--level {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+.pp-ex-card__cta button {
+  border: none;
+  background: #2563eb;
+  color: #fff;
+  border-radius: 8px;
+  padding: .35rem .75rem;
+  cursor: pointer;
+  font-size: .85rem;
+}
+.pp-ex-card__cta button:hover {
+  background: #1e40af;
+}
+
+/* === Exercise Modal Styles === */
+.pp-ex-modal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  z-index: 1000;
+}
+.pp-ex-modal[aria-hidden="false"] {
+  display: block;
+}
+.pp-ex-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+}
+.pp-ex-modal__dialog {
+  position: relative;
+  max-width: 720px;
+  margin: 5vh auto;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.pp-ex-modal__header,
+.pp-ex-modal__footer {
+  padding: .75rem 1rem;
+  background: #f9fafb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.pp-ex-modal__title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+}
+.pp-ex-modal__close {
+  border: none;
+  background: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  color: #6b7280;
+}
+.pp-ex-modal__close:hover {
+  color: #111827;
+}
+.pp-ex-modal__body {
+  padding: 1rem;
+  overflow-y: auto;
+  max-height: 70vh;
+}
+.pp-ex-btn {
+  border: none;
+  border-radius: 8px;
+  padding: .4rem .85rem;
+  font-size: .85rem;
+  cursor: pointer;
+}
+.pp-ex-btn--secondary {
+  background: #e5e7eb;
+  color: #111827;
+}
+.pp-ex-btn--secondary:hover {
+  background: #d1d5db;
+}
+
+/* === Exercise Carousel === */
+.pp-ex-carousel {
+  font-size: 0.95rem;
+}
+
+.pp-ex-q {
+  background: #f9fafb;
+  padding: 1rem;
+  border-radius: 10px;
+}
+
+.pp-ex-prompt {
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+  color: #111827;
+}
+
+.pp-ex-choices label {
+  margin-left: 0.35rem;
+}
+
+.pp-ex-nav button {
+  border: none;
+  border-radius: 8px;
+  padding: .4rem .85rem;
+  font-size: .85rem;
+  cursor: pointer;
+  background: #2563eb;
+  color: #fff;
+}
+.pp-ex-nav button:hover {
+  background: #1e40af;
+}
+.pp-ex-nav button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* === Exercise Hints === */
+.pp-ex-hints {
+  margin-top: .5rem;
+}
+
+.pp-ex-hint-btn {
+  border: none;
+  border-radius: 8px;
+  padding: .4rem .85rem;
+  font-size: .85rem;
+  cursor: pointer;
+  background: #10b981; /* teal/green */
+  color: #fff;
+}
+.pp-ex-hint-btn:hover {
+  background: #0ea5a4;
+}
+.pp-ex-hint-text {
+  margin-top: .35rem;
+  color: #065f46; /* deep teal for hint text */
+  line-height: 1.35;
+}

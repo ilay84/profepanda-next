@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Prueba de Ejercicios{% endblock %}
+
+{% block content %}
+<h2 style="margin:1rem 0;">Prueba de Ejercicios</h2>
+<p style="margin:.25rem 0 1rem;color:#6b7280;">Hacé clic en “Abrir” para probar el modal.</p>
+
+{# ▶️ Card 1: True/False #}
+{% set ref = {
+  "exercise_id": "ex_001",
+  "version": 1,
+  "title": "SER vs ESTAR — Calentamiento",
+  "type": "true_false",
+  "levelTags": ["A2"]
+} %}
+{% include "_exercise_card.html" %}
+
+{# ▶️ Card 2: MCQ #}
+{% set ref = {
+  "exercise_id": "ex_002",
+  "version": 2,
+  "title": "Pretérito vs Imperfecto — Básico",
+  "type": "mcq",
+  "levelTags": ["B1"]
+} %}
+{% include "_exercise_card.html" %}
+
+{# ▶️ Card 3: FITB #}
+{% set ref = {
+  "exercise_id": "ex_003",
+  "version": 1,
+  "title": "Presente de SER — Completar",
+  "type": "fitb",
+  "levelTags": ["A1"]
+} %}
+{% include "_exercise_card.html" %}
+{% endblock %}

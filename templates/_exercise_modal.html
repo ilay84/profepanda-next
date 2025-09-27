@@ -1,0 +1,23 @@
+{# templates/_exercise_modal.html #}
+<div id="pp-ex-modal" class="pp-ex-modal" aria-hidden="true">
+  <div class="pp-ex-modal__backdrop" data-close="true"></div>
+
+  <div class="pp-ex-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="pp-ex-modal-title">
+    <div class="pp-ex-modal__header">
+      <h3 id="pp-ex-modal-title" class="pp-ex-modal__title">Ejercicio</h3>
+      <button class="pp-ex-modal__close" type="button" aria-label="Cerrar" data-close="true">✕</button>
+    </div>
+
+    <div class="pp-ex-modal__body">
+      {# Placeholder — JS will inject the carousel/exercise here #}
+      <div class="pp-ex-modal__content">
+        <p style="margin:0;color:#6b7280;">Cargando ejercicio…</p>
+      </div>
+    </div>
+
+    <div class="pp-ex-modal__footer" style="display:flex;justify-content:space-between;align-items:center;padding:.75rem 1rem;background:#f9fafb;border-top:1px solid #e5e7eb;">
+      <button class="pp-ex-btn pp-ex-btn--secondary" type="button" data-close="true">Cerrar</button>
+      <img src="{{ url_for('static', filename='assets/exercises.png') }}" alt="ProfePanda ejercicios" style="height:36px;max-height:44px;">
+    </div>
+  </div>
+</div>

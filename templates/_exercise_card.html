@@ -1,0 +1,46 @@
+{# templates/_exercise_card.html #}
+{# Context expected:
+   ref = {
+     "exercise_id": "ex_001",
+     "version": 3,
+     "title": "SER vs ESTAR — Calentamiento",
+     "type": "true_false",        # true_false | mcq | fitb | dnd
+     "levelTags": ["A2"],         # optional list
+     "tags": []                   # optional list
+   }
+#}
+
+<div class="pp-ex-card"
+     role="button"
+     tabindex="0"
+     aria-label="Abrir ejercicio: {{ ref.title }}"
+     data-exercise-id="{{ ref.exercise_id }}"
+     data-exercise-version="{{ ref.version }}"
+     data-exercise-type="{{ ref.type|default('mcq') }}">
+
+  <div class="pp-ex-card__inner">
+    <div class="pp-ex-card__icon">
+      {# Simple icon stub by type (can be replaced with SVG later) #}
+      {% set t = ref.type or 'mcq' %}
+      <span class="pp-ex-card__type">
+        {% if t == 'true_false' %}T/F{% elif t == 'mcq' %}MCQ{% elif t == 'fitb' %}FITB{% elif t == 'dnd' %}D&amp;D{% else %}EX{% endif %}
+      </span>
+    </div>
+
+    <div class="pp-ex-card__body">
+      <div class="pp-ex-card__title">{{ ref.title }}</div>
+
+      {% if ref.levelTags %}
+      <div class="pp-ex-card__levels">
+        {% for lvl in ref.levelTags %}
+          <span class="pp-ex-chip pp-ex-chip--level">{{ lvl }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="pp-ex-card__cta">
+      <button class="pp-ex-card__open">Abrir</button>
+    </div>
+  </div>
+</div>

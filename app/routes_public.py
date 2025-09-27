@@ -552,6 +552,10 @@ def public_pages_index():
     pages = sorted(pages, key=lambda p: p.get("created_at", ""), reverse=True)
     return render_template("public_pages_index.html", pages=pages)
 
+@bp.route("/exercises/test")
+def exercises_test():
+    return render_template("exercises_test.html")
+
 # === BEGIN: Public Page view ===
 @bp.route("/pages/<slug>", methods=["GET"])
 def public_page(slug):
