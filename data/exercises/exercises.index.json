@@ -1,0 +1,17 @@
+{
+  "exercises": [
+    {
+      "id": "a7996fe28d2d4b3583b9243c83ed4e68",
+      "type": "tf",
+      "title": "¿Quién es?",
+      "pinned_version": 1,
+      "overrides": {},
+      "versions": [
+        {
+          "version": 1,
+          "path": "data/exercises/a7996fe28d2d4b3583b9243c83ed4e68@v1.json"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "id": "mcq_demo_1",
+  "type": "mcq",
+  "title": "MCQ Demo",
+  "version": 1,
+  "settings": {
+    "shuffle": true,
+    "pass_threshold": 0
+  },
+  "items": [
+    {
+      "id": "q1",
+      "prompt": "¿Cuál es la traducción correcta?",
+      "choices": [
+        { "key": "A", "label": "house" },
+        { "key": "B", "label": "car" },
+        { "key": "C", "label": "tree" }
+      ],
+      "answer": "A",
+      "feedback_correct": "Bien.",
+      "feedback_incorrect": "No, es “house”.",
+      "hint": "Pensá en 'casita'.",
+      "image": "mcq/mcq_demo_1/img1.png",
+      "audio": null,
+      "video_iframe": null,
+      "video_mp4": null
+    },
+    {
+      "id": "q2",
+      "prompt": "Seleccioná la opción que mejor completa la idea.",
+      "choices": [
+        { "key": "A", "label": "water" },
+        { "key": "B", "label": "fire" },
+        { "key": "C", "label": "air" }
+      ],
+      "answer": "B",
+      "feedback_correct": "¡Eso!",
+      "feedback_incorrect": "Probá otra vez.",
+      "hint": "Pensá en calor.",
+      "video_iframe": "https://www.youtube.com/embed/dQw4w9WgXcQ"
+    }
+  ]
+}

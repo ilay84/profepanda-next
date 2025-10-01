@@ -1,0 +1,36 @@
+{
+  "id": "mcq_demo",
+  "title": "Ejercicio de opción múltiple",
+  "version": 1,
+  "type": "mcq",
+  "settings": {
+    "shuffle": true,
+    "pass_threshold": 0
+  },
+  "items": [
+    {
+      "id": "q1",
+      "prompt": "¿Cuál de estas es una comida típica de Argentina?",
+      "choices": [
+        { "key": "A", "label": "Asado" },
+        { "key": "B", "label": "Sushi", "feedback_incorrect": "No, eso es japonés." },
+        { "key": "C", "label": "Pizza de pepperoni", "feedback_incorrect": "Es más común en EE.UU." }
+      ],
+      "answer": "A",
+      "feedback_correct": "¡Exacto, el asado es típico argentino!",
+      "feedback_incorrect": "Pensá en la parrilla."
+    },
+    {
+      "id": "q2",
+      "prompt": "¿Qué ciudad es la capital de Argentina?",
+      "choices": [
+        { "key": "A", "label": "Rosario", "feedback_incorrect": "No, aunque es una ciudad importante." },
+        { "key": "B", "label": "Córdoba", "feedback_incorrect": "No, es la segunda ciudad más grande." },
+        { "key": "C", "label": "Buenos Aires" }
+      ],
+      "answer": "C",
+      "feedback_correct": "¡Correcto! Buenos Aires es la capital.",
+      "feedback_incorrect": "Recordá la capital del país."
+    }
+  ]
+}

@@ -49,32 +49,57 @@
     // Existing result (back/forward)
     const existing = state.responses[q.id];
     const fbText = existing
-      ? (existing.isCorrect ? (q.feedback && q.feedback.correct || "¡Correcto!") : (q.feedback && q.feedback.incorrect || "No es correcto."))
+      ? (existing.isCorrect
+        ? (q.feedback_correct ?? (q.feedback && q.feedback.correct) ?? "¡Correcto!")
+        : (q.feedback_incorrect ?? (q.feedback && q.feedback.incorrect) ?? "No es correcto."))
       : "";
     const fbColor = existing ? (existing.isCorrect ? "#0a7f2e" : "#b91c1c") : "#6b7280";
 
-    // Render block
+    // Render block (polished media sizing)
     slide.innerHTML = `
       <div class="pp-ex-q">
-        ${q.image ? `<div class="pp-ex-image" style="margin-bottom:.75rem;">
+        ${q.image ? `<figure class="pp-ex-image" style="margin:0 0 .9rem 0;">
           <img
             src="/static/exercises/images/${q.image}"
             alt="${(q.image_alt || "").replace(/"/g, "&quot;")}"
             loading="lazy"
-            onerror="this.closest('.pp-ex-image').style.display='none';"
-            style="max-width:100%;height:auto;border-radius:8px;display:block;"
+            onerror="this.style.border='2px solid #f59e0b';this.alt='Imagen no encontrada';"
+            style="display:block;width:100%;max-height:360px;object-fit:contain;border-radius:10px;background:#f8fafc;"
           >
-          ${q.image_caption ? `<div class="pp-ex-image-cap" style="margin-top:.35rem;color:#6b7280;font-size:.85rem;text-align:center;">
+          ${q.image_caption ? `<figcaption style="margin-top:.4rem;color:#6b7280;font-size:.85rem;text-align:center;line-height:1.3;">
             ${(q.image_caption || "").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
-          </div>` : ""}
+          </figcaption>` : ""}
+        </figure>` : ""}
+
+        ${q.audio ? `<div class="pp-ex-audio" style="margin:0 0 .9rem 0;">
+          <audio controls
+                 src="${(q.audio || '').startsWith('http') ? q.audio : '/static/exercises/audio/' + q.audio}"
+                 style="width:100%;max-width:100%;outline:none;display:block;"></audio>
         </div>` : ""}
-        <div class="pp-ex-prompt" style="font-weight:600;margin-bottom:.5rem;">${q.prompt_html || ""}</div>
+
+        ${q.video_iframe ? `<div class="pp-ex-video" style="margin:0 0 .9rem 0;position:relative;width:100%;max-width:100%;border-radius:10px;overflow:hidden;background:#000;">
+          <div style="position:relative;padding-bottom:56.25%;height:0;">
+            <iframe
+              src="${q.video_iframe}"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen
+              style="position:absolute;inset:0;width:100%;height:100%;border:0;"></iframe>
+          </div>
+        </div>` : ""}
+
+        ${q.video_mp4 ? `<div class="pp-ex-video" style="margin:0 0 .9rem 0;">
+          <video controls
+                 src="${(q.video_mp4 || '').startsWith('http') ? q.video_mp4 : '/static/exercises/video/' + q.video_mp4}"
+                 style="display:block;width:100%;max-height:420px;border-radius:10px;background:#000;object-fit:contain;"></video>
+        </div>` : ""}
+
+        <div class="pp-ex-prompt" style="font-weight:600;margin-bottom:.6rem;">${q.prompt_html || ""}</div>
         <div class="pp-ex-choices">${choicesHtml || "<em>(sin opciones)</em>"}</div>
         <button class="pp-ex-check" type="button"
-          style="margin-top:.5rem;background:#2563eb;color:#fff;border:none;border-radius:8px;padding:.4rem .9rem;font-size:.85rem;${existing ? "display:none;cursor:default;opacity:0;" : "cursor:not-allowed;opacity:0.6;"}">
+          style="margin-top:.6rem;background:#2563eb;color:#fff;border:none;border-radius:8px;padding:.45rem .95rem;font-size:.9rem;${existing ? "display:none;cursor:default;opacity:0;" : "cursor:not-allowed;opacity:0.6;"}">
           Comprobar
         </button>
-        <div class="pp-ex-feedback" style="margin-top:.5rem;min-height:1.25rem;color:${fbColor};">
+        <div class="pp-ex-feedback" style="margin-top:.6rem;min-height:1.25rem;color:${fbColor};">
           ${fbText}
         </div>
       </div>
@@ -83,6 +108,49 @@
     const radios = slide.querySelectorAll(`input[name="${name}"]`);
     const btnCheck = slide.querySelector(".pp-ex-check");
     const fbEl = slide.querySelector(".pp-ex-feedback");
+
+    // Add a11y focus ring for media (inject once)
+    if (!document.getElementById('pp-ex-media-focus-style')) {
+      const st = document.createElement('style');
+      st.id = 'pp-ex-media-focus-style';
+      st.textContent = `
+        .pp-ex-audio:focus-within,
+        .pp-ex-video:focus-within {
+          outline: 3px solid #0ea5e9;
+          outline-offset: 4px;
+          border-radius: 12px;
+        }
+        .pp-ex-video video { border-radius: 10px; }
+      `;
+      document.head.appendChild(st);
+    }
+
+    // --- Hint UI (only if q.hint exists) ---
+    let hintBtn = null;
+    let hintDiv = null;
+    if (q.hint) {
+      hintBtn = document.createElement("button");
+      hintBtn.type = "button";
+      hintBtn.className = "pp-ex-hint-btn";
+      hintBtn.textContent = "💡";
+      hintBtn.title = "Ver pista";
+      hintBtn.style.cssText = "margin-top:.5rem;background:#f3f4f6;color:#111827;border:1px solid #e5e7eb;border-radius:8px;padding:.35rem .7rem;font-size:.85rem;cursor:pointer;";
+
+      hintDiv = document.createElement("div");
+      hintDiv.className = "pp-ex-hint";
+      hintDiv.style.cssText = "display:none;margin-top:.4rem;color:#334155;";
+
+      const wrap = slide.querySelector(".pp-ex-q");
+      if (wrap) {
+        wrap.appendChild(hintBtn);
+        wrap.appendChild(hintDiv);
+      }
+
+      hintBtn.addEventListener("click", () => {
+        hintDiv.style.display = "block";
+        hintDiv.textContent = "💡 " + q.hint;
+      });
+    }
 
     // If already answered → lock + hide check button and allow next
     if (existing) {
@@ -182,9 +250,11 @@
 
         // Feedback
         fbEl.style.color = isCorrect ? "#0a7f2e" : "#b91c1c";
-        fbEl.innerHTML = isCorrect
-          ? ((q.feedback && q.feedback.correct) || "¡Correcto!")
-          : ((q.feedback && q.feedback.incorrect) || "No es correcto.");
+        const selectedChoice = (Array.isArray(q.choices) ? q.choices : []).find(c => c && c.key === selected) || null;
+        const correctMsg   = q.feedback_correct ?? (q.feedback && q.feedback.correct) ?? "¡Correcto!";
+        const incorrectMsg = (selectedChoice && (selectedChoice.feedback_incorrect || selectedChoice.feedback))
+                          ?? (q.feedback_incorrect ?? (q.feedback && q.feedback.incorrect) ?? "No es correcto.");
+        fbEl.innerHTML = isCorrect ? correctMsg : incorrectMsg;
 
         // Persist if helper present
         if (typeof saveState === "function") {

@@ -87,8 +87,7 @@
                             "year": "2005",
                             "season": "1",
                             "episode": "1"
-                        },
-                        "audio": "static/audio/examples/afanar/ex-afanar-01.mp3"
+                        }
                     }
                 ]
             }
@@ -488,24 +487,47 @@
         ]
     },
     {
-        "word": "cagada",
+        "word": "cagar",
+        "slug": "cagar",
         "variants": {
-            "m.s.": [],
-            "m.p.": [],
-            "f.s.": [],
-            "f.p.": [],
+            "ms": [],
+            "mp": [],
+            "fs": [],
+            "fp": [],
             "diminutivo": [],
             "aumentativo": []
         },
-        "audio_word": null,
+        "audio": "static/audio/word/w-cagar.mp3",
         "senses": [
             {
-                "tag_word_class": [],
-                "tag_general": [],
-                "definition": "",
-                "equivalents": [],
-                "audio": null,
-                "examples": []
+                "id": "s1",
+                "tag_word_class": [
+                    "verbo transitivo"
+                ],
+                "tag_general": [
+                    "😡 malsonante"
+                ],
+                "definition": "<p>Arruinar, perjudicar o estropear algo.</p>",
+                "equivalents": [
+                    "to screw up",
+                    "to mess up",
+                    "to fuck up",
+                    "to ruin"
+                ],
+                "see_also": [],
+                "examples": [
+                    {
+                        "es": "Ahora yo no los entiendo estos pibes, viejo. Que ganas de `cagar`le la vida a la familia, ¿no?",
+                        "en": "I just don’t understand these kids, man. Such a desire to screw up their family’s life, you know?",
+                        "source": {
+                            "kind": "serie",
+                            "title": "Viudas negras: P*tas y chorras",
+                            "year": "2025",
+                            "season": "1",
+                            "episode": "1"
+                        }
+                    }
+                ]
             }
         ]
     },

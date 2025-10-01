@@ -1,0 +1,27 @@
+{
+  "id": "tf_demo",
+  "title": "Ejercicio de Verdadero/Falso",
+  "version": 1,
+  "type": "tf",
+  "settings": {
+    "pass_threshold": 0
+  },
+  "items": [
+    {
+      "id": "q1",
+      "prompt": "El mate es de Argentina.",
+      "answer": true,
+      "feedback_correct": "¡Exacto, el mate es argentino!",
+      "feedback_incorrect": "No, en realidad el mate es de Argentina.",
+      "hint": "Pensá en la bebida nacional."
+    },
+    {
+      "id": "q2",
+      "prompt": "La capital de Uruguay es Montevideo.",
+      "answer": true,
+      "feedback_correct": "Muy bien.",
+      "feedback_incorrect": "Recordá: Montevideo es la capital.",
+      "hint": "Está en la orilla opuesta del Río de la Plata."
+    }
+  ]
+}

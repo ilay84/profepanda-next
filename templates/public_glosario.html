@@ -343,7 +343,7 @@ window.openEntryModal = function(entry) {
                             label = `${title}${year}`;
                           } else if (kind === 'serie') {
                             emoji = '📺';
-                            const title   = ex.source.title || 'Serie';
+                            const title   = ex.source.title || ex.source.name || ex.source.text || ex.source.handle || ex.source.song || 'Serie';
                             const year    = ex.source.year ? ` (${ex.source.year})` : '';
                             const season  = ex.source.season ? ` T${ex.source.season}` : '';
                             const episode = ex.source.episode ? ` E${ex.source.episode}` : '';
@@ -375,7 +375,7 @@ window.openEntryModal = function(entry) {
                               🔖 Fuente:
                               <span class="source-chip js-source-chip"
                                 data-kind="${kind}"
-                                data-title="${(ex.source.title || '').replace(/"/g,'&quot;')}"
+                                data-title="${(ex.source.title || ex.source.name || ex.source.text || ex.source.handle || ex.source.song || '').replace(/"/g,'&quot;')}"
                                 data-year="${ex.source.year || ''}"
                                 data-season="${ex.source.season || ''}"
                                 data-episode="${ex.source.episode || ''}"
@@ -538,7 +538,7 @@ window.openEntryModal = function(entry) {
         label = `${title}${year}`;
       } else if (kind === 'serie') {
         emoji = '📺';
-        const title   = ex.source.title || 'Serie';
+        const title   = ex.source.title || ex.source.name || ex.source.text || ex.source.handle || ex.source.song || 'Serie';
         const year    = ex.source.year ? ` (${ex.source.year})` : '';
         const season  = ex.source.season ? ` T${ex.source.season}` : '';
         const episode = ex.source.episode ? ` E${ex.source.episode}` : '';
@@ -566,7 +566,7 @@ window.openEntryModal = function(entry) {
           🔖 Fuente:
           <span class="source-chip js-source-chip"
             data-kind="${kind}"
-            data-title="${(ex.source.title || '').replace(/"/g,'&quot;')}"
+            data-title="${(ex.source.title || ex.source.name || ex.source.text || ex.source.handle || ex.source.song || '').replace(/"/g,'&quot;')}"
             data-year="${ex.source.year || ''}"
             data-season="${ex.source.season || ''}"
             data-episode="${ex.source.episode || ''}"

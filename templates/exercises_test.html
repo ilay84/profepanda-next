@@ -1,37 +1,26 @@
 {% extends "base.html" %}
-{% block title %}Prueba de Ejercicios{% endblock %}
+
+{% block title %}ProfePanda — Test de Ejercicio{% endblock %}
 
 {% block content %}
-<h2 style="margin:1rem 0;">Prueba de Ejercicios</h2>
-<p style="margin:.25rem 0 1rem;color:#6b7280;">Hacé clic en “Abrir” para probar el modal.</p>
+  <h2 style="margin:.25rem 0 1rem;">Prueba de Ejercicio (True/False)</h2>
 
-{# ▶️ Card 1: True/False #}
-{% set ref = {
-  "exercise_id": "ex_001",
-  "version": 1,
-  "title": "SER vs ESTAR — Calentamiento",
-  "type": "true_false",
-  "levelTags": ["A2"]
-} %}
-{% include "_exercise_card.html" %}
+  <p style="color:#64748b;margin:.25rem 0 1rem;">
+    Hacé clic para abrir el ejercicio guardado (usa el modal nuevo).
+  </p>
 
-{# ▶️ Card 2: MCQ #}
-{% set ref = {
-  "exercise_id": "ex_002",
-  "version": 2,
-  "title": "Pretérito vs Imperfecto — Básico",
-  "type": "mcq",
-  "levelTags": ["B1"]
-} %}
-{% include "_exercise_card.html" %}
+  <!-- Minimal button that directly calls the loader -->
+  <button
+    id="btnOpenTF"
+    class="btn"
+    onclick="window.PPExercises && PPExercises.openExerciseOld('tf_demo_1', '3')"
+    style="appearance:none;border:1px solid #cbd5e1;background:#fff;padding:.55rem .8rem;border-radius:10px;cursor:pointer;">
+    ▶️ Abrir ejercicio T/F (estilo anterior)
+  </button>
 
-{# ▶️ Card 3: FITB #}
-{% set ref = {
-  "exercise_id": "ex_003",
-  "version": 1,
-  "title": "Presente de SER — Completar",
-  "type": "fitb",
-  "levelTags": ["A1"]
-} %}
-{% include "_exercise_card.html" %}
+  <button class="btn"
+        onclick="window.PPExercises && PPExercises.openExerciseOld('mcq_demo_1','1')"
+        style="appearance:none;border:1px solid #cbd5e1;background:#fff;padding:.55rem .8rem;border-radius:10px;cursor:pointer;">
+    ▶️ Abrir MCQ Demo
+  </button>
 {% endblock %}

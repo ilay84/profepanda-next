@@ -99,13 +99,40 @@ document.addEventListener("DOMContentLoaded", () => {
             <p style="margin:0 0 .5rem;color:${pct >= (exercise.settings?.pass_threshold || 0) ? "#0a7f2e" : "#b91c1c"};">
               Puntaje: <strong>${state.correct} / ${total}</strong> (${pct}%)
             </p>
-            <ul style="margin:0;padding-left:1.2rem;">
+            <div class="pp-ex-review-list" style="margin:.5rem 0;display:flex;flex-direction:column;gap:.5rem;">
               ${exercise.items.map((q, idx) => {
-                const r = state.responses[q.id];
-                const tag = r?.isCorrect ? "✅" : "❌";
-                return `<li><button class="pp-ex-jump" data-idx="${idx}" style="background:none;border:none;padding:0;color:#2563eb;cursor:pointer;text-decoration:underline;">Pregunta ${idx + 1}</button> — ${q.id} ${tag}</li>`;
+                const r = state.responses[q.id] || {};
+                const tag = r.isCorrect ? "✅" : "❌";
+                const selectedKey = r.selected;
+
+                const choices = Array.isArray(q.choices) ? q.choices : [];
+                const selectedChoice = choices.find(c => c && c.key === selectedKey) || null;
+                const correctChoice  = choices.find(c => c && c.key === q.answer) || null;
+
+                const correctMsg = q.feedback_correct ?? (q.feedback && q.feedback.correct) ?? "¡Correcto!";
+                const incorrectMsg = (selectedChoice && (selectedChoice.feedback_incorrect || selectedChoice.feedback))
+                                   ?? (q.feedback_incorrect ?? (q.feedback && q.feedback.incorrect) ?? "Repasá la explicación y volvé a intentar.");
+                const rationale = r.isCorrect ? correctMsg : incorrectMsg;
+
+                const yourAns  = selectedChoice ? (selectedChoice.label || selectedChoice.html || selectedKey) : (selectedKey || "-");
+                const rightAns = correctChoice  ? (correctChoice.label  || correctChoice.html  || q.answer)    : (q.answer || "-");
+
+                return `
+                  <div class="pp-summary-item" style="border:1px solid #e5e7eb;border-radius:10px;padding:.5rem .6rem;">
+                    <div style="font-weight:600;display:inline-flex;align-items:center;gap:.25rem;">${idx + 1}<span>: ${tag}</span></div>
+                    <details style="margin-top:.35rem;">
+                      <summary style="cursor:pointer;user-select:none">Repasar</summary>
+                      <div style="margin-top:.4rem">
+                        <div style="color:#64748b;margin-bottom:.25rem;">${q.prompt_html || ""}</div>
+                        <div><strong>Tu respuesta:</strong> <span style="color:${r.isCorrect ? "#0a7f2e" : "#b91c1c"}">${yourAns}</span></div>
+                        <div><strong>Correcta:</strong> <span style="color:#0a7f2e">${rightAns}</span></div>
+                        <div style="margin-top:.25rem;color:#334155;">💡 ${rationale}</div>
+                      </div>
+                    </details>
+                  </div>
+                `;
               }).join("")}
-            </ul>
+            </div>
 
             <button class="pp-ex-retry" type="button"
               style="margin-top:1rem;background:#f59e0b;color:#fff;border:none;border-radius:8px;padding:.5rem 1rem;font-size:.9rem;cursor:pointer;">
@@ -205,6 +232,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     }
 
+    // Expose for external callers (old modal styling)
+    window.PPRenderCarousel = renderCarousel;
+
   // ---------- Open modal ----------
   openButtons.forEach(btn => {
     btn.addEventListener("click", async (e) => {
@@ -292,3 +322,200 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 });
+
+// === BEGIN: Exercise Modal Loader ===
+window.PPExercises = (function(NS){
+
+  function getEls(){
+    const modal = document.getElementById("exerciseModal");
+    const root  = document.getElementById("exerciseRoot");
+    return { modal, root };
+  }
+
+  // No region needed anymore
+  function openExercise(id, version){
+    const { modal, root } = getEls();
+    if(!modal || !root){
+      alert("No se encontró el modal de ejercicios en la página.");
+      return;
+    }
+
+    fetch(`/data/exercises/${id}_v${version}.json`)
+      .then(r => r.json())
+      .then(ex => {
+        modal.style.display = "block";
+        root.innerHTML = "";
+        if (ex.type === "tf" && window.PPTypes && typeof window.PPTypes.renderTF === "function"){
+          window.PPTypes.renderTF(root, ex);
+        } else {
+          root.innerHTML = `<p>Tipo no soportado aún: ${ex.type || "(desconocido)"}.</p>`;
+        }
+      })
+      .catch(err => {
+        console.error("Error loading exercise:", err);
+        root.innerHTML = "<p style='color:red'>No se pudo cargar el ejercicio.</p>";
+        const { modal } = getEls();
+        if(modal) modal.style.display = "block";
+      });
+  }
+
+  NS.openExercise = openExercise;
+  return NS;
+})(window.PPExercises || {});
+// === END: Exercise Modal Loader ===
+
+// === BEGIN: Adapter to old modal & carousel ===
+(function(NS){
+  // Convert simple TF exercise -> structure expected by your old renderCarousel()
+  function adaptTFToOld(ex) {
+    const out = {
+      exercise_id: ex.id || "tf_demo",
+      title: ex.title || "Ejercicio T/F",
+      items: [],
+      settings: { pass_threshold: 0 } // keep same behavior as before unless changed in file
+    };
+
+    const items = Array.isArray(ex.items) ? ex.items : [];
+    out.items = items.map((it, idx) => {
+      const id = it.id || `q${idx + 1}`;
+      const isTrue = !!it.answer; // boolean
+      const prompt = it.prompt || "";
+
+      return {
+        id,
+        type: "true_false", // your old code routes this to renderSingleChoice()
+        prompt_html: `<p>${prompt}</p>`,
+        choices: [
+          { key: "T", label: "Verdadero", html: "Verdadero" },
+          { key: "F", label: "Falso",     html: "Falso" }
+        ],
+        answer: isTrue ? "T" : "F",
+        feedback_correct: it.feedback_correct || null,
+        feedback_incorrect: it.feedback_incorrect || null,
+        hint: it.hint || null,
+
+        // ── media passthrough (optional) ─────────────────────────────
+        // Use relative paths like: "tf/tf_demo_1/q1.mp3" for audio,
+        //                          "tf/tf_demo_1/clip1.mp4" for mp4,
+        //                          "tf/tf_demo_1/img1.png" for image.
+        audio: it.audio || null,             // served from /static/exercises/audio/<path>
+        video_iframe: it.video_iframe || null, // full iframe src (YouTube/Vimeo, etc.)
+        video_mp4: it.video_mp4 || null,     // served from /static/exercises/video/<path>
+        image: it.image || null,             // served from /static/exercises/images/<path>
+        image_caption: it.image_caption || null
+      };
+    });
+
+    return out;
+  }
+
+  // Convert simple MCQ exercise -> structure expected by your old renderCarousel()
+  function adaptMCQToOld(ex) {
+    const out = {
+      exercise_id: ex.id || "mcq_demo",
+      title: ex.title || "Ejercicio MCQ",
+      items: [],
+      settings: {
+        pass_threshold: (ex.settings && typeof ex.settings.pass_threshold === "number") ? ex.settings.pass_threshold : 0,
+        shuffle: !!(ex.settings && ex.settings.shuffle)
+      }
+    };
+
+    const items = Array.isArray(ex.items) ? ex.items : [];
+    out.items = items.map((it, idx) => {
+      const id = it.id || `q${idx + 1}`;
+      const prompt = it.prompt || "";
+
+      // Normalize choices (A, B, C…) if key missing; prefer provided html/label
+      const choices = (it.choices || []).map((c, j) => {
+        const key = (c && c.key) ? c.key : String.fromCharCode(65 + j); // A, B, C…
+        const label = (c && (c.label ?? c.text)) || (typeof c === "string" ? c : `Opción ${key}`);
+        const html = (c && (c.html ?? c.label ?? c.text)) || label;
+        return { key, label, html };
+      });
+
+      return {
+        id,
+        type: "mcq",
+        prompt_html: `<p>${prompt}</p>`,
+        choices,
+        answer: it.answer, // must match one of choices.key
+        feedback_correct: it.feedback_correct || null,
+        feedback_incorrect: it.feedback_incorrect || null,
+        hint: it.hint || null,
+
+        // ── media passthrough (optional) ─────────────────────────────
+        // Use relative paths like: "mcq/mcq_demo_1/q1.mp3" for audio,
+        //                          "mcq/mcq_demo_1/clip1.mp4" for mp4,
+        //                          "mcq/mcq_demo_1/img1.png" for image.
+        audio: it.audio || null,             // served from /static/exercises/audio/<path>
+        video_iframe: it.video_iframe || null, // full iframe src (YouTube/Vimeo)
+        video_mp4: it.video_mp4 || null,     // served from /static/exercises/video/<path>
+        image: it.image || null,             // served from /static/exercises/images/<path>
+        image_caption: it.image_caption || null
+      };
+    });
+
+    return out;
+  }
+
+  // Open using the OLD modal (#pp-ex-modal) and OLD look (renderCarousel)
+  function openExerciseOld(id, version){
+    fetch(`/data/exercises/${id}_v${version}.json`)
+      .then(r => r.json())
+      .then(ex => {
+        // 1) Adapt TF to old structure
+        let adapted = ex;
+        if (ex && ex.type === "tf") {
+          adapted = adaptTFToOld(ex);
+        } else if (ex && ex.type === "mcq") {
+          adapted = adaptMCQToOld(ex);
+        }
+
+        // Restore saved progress (same behavior as the old click-flow)
+        try {
+          const key = `pp-ex-${adapted.exercise_id || adapted.exerciseId || "unknown"}`;
+          const saved = sessionStorage.getItem(key);
+          if (saved) {
+            adapted._savedState = JSON.parse(saved);
+          }
+        } catch (_) { /* ignore */ }
+
+        // 2) Find old modal elements
+        const modal = document.getElementById("pp-ex-modal");
+        if(!modal){
+          alert("No se encontró #pp-ex-modal en esta página.");
+          return;
+        }
+        const titleEl = modal.querySelector("#pp-ex-modal-title");
+        const content = modal.querySelector(".pp-ex-modal__content");
+
+        // 3) Open old modal and render with old renderer
+        if(titleEl) titleEl.textContent = adapted.title || ex.title || "Ejercicio";
+        if(content) content.innerHTML = `<p style="margin:0;color:#6b7280;">Cargando…</p>`;
+        modal.setAttribute("aria-hidden", "false");
+        document.body.style.overflow = "hidden";
+
+        if(typeof window.PPRenderCarousel === "function"){
+          // renderCarousel(modalEl, exerciseObj)
+          window.PPRenderCarousel(modal, adapted);
+        } else {
+          if(content) content.innerHTML = `<p style="color:#b91c1c;">No se encontró PPRenderCarousel.</p>`;
+        }
+      })
+      .catch(err => {
+        console.error("Error loading exercise:", err);
+        const modal = document.getElementById("pp-ex-modal");
+        const content = modal && modal.querySelector(".pp-ex-modal__content");
+        if(modal){
+          modal.setAttribute("aria-hidden", "false");
+          document.body.style.overflow = "hidden";
+        }
+        if(content) content.innerHTML = "<p style='color:#b91c1c;'>No se pudo cargar el ejercicio.</p>";
+      });
+  }
+
+  // expose
+  NS.openExerciseOld = openExerciseOld;
+})(window.PPExercises = window.PPExercises || {});
+// === END: Adapter to old modal & carousel ===

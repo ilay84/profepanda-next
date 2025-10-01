@@ -144,13 +144,9 @@ def delete_glosario(country_code):
 @bp.route("/glosario/<country_code>/update", methods=["POST"])
 def update_glosario(country_code):
     """
-    Update an existing entry. Expects multipart/form-data with:
-      - original_word: the word to locate the existing entry (required)
-      - word: the (possibly edited) current word (required)
-      - variants: JSON string
-      - senses: JSON string
-      - audio_word: optional new main word audio file
-      - example_audio_*: optional example audio files (saved but not linked here, same as /add)
+    Update an existing entry. Accepts multipart/form-data (preferred) and will
+    also fall back to JSON if present. Always writes back 'word', 'variants',
+    and 'senses' so edits stick.
     """
     from werkzeug.utils import secure_filename
     import json
@@ -161,34 +157,46 @@ def update_glosario(country_code):
         return jsonify({"success": False, "error": f"Invalid country code: {country_code}"}), 400
 
     # Paths
-    filename = f"{country_map[country_code]}.json"
+    filename  = f"{country_map[country_code]}.json"
     data_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'glossaries', filename)
     if not os.path.exists(data_path):
         return jsonify({"success": False, "error": f"No glossary found for {country_code}"}), 404
 
-    # ---- Parse form fields ----
-    original_word = (request.form.get("original_word") or "").strip()
-    word = (request.form.get("word") or "").strip()
+    # ---- Read inputs ----
+    # Prefer form fields (because we send FormData with files), but also check JSON
+    req_json = request.get_json(silent=True) or {}
+
+    original_word = (request.form.get("original_word") or req_json.get("original_word") or "").strip()
+    word          = (request.form.get("word")          or req_json.get("word")          or "").strip()
 
     if not original_word or not word:
         return jsonify({"success": False, "error": "original_word and word are required"}), 400
 
+    # Parse variants
+    variants_raw = request.form.get("variants")
+    if variants_raw is None and "variants" in req_json:
+        variants_raw = req_json.get("variants")
     try:
-        variants = json.loads(request.form.get("variants") or "{}")
-    except json.JSONDecodeError as e:
+        variants = variants_raw if isinstance(variants_raw, dict) else json.loads(variants_raw or "{}")
+    except Exception as e:
         return jsonify({"success": False, "error": f"Invalid variants JSON: {e}"}), 400
 
+    # Parse senses
+    senses_raw = request.form.get("senses")
+    if senses_raw is None and "senses" in req_json:
+        senses_raw = req_json.get("senses")
     try:
-        senses = json.loads(request.form.get("senses") or "[]")
-    except json.JSONDecodeError as e:
+        senses = senses_raw if isinstance(senses_raw, list) else json.loads(senses_raw or "[]")
+    except Exception as e:
         return jsonify({"success": False, "error": f"Invalid senses JSON: {e}"}), 400
 
     # ---- Load existing entries ----
     with open(data_path, "r", encoding="utf-8") as f:
         entries = json.load(f) or []
 
-    # Find existing entry index
-    idx = next((i for i, e in enumerate(entries) if (e.get("word", "").lower() == original_word.lower())), -1)
+    # Find existing entry index (case-insensitive match)
+    idx = next((i for i, e in enumerate(entries)
+                if (e.get("word", "") or "").lower() == original_word.lower()), -1)
     if idx == -1:
         return jsonify({"success": False, "error": f'Word "{original_word}" not found'}), 404
 
@@ -199,11 +207,11 @@ def update_glosario(country_code):
     slug = "".join(ch if ch.isalnum() or ch == " " else "-" for ch in slug).replace(" ", "-")
 
     # ---- Optional: main word audio ----
-    audio_relpath = existing.get("audio")  # keep current unless a new one is uploaded
+    audio_relpath = existing.get("audio")  # keep current unless new uploaded
     if "audio_word" in request.files and request.files["audio_word"].filename:
         word_audio_file = request.files["audio_word"]
-        audio_filename = secure_filename(f"w-{slug}.mp3")
-        audio_path = os.path.join("static", "audio", "word", audio_filename)
+        audio_filename  = secure_filename(f"w-{slug}.mp3")
+        audio_path      = os.path.join("static", "audio", "word", audio_filename)
         os.makedirs(os.path.dirname(audio_path), exist_ok=True)
         word_audio_file.save(audio_path)
         audio_relpath = os.path.join("static", "audio", "word", audio_filename).replace("\\", "/")
@@ -216,28 +224,42 @@ def update_glosario(country_code):
             save_as = secure_filename(fs.filename)
             fs.save(os.path.join(examples_dir, save_as))
 
-    # ---- Build updated entry ----
+    # ---- Build the updated entry (ALWAYS trust the incoming variants/senses) ----
+    # If client sent nothing for those, fall back to existing so we don't wipe.
+    if not isinstance(variants, dict):
+        variants = existing.get("variants", {})
+    if not isinstance(senses, list):
+        senses = existing.get("senses", [])
+
     updated_entry = {
-        "word": word,
-        "slug": slug,
+        "word":     word,
+        "slug":     slug,
         "variants": variants,
-        "audio": audio_relpath,
-        "senses": senses
+        "audio":    audio_relpath,
+        "senses":   senses,
     }
 
-    # Replace, then re-sort by normalized 'word'
+    # Replace, then sort by normalized word
     entries[idx] = updated_entry
 
     def normalize_for_sort(s):
         return unicodedata.normalize("NFKD", s or "").encode("ascii", "ignore").decode("ascii").lower()
-
     entries.sort(key=lambda e: normalize_for_sort(e.get("word", "")))
 
     # Save back
     with open(data_path, "w", encoding="utf-8") as f:
         json.dump(entries, f, ensure_ascii=False, indent=4)
 
-    return jsonify({"success": True, "updated_word": word})
+    # Return some quick debug counts so you can confirm in DevTools
+    return jsonify({
+        "success": True,
+        "updated_word": word,
+        "counts": {
+            "variants_keys": len(updated_entry.get("variants", {})),
+            "senses": len(updated_entry.get("senses", [])),
+            "examples_total": sum(len(s.get("examples", [])) for s in updated_entry.get("senses", []))
+        }
+    })
 # ========= END: NEW UPDATE ENDPOINT =========
 
 @bp.route("/glosario/<country_code>/edit", methods=["POST"])
@@ -577,22 +599,32 @@ def _ensure_tiles_image_dir():
 
 def _coerce_tile_shape(t):
     """
-    Normalize tile shape for the admin UI.
-    Frontend expects: id, title, subtitle, image_url
-    We map existing fields if different (e.g., description -> subtitle, image -> image_url).
+    Normalize tile shape using the actual schema we store:
+      id, title, description, image, link, order, enabled
+    Falls back to legacy keys if present, but outputs a consistent shape.
     """
     if not isinstance(t, dict):
         return {}
+
+    # Prefer real fields; fallbacks only if missing
+    _id   = t.get("id") or t.get("slug") or uuid.uuid4().hex
+    title = t.get("title") or ""
+    desc  = t.get("description") or t.get("subtitle") or ""
+    img   = t.get("image") or t.get("image_url") or ""
+    link  = t.get("link") or t.get("href") or ""
+    order = t.get("order", 9999)
+    enabled = bool(t.get("enabled", True))
+    slug  = t.get("slug") or _slugify(title)
+
     return {
-        "id": t.get("id") or t.get("slug") or uuid.uuid4().hex,
-        "title": t.get("title") or "",
-        "subtitle": t.get("subtitle") or t.get("description") or "",
-        "image_url": t.get("image_url") or t.get("image") or "",
-        # keep originals too (not used by the current UI, but nice to have)
-        "href": t.get("href") or t.get("link") or "",
-        "order": t.get("order", 9999),
-        "enabled": bool(t.get("enabled", True)),
-        "slug": t.get("slug") or _slugify(t.get("title") or "")
+        "id": _id,
+        "title": title,
+        "description": desc,   # ← use the real key
+        "image": img,          # ← use the real key
+        "link": link,          # ← use the real key
+        "order": order,
+        "enabled": enabled,
+        "slug": slug
     }
 
 @bp.route("/tiles", methods=["GET"])
@@ -913,6 +945,241 @@ def admin_home_tile_create():
     return jsonify({"success": True, "tile": new_tile})
 
 # === END: Pages (blog-like) storage + routes scaffolding ===
+
+# === BEGIN: Exercises storage + admin routes scaffolding ===
+# Files live under: data/exercises/
+#   - exercises.index.json                  (global registry of all exercises)
+#   - <exercise_id>@v<version>.json        (versioned payloads)
+
+def _exercises_root_path():
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data', 'exercises'))
+
+def _ensure_exercises_dir():
+    path = _exercises_root_path()
+    os.makedirs(path, exist_ok=True)
+    return path
+
+def _exercise_index_path():
+    return os.path.join(_ensure_exercises_dir(), 'exercises.index.json')
+
+def _load_exercise_index():
+    path = _exercise_index_path()
+    if not os.path.exists(path):
+        return {"exercises": []}
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f) or {}
+        # Normalize minimal expected structure
+        if "exercises" not in data or not isinstance(data["exercises"], list):
+            data = {"exercises": []}
+        return data
+    except Exception:
+        return {"exercises": []}
+
+def _save_exercise_index(index_data: dict):
+    os.makedirs(os.path.dirname(_exercise_index_path()), exist_ok=True)
+    with open(_exercise_index_path(), "w", encoding="utf-8") as f:
+        json.dump(index_data or {"exercises": []}, f, ensure_ascii=False, indent=2)
+    return index_data
+
+def _write_versioned_exercise(exercise_id: str, version: int, payload: dict):
+    """
+    Writes a versioned exercise JSON:
+      data/exercises/<exercise_id>@v<version>.json
+    Returns the relative filepath and absolute path.
+    """
+    base_dir = _ensure_exercises_dir()
+    filename = f"{exercise_id}@v{version}.json"
+    abs_path = os.path.join(base_dir, filename)
+    os.makedirs(os.path.dirname(abs_path), exist_ok=True)
+    with open(abs_path, "w", encoding="utf-8") as f:
+        json.dump(payload or {}, f, ensure_ascii=False, indent=2)
+    # Return a repo-relative path for later use, if needed
+    rel_path = os.path.join("data", "exercises", filename).replace("\\", "/")
+    return rel_path, abs_path
+
+@bp.route("/exercises", methods=["GET"])
+def admin_exercises_library():
+    """
+    Admin library shell (global, no regions).
+    """
+    index_data = _load_exercise_index()
+    return render_template("admin_exercises.html", index=index_data)
+
+@bp.route("/exercises/new", methods=["GET"])
+def admin_exercises_new():
+    """
+    New exercise shell (global, no regions).
+    If ?id=<exercise_id> is provided, load that exercise's pinned (or latest)
+    version and pass it to the template as `edit_ex` to prefill the form.
+    Query params:
+      - type: "tf" | "mcq" | ...
+      - id?: exercise id to edit
+    """
+    ex_type = (request.args.get("type") or "tf").lower().strip()
+    ex_id = (request.args.get("id") or "").strip()
+
+    edit_payload = None
+    if ex_id:
+        try:
+            index = _load_exercise_index()
+            rec = next((e for e in index.get("exercises", []) if e.get("id") == ex_id), None)
+            if rec:
+                # choose pinned_version if present, else the highest version number
+                ver = rec.get("pinned_version")
+                if not ver:
+                    if rec.get("versions"):
+                        ver = max(v.get("version", 0) for v in rec["versions"])
+                # resolve the JSON path for that version
+                vrow = None
+                if rec.get("versions"):
+                    vrow = next((v for v in rec["versions"] if v.get("version") == ver), None)
+                    if not vrow:  # fallback to last row if not found
+                        vrow = rec["versions"][-1]
+                if vrow and vrow.get("path"):
+                    abs_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", vrow["path"]))
+                    if os.path.exists(abs_path):
+                        with open(abs_path, "r", encoding="utf-8") as f:
+                            edit_payload = json.load(f)
+                # If the stored type exists, prefer it for the builder
+                if edit_payload and edit_payload.get("type"):
+                    ex_type = str(edit_payload.get("type")).lower().strip()
+        except Exception:
+            edit_payload = None  # fail-safe
+
+    return render_template(
+        "admin_exercises.html",
+        create_type=ex_type,
+        index=_load_exercise_index(),
+        edit_ex=edit_payload
+    )
+
+@bp.route("/exercises/save", methods=["POST"])
+def admin_exercises_save():
+    """
+    Create or update an exercise and write a new versioned payload (GLOBAL; no region).
+    Expects form-data (or JSON) with at minimum:
+      - type: str              ("tf" initially)
+      - title: str             (admin-facing title)
+      - items: JSON string or object  (exercise content; for TF this is the list of questions)
+    Optional:
+      - id: str                (if omitted, new UUID4)
+      - version: int           (if omitted, auto-increment from index)
+      - meta: JSON string or object  (tags, level, etc.)
+      - overrides: JSON string or object (stored on the index record)
+
+    Behavior:
+      - Appends a new version file under data/exercises/.
+      - Updates/creates the exercise record in exercises.index.json with pinned_version (if not set).
+    """
+    # Accept both JSON and form submissions
+    data = request.get_json(silent=True) or {}
+    form = request.form or {}
+
+    def pick(k, default=None):
+        return (data.get(k) if k in data else form.get(k, default))
+
+    ex_type = (pick("type", "tf") or "tf").lower().strip()
+    title = (pick("title", "") or "").strip()
+    if not title:
+        return jsonify({"success": False, "error": "Missing required field: title"}), 400
+
+    # id: keep if provided; else new
+    exercise_id = (pick("id") or uuid.uuid4().hex)
+
+    # items/meta/overrides may arrive as JSON strings
+    def ensure_obj(val):
+        if isinstance(val, (dict, list)):
+            return val
+        if not val:
+            return {}
+        try:
+            return json.loads(val)
+        except Exception:
+            return {}
+
+    items = ensure_obj(pick("items", {}))
+    meta = ensure_obj(pick("meta", {}))
+    overrides = ensure_obj(pick("overrides", {}))
+
+    # Load index and compute next version if not given
+    index_data = _load_exercise_index()
+    ex_list = index_data.get("exercises", [])
+    existing = next((e for e in ex_list if e.get("id") == exercise_id), None)
+
+    # Determine version
+    req_version = pick("version")
+    if req_version is not None:
+        try:
+            version = int(req_version)
+        except (TypeError, ValueError):
+            return jsonify({"success": False, "error": "version must be an integer"}), 400
+    else:
+        if existing and isinstance(existing.get("versions"), list) and existing["versions"]:
+            version = max(v.get("version", 0) for v in existing["versions"]) + 1
+        else:
+            version = 1
+
+    # Build payload to persist
+    from datetime import datetime
+    payload = {
+        "id": exercise_id,
+        "type": ex_type,      # "tf", "mcq", ...
+        "title": title,
+        "version": version,
+        "created_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+        "items": items,       # e.g., list of T/F questions with feedback & optional hints
+        "meta": meta,         # tags/CEFR/etc.
+    }
+
+    # Write versioned file
+    rel_path, _abs = _write_versioned_exercise(exercise_id, version, payload)
+
+    # Update index record
+    record = existing or {
+        "id": exercise_id,
+        "type": ex_type,
+        "title": title,
+        "pinned_version": version,   # default pin to first version
+        "overrides": overrides,      # placeholder for per-insert defaults
+        "versions": []
+    }
+    # Keep title/type in sync if changed
+    record["title"] = title
+    record["type"] = ex_type
+    record.setdefault("versions", [])
+    # Append/replace this version info
+    v_entry = {"version": version, "path": rel_path}
+    found_idx = next((i for i, v in enumerate(record["versions"]) if v.get("version") == version), -1)
+    if found_idx >= 0:
+        record["versions"][found_idx] = v_entry
+    else:
+        record["versions"].append(v_entry)
+        record["versions"].sort(key=lambda v: v.get("version", 0))
+
+    # Put back into list
+    if existing:
+        ex_list = [record if e.get("id") == exercise_id else e for e in ex_list]
+    else:
+        ex_list.append(record)
+
+    # Save index
+    index_data["exercises"] = ex_list
+    _save_exercise_index(index_data)
+
+    return jsonify({
+        "success": True,
+        "exercise": {
+            "id": exercise_id,
+            "type": ex_type,
+            "title": title,
+            "saved_version": version,
+            "pinned_version": record.get("pinned_version", version),
+            "versions": record.get("versions", []),
+        },
+        "path": rel_path
+    })
+# === END: Exercises storage + admin routes scaffolding ===
 
 # === BEGIN: Admin endpoints to read/update glossary visibility ===
 @bp.route("/glosarios/settings", methods=["GET"])

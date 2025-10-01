@@ -338,6 +338,71 @@ def serve_glossary_json(country_code):
 
     return send_from_directory(glossary_dir, filename)
 
+# === BEGIN: Serve versioned exercises JSON ===
+def _public_exercises_root():
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "exercises"))
+
+@bp.route("/data/exercises/<region>/<filename>")
+def serve_exercise_json(region, filename):
+    """
+    Serves a versioned exercise JSON:
+      /data/exercises/<region>/<exercise_id>@v<version>.json
+    Example:
+      /data/exercises/ar/abcd1234@v1.json
+    """
+    import re
+    region = (region or "").strip().lower()
+
+    # Basic safety checks
+    if not re.fullmatch(r"[a-z]{2}", region):
+        abort(404, description="Invalid region")
+
+    if not re.fullmatch(r"[A-Za-z0-9_-]+_v[0-9]+\.json", filename):
+        abort(404, description="Invalid filename")
+
+    region_dir = os.path.join(_public_exercises_root(), region)
+    file_path = os.path.join(region_dir, filename)
+
+    if not os.path.exists(file_path):
+        abort(404, description="Exercise not found")
+
+    return send_from_directory(region_dir, filename)
+# === END: Serve versioned exercises JSON ===
+
+# === BEGIN: Serve versioned exercises JSON (flat, no region) ===
+@bp.route("/data/exercises/<filename>")
+def serve_exercise_json_flat(filename):
+    """
+    Serves a versioned exercise JSON without region:
+      /data/exercises/<exercise_id>@v<version>.json
+
+    If not found at the root, it will also look in any 1-level subfolder
+    (so existing regional subfolders keep working).
+    """
+    import re
+    root_dir = _public_exercises_root()
+
+    # Basic filename safety: <id>@v<integer>.json
+    if not re.fullmatch(r"[A-Za-z0-9_-]+_v[0-9]+\.json", filename):
+        abort(404, description="Invalid filename")
+
+    # 1) Try root
+    root_path = os.path.join(root_dir, filename)
+    if os.path.exists(root_path):
+        return send_from_directory(root_dir, filename)
+
+    # 2) Try any immediate subfolder (e.g., legacy regional dirs)
+    for entry in os.listdir(root_dir):
+        subdir = os.path.join(root_dir, entry)
+        if not os.path.isdir(subdir):
+            continue
+        candidate = os.path.join(subdir, filename)
+        if os.path.exists(candidate):
+            return send_from_directory(subdir, filename)
+
+    abort(404, description="Exercise not found")
+# === END: Serve versioned exercises JSON (flat, no region) ===
+
 # ===== NEW: entries filtered by source (episode or whole series, etc.) =====
 @bp.route("/api/<country_code>/by-source")
 def api_entries_by_source(country_code):

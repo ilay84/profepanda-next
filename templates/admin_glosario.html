@@ -11,8 +11,7 @@
 
 <div class="admin-toolbar" style="max-width:1100px;margin:.25rem auto 1rem;display:flex;gap:.5rem;align-items:center;">
   <a href="{{ url_for('admin.admin_home') }}" style="text-decoration:none;border:1px solid #e5e7eb;border-radius:10px;padding:.5rem .75rem;background:#fff;display:inline-block;">⬅ Volver</a>
-  <button id="btnNewEntry" type="button" style="appearance:none;border:1px solid #cfe3fb;border-radius:10px;padding:.5rem .75rem;background:#f7fbff;color:#1e40af;font-weight:700;cursor:default;" disabled>➕ Nueva entrada</button>
-  <span style="color:#64748b;">(el editor lo conectamos en el siguiente paso)</span>
+  <button id="btnNewEntry" type="button" style="appearance:none;border:1px solid #cfe3fb;border-radius:10px;padding:.5rem .75rem;background:#f7fbff;color:#1e40af;font-weight:700;cursor:pointer;">➕ Nueva entrada</button>
 </div>
 
 <p style="max-width:1100px;margin:.25rem auto 1rem;color:#64748b;">
@@ -21,7 +20,9 @@
 
 <div class="admin-glossary-grid">
   {% for e in entries %}
-    <div class="admin-entry-card" title="Entrada del glosario" data-entry='{{ e|tojson|safe }}'>
+    <div class="admin-entry-card"
+        title="Entrada del glosario"
+        data-entry="{{ e|tojson|forceescape }}">
       <div class="left">
         <div class="admin-entry-word">{{ e.word }}</div>
         <div class="meta">
@@ -29,14 +30,27 @@
           <span class="badge">{{ (e.variants or {})|length }} variantes</span>
         </div>
       </div>
-      <div class="right">
-        <button type="button"
-                class="admin-edit-btn"
-                title="Editar"
-                onclick='editEntry({{ e.word|tojson }}, {{ e|tojson|safe }})'>
-          ✎
-        </button>
-      </div>
+        <div class="right" style="display:flex;gap:.35rem;">
+          <button type="button"
+                  class="admin-edit-btn"
+                  title="Editar"
+                  onclick='editEntry({{ e.word|tojson }}, {{ e|tojson|safe }})'>
+            ✎
+          </button>
+          <button type="button"
+                  class="admin-del-btn"
+                  title="Eliminar"
+                  onclick='deleteEntry(this, {{ e.word|tojson }})'
+                  style="border:1px solid #fcd6d6;
+                         background:#fff5f5;
+                         border-radius:8px;
+                         padding:.35rem .55rem;
+                         cursor:pointer;
+                         color:#b91c1c;
+                         font-weight:700;">
+            🗑
+          </button>
+        </div>
     </div>
   {% endfor %}
 </div>
@@ -73,7 +87,7 @@
   color:#0f172a;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
-.meta{display:flex;gap:.35rem;margin-top:.2rem; color:#64748b; font-size:.85rem;}
+.meta{ display:none; }
 .badge{border:1px solid #cbd5e1;border-radius:999px;padding:.05rem .5rem;background:#f8fafc;}
 
 .admin-edit-btn{
@@ -98,8 +112,7 @@
     max-height:260px;         /* cap the editor itself */
     overflow-y:auto;
   }
-  /* keep toolbar visible while the editor scrolls */
-  #formModal .ql-toolbar.ql-snow{ position: sticky; top:0; z-index:1; }
+  #formModal .ql-toolbar.ql-snow{ position: static; }
 </style>
 
 <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
@@ -264,10 +277,109 @@ function attachExampleBehaviors(root = document){
     if (!sel) return;
     const ex = sel.closest('.example-item');
     if (!ex) return;
-    ex.querySelectorAll('.source-fields').forEach(x => x.style.display = 'none');
-    const map = { pelicula:'.source-pelicula', serie:'.source-serie', redes:'.source-redes', cancion:'.source-cancion', otro:'.source-otro' };
-    const show = ex.querySelector(map[sel.value]);
-    if (show) show.style.display = '';
+    showSourceFieldsFor(ex, sel.value);
+  });
+}
+
+function showSourceFieldsFor(exampleBlock, kind){
+  if (!exampleBlock) return;
+  exampleBlock.querySelectorAll('.source-fields').forEach(x => x.style.display = 'none');
+  const map = {
+    pelicula: '.source-pelicula',
+    serie:    '.source-serie',
+    redes:    '.source-redes',
+    cancion:  '.source-cancion',
+    otro:     '.source-otro'
+  };
+  const section = map[kind] && exampleBlock.querySelector(map[kind]);
+  if (section) section.style.display = '';
+}
+
+/* ---------- Sentidos: add/remove + reindex + init quill ---------- */
+function attachSentidoBehaviors(root = document){
+  if (window.__ppSentidosWired) return;
+  window.__ppSentidosWired = true;
+
+  // Add a new sentido
+  root.addEventListener('click', (e) => {
+    const btn = e.target.closest('#addSentidoBtn');
+    if (!btn) return;
+
+    const form = root.getElementById('addEntryForm');
+    const base = form?.querySelector('.sentido-block[data-sentido="1"]');
+    if (!base) return;
+
+    // Determine next index
+    const current = [...form.querySelectorAll('.sentido-block')];
+    const n = current.length + 1;
+
+    // Clone and strip values
+    const clone = base.cloneNode(true);
+    clone.dataset.sentido = String(n);
+    const h4 = clone.querySelector('h4');
+    if (h4) h4.textContent = `Sentido ${n}`;
+
+    // Update all ids/names/for from *_1 to *_n and clear values
+    clone.querySelectorAll('[id],[name],[for]').forEach(el => {
+      ['id','name','for'].forEach(attr => {
+        const val = el.getAttribute && el.getAttribute(attr);
+        if (!val) return;
+        el.setAttribute(attr, val.replace(/(_|-)1(\[\])?/g, `$1${n}$2`));
+      });
+      if ('value' in el) el.value = '';
+      if (el.tagName === 'TEXTAREA') el.textContent = '';
+      if (el.tagName === 'SELECT') el.selectedIndex = 0;
+    });
+
+    // Reset Quill + hidden
+    const qDiv = clone.querySelector(`#editor_definicion_${n}`);
+    if (qDiv) { qDiv.innerHTML = ''; delete qDiv.__quill; }
+    const hidden = clone.querySelector(`#definicion_${n}`);
+    if (hidden) hidden.value = '';
+
+    // Reset examples to a single fresh example for this sentido
+    const exContainer = clone.querySelector('.examples-container');
+    if (exContainer) {
+      exContainer.querySelectorAll('.example-item').forEach(x => x.remove());
+      exContainer.appendChild(buildExampleRow(n));
+    }
+
+    // Append in extra-sentidos
+    root.getElementById('extra-sentidos')?.appendChild(clone);
+
+    // Init Quill on new block
+    initQuillEditors(root);
+  });
+
+  // Remove a sentido
+  root.addEventListener('click', (e) => {
+    const btn = e.target.closest('.remove-sentido');
+    if (!btn) return;
+
+    const block = btn.closest('.sentido-block');
+    const form = btn.closest('#addEntryForm');
+    if (!block || !form) return;
+
+    const blocks = [...form.querySelectorAll('.sentido-block')];
+    if (blocks.length <= 1) { alert('Debe haber al menos un sentido.'); return; }
+
+    block.remove();
+
+    // Reindex remaining sentidos
+    const remain = [...form.querySelectorAll('.sentido-block')];
+    remain.forEach((b, i) => {
+      const n = i + 1;
+      b.dataset.sentido = String(n);
+      const h = b.querySelector('h4');
+      if (h) h.textContent = `Sentido ${n}`;
+      b.querySelectorAll('[id],[name],[for]').forEach(el => {
+        ['id','name','for'].forEach(attr => {
+          const val = el.getAttribute && el.getAttribute(attr);
+          if (!val) return;
+          el.setAttribute(attr, val.replace(/(_|-)\d+(\[\])?$/g, `$1${n}$2`));
+        });
+      });
+    });
   });
 }
 
@@ -341,33 +453,68 @@ function prefillFromEntry(entry) {
       if (enField) enField.value = ex.en || '';
 
       const kindSel = exBlock.querySelector(`select[name="example_source_kind_${n}[]"]`);
-      const kind = ex?.source?.kind || '';
-      if (kindSel) {
-        kindSel.value = kind;
-        kindSel.dispatchEvent(new Event('change'));
+      const src = ex?.source || {};
+      let kind = (src.kind || '').toLowerCase();
+
+      // 🔎 Infer kind if it wasn't explicitly saved
+      if (!kind) {
+        if (src.season || src.episode)      kind = 'serie';
+        else if (src.song || src.artist)     kind = 'cancion';
+        else if (src.handle || src.url)      kind = 'redes';
+        else if (src.title && src.year)      kind = 'pelicula';
+        else if (src.text)                   kind = 'otro';
+        else                                 kind = '';
       }
 
+      if (kindSel) {
+        kindSel.value = kind;
+      }
+      // Show only the relevant source-fields group once
+      showSourceFieldsFor(exBlock, kind);
+
+      // Fill fields for the selected kind
       if (kind === 'pelicula') {
         const wrap = exBlock.querySelector('.source-pelicula');
-        wrap?.querySelector(`[name="example_source_title_${n}[]"]`)?.setAttribute('value', ex?.source?.title || '');
-        wrap?.querySelector(`[name="example_source_year_${n}[]"]`)?.setAttribute('value',  ex?.source?.year  || '');
+        if (wrap) {
+          const t = wrap.querySelector(`[name="example_source_title_${n}[]"]`);
+          const y = wrap.querySelector(`[name="example_source_year_${n}[]"]`);
+          if (t) t.value = ex?.source?.title || '';
+          if (y) y.value = ex?.source?.year  || '';
+        }
       } else if (kind === 'serie') {
         const w = exBlock.querySelector('.source-serie');
-        w?.querySelector(`[name="example_source_title_${n}[]"]`)?.setAttribute('value',   ex?.source?.title   || '');
-        w?.querySelector(`[name="example_source_year_${n}[]"]`)?.setAttribute('value',    ex?.source?.year    || '');
-        w?.querySelector(`[name="example_source_season_${n}[]"]`)?.setAttribute('value',  ex?.source?.season  || '');
-        w?.querySelector(`[name="example_source_episode_${n}[]"]`)?.setAttribute('value', ex?.source?.episode || '');
+        if (w) {
+          const t = w.querySelector(`[name="example_source_title_${n}[]"]`);
+          const y = w.querySelector(`[name="example_source_year_${n}[]"]`);
+          const s = w.querySelector(`[name="example_source_season_${n}[]"]`);
+          const e = w.querySelector(`[name="example_source_episode_${n}[]"]`);
+          if (t) t.value = ex?.source?.title   || '';
+          if (y) y.value = ex?.source?.year    || '';
+          if (s) s.value = ex?.source?.season  || '';
+          if (e) e.value = ex?.source?.episode || '';
+        }
       } else if (kind === 'redes') {
         const w = exBlock.querySelector('.source-redes');
-        w?.querySelector(`[name="example_source_handle_${n}[]"]`)?.setAttribute('value', ex?.source?.handle || '');
-        w?.querySelector(`[name="example_source_url_${n}[]"]`)?.setAttribute('value',    ex?.source?.url    || '');
+        if (w) {
+          const h = w.querySelector(`[name="example_source_handle_${n}[]"]`);
+          const u = w.querySelector(`[name="example_source_url_${n}[]"]`);
+          if (h) h.value = ex?.source?.handle || '';
+          if (u) u.value = ex?.source?.url    || '';
+        }
       } else if (kind === 'cancion') {
         const w = exBlock.querySelector('.source-cancion');
-        w?.querySelector(`[name="example_source_song_${n}[]"]`)?.setAttribute('value',   ex?.source?.song   || '');
-        w?.querySelector(`[name="example_source_artist_${n}[]"]`)?.setAttribute('value', ex?.source?.artist || '');
+        if (w) {
+          const song   = w.querySelector(`[name="example_source_song_${n}[]"]`);
+          const artist = w.querySelector(`[name="example_source_artist_${n}[]"]`);
+          if (song)   song.value   = ex?.source?.song   || '';
+          if (artist) artist.value = ex?.source?.artist || '';
+        }
       } else if (kind === 'otro') {
         const w = exBlock.querySelector('.source-otro');
-        w?.querySelector(`[name="example_source_text_${n}[]"]`)?.setAttribute('value', ex?.source?.text || '');
+        if (w) {
+          const txt = w.querySelector(`[name="example_source_text_${n}[]"]`);
+          if (txt) txt.value = ex?.source?.text || '';
+        }
       }
     });
   });
@@ -381,8 +528,6 @@ function prefillFromEntry(entry) {
       if (qDiv?.__quill) qDiv.__quill.root.innerHTML = '';
     }
   }
-
-  console.debug('Prefilled senses & examples from entry', entry);
 }
 
 function wireEditSubmit(originalWord){
@@ -409,75 +554,111 @@ function wireEditSubmit(originalWord){
       aumentativo: (form.variant_aumentativo?.value || '').split(',').map(s=>s.trim()).filter(Boolean),
     };
 
-    // Senses + examples from the DOM
-    const senses = [];
-    document.querySelectorAll('.sentido-block').forEach((block, idx) => {
-      const n = block.dataset.sentido;
-      const def = (document.getElementById(`definicion_${n}`)?.value || '').trim();
+    // Senses + examples from the DOM (with Quill fallback)
+        let hasAnyDefinition = false;
+        const senses = [];
 
-      const sense = {
-        id: `s${idx+1}`,
-        tag_word_class: (form[`clase_${n}`]?.value || '').split(',').map(s=>s.trim()).filter(Boolean),
-        tag_general:    (form[`etiquetas_${n}`]?.value || '').split(',').map(s=>s.trim()).filter(Boolean),
-        definition: def,
-        equivalents:   (form[`equivalentes_${n}`]?.value || '').split(',').map(s=>s.trim()).filter(Boolean),
-        see_also: [],
-        examples: []
-      };
+        document.querySelectorAll('.sentido-block').forEach((block, idx) => {
+          const n = block.dataset.sentido;
 
-      // Examples
-      block.querySelectorAll('.example-item').forEach(ex => {
-        const es   = ex.querySelector(`textarea[name="example_sentence_${n}[]"]`)?.value.trim() || '';
-        const en   = ex.querySelector(`textarea[name="example_translation_${n}[]"]`)?.value.trim() || '';
-        const kind = ex.querySelector(`select[name="example_source_kind_${n}[]"]`)?.value || '';
-
-        const source = {};
-        if (kind) {
-          source.kind = kind;
-          if (kind === 'pelicula') {
-            source.title = ex.querySelector(`[name="example_source_title_${n}[]"]`)?.value || '';
-            source.year  = ex.querySelector(`[name="example_source_year_${n}[]"]`)?.value  || '';
-          } else if (kind === 'serie') {
-            source.title   = ex.querySelector(`[name="example_source_title_${n}[]"]`)?.value   || '';
-            source.year    = ex.querySelector(`[name="example_source_year_${n}[]"]`)?.value    || '';
-            source.season  = ex.querySelector(`[name="example_source_season_${n}[]"]`)?.value  || '';
-            source.episode = ex.querySelector(`[name="example_source_episode_${n}[]"]`)?.value || '';
-          } else if (kind === 'redes') {
-            source.handle = ex.querySelector(`[name="example_source_handle_${n}[]"]`)?.value || '';
-            source.url    = ex.querySelector(`[name="example_source_url_${n}[]"]`)?.value    || '';
-          } else if (kind === 'cancion') {
-            source.song   = ex.querySelector(`[name="example_source_song_${n}[]"]`)?.value   || '';
-            source.artist = ex.querySelector(`[name="example_source_artist_${n}[]"]`)?.value || '';
-          } else if (kind === 'otro') {
-            source.text = ex.querySelector(`[name="example_source_text_${n}[]"]`)?.value || '';
+          // Try hidden input first; if empty/missing, fall back to Quill editor HTML
+          let defHTML = (document.getElementById(`definicion_${n}`)?.value || '').trim();
+          if (!defHTML) {
+            const qDiv = document.getElementById(`editor_definicion_${n}`);
+            if (qDiv?.__quill) {
+              defHTML = (qDiv.__quill.root.innerHTML || '').trim();
+            } else if (qDiv) {
+              defHTML = (qDiv.innerHTML || '').trim();
+            }
           }
+
+          // consider definition "real" only if it has visible text (strip tags & &nbsp;)
+          const defText = (defHTML || '')
+            .replace(/<[^>]*>/g, '')
+            .replace(/&nbsp;/g, ' ')
+            .trim();
+
+          if (defText) hasAnyDefinition = true;
+
+          const sense = {
+            id: `s${idx+1}`,
+            tag_word_class: (form[`clase_${n}`]?.value || '').split(',').map(s=>s.trim()).filter(Boolean),
+            tag_general:    (form[`etiquetas_${n}`]?.value || '').split(',').map(s=>s.trim()).filter(Boolean),
+            definition: defHTML, // keep the HTML version for display
+            equivalents:   (form[`equivalentes_${n}`]?.value || '').split(',').map(s=>s.trim()).filter(Boolean),
+            see_also: [],
+            examples: []
+          };
+
+          // Examples
+          block.querySelectorAll('.example-item').forEach(ex => {
+            const es   = ex.querySelector(`textarea[name="example_sentence_${n}[]"]`)?.value.trim() || '';
+            const en   = ex.querySelector(`textarea[name="example_translation_${n}[]"]`)?.value.trim() || '';
+          // Prefer the dropdown value…
+          let kind = ex.querySelector(`select[name="example_source_kind_${n}[]"]`)?.value || '';
+
+          // …but if it's empty, infer kind from whichever source section is visible
+          if (!kind) {
+            const kinds = ['pelicula','serie','redes','cancion','otro'];
+            for (const k of kinds) {
+              const sec = ex.querySelector(`.source-${k}`);
+              if (sec && sec.style.display !== 'none') { kind = k; break; }
+            }
+          }
+
+          const source = {};
+          if (kind) {
+            source.kind = kind;
+            if (kind === 'pelicula') {
+              const w = ex.querySelector('.source-pelicula');
+              source.title = w?.querySelector(`[name="example_source_title_${n}[]"]`)?.value || '';
+              source.year  = w?.querySelector(`[name="example_source_year_${n}[]"]`)?.value  || '';
+            } else if (kind === 'serie') {
+              const w = ex.querySelector('.source-serie');
+              source.title   = w?.querySelector(`[name="example_source_title_${n}[]"]`)?.value   || '';
+              source.year    = w?.querySelector(`[name="example_source_year_${n}[]"]`)?.value    || '';
+              source.season  = w?.querySelector(`[name="example_source_season_${n}[]"]`)?.value  || '';
+              source.episode = w?.querySelector(`[name="example_source_episode_${n}[]"]`)?.value || '';
+            } else if (kind === 'redes') {
+              source.handle = ex.querySelector(`[name="example_source_handle_${n}[]"]`)?.value || '';
+              source.url    = ex.querySelector(`[name="example_source_url_${n}[]"]`)?.value    || '';
+            } else if (kind === 'cancion') {
+              source.song   = ex.querySelector(`[name="example_source_song_${n}[]"]`)?.value   || '';
+              source.artist = ex.querySelector(`[name="example_source_artist_${n}[]"]`)?.value || '';
+            } else if (kind === 'otro') {
+              source.text = ex.querySelector(`[name="example_source_text_${n}[]"]`)?.value || '';
+            }
+          }
+
+            const exObj = { es, en, source };
+
+            const fileInput = ex.querySelector(`input[type="file"][name="example_audio_${n}[]"]`);
+            if (fileInput?.files?.length) {
+              const orig = fileInput.files[0].name;
+              const safe = orig.normalize('NFKD').replace(/[^\w.\-]+/g, '_');
+              const serverSlug = word.toLowerCase()
+                .replace(/ñ/g,'n')
+                .replace(/[^\p{L}\p{N} ]/gu,'-')
+                .replace(/ /g,'-');
+              exObj.audio = `/static/audio/examples/${serverSlug}/${safe}`;
+            }
+
+            if (es || en || Object.keys(source).length) sense.examples.push(exObj);
+          });
+
+          senses.push(sense);
+        });
+
+        // Block saving if none of the sentidos has any real definition text
+        if (!hasAnyDefinition) {
+          alert('Agregá al menos un sentido con definición.');
+          return;
         }
 
-        const exObj = { es, en, source };
-
-        // If user selected a new example audio file, predict the saved path (matches server convention)
-        const fileInput = ex.querySelector(`input[type="file"][name="example_audio_${n}[]"]`);
-        if (fileInput?.files?.length) {
-          const orig = fileInput.files[0].name;
-          const safe = orig.normalize('NFKD').replace(/[^\w.\-]+/g, '_');
-          const serverSlug = word.toLowerCase()
-            .replace(/ñ/g,'n')
-            .replace(/[^\p{L}\p{N} ]/gu,'-')
-            .replace(/ /g,'-');
-          exObj.audio = `/static/audio/examples/${serverSlug}/${safe}`;
-        }
-
-        if (es || en || Object.keys(source).length) sense.examples.push(exObj);
-      });
-
-      if (sense.definition) senses.push(sense);
-    });
-
-    if (!senses.length) { alert('Agregá al menos un sentido con definición.'); return; }
-
-    // Build payload
+    // Build payload (always include variants & senses)
     const fd = new FormData();
-    fd.set('original_word', originalWord);
+    const effectiveOriginal = (originalWord && originalWord.trim()) ? originalWord.trim() : word;
+    fd.set('original_word', effectiveOriginal);
     fd.set('word', word);
     fd.set('variants', JSON.stringify(variants));
     fd.set('senses', JSON.stringify(senses));
@@ -486,16 +667,24 @@ function wireEditSubmit(originalWord){
       fd.set('audio_word', form.audio_word.files[0]);
     }
 
-    // Attach any example audio files present
+    // Attach example audio files
     form.querySelectorAll('input[type="file"][name^="example_audio_"]').forEach(inp => {
       [...(inp.files || [])].forEach(f => fd.append(inp.name.replace('[]',''), f));
     });
 
     try {
-      const res = await fetch(`/admin/glosario/{{ country_code }}/update`, { method:'POST', body: fd });
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || 'No se pudo actualizar');
-      alert('✅ Entrada actualizada');
+      const isNew = !(originalWord && originalWord.trim());
+      const url   = isNew
+        ? `/admin/glosario/{{ country_code }}/add`
+        : `/admin/glosario/{{ country_code }}/update`;
+
+      const res = await fetch(url, { method:'POST', body: fd });
+      let data = {};
+      try { data = await res.json(); } catch (_) {}
+
+      if (!res.ok || !data.success) throw new Error(data.error || `HTTP ${res.status}`);
+
+      alert(isNew ? '✅ Entrada creada' : '✅ Entrada actualizada');
       location.reload();
     } catch (err) {
       console.error(err);
@@ -515,9 +704,11 @@ async function editEntry(word, entry) {
     // After the form DOM is in, wire behaviors + init Quill, then prefill + hook submit
     setTimeout(() => {
       attachExampleBehaviors(document);
+      attachSentidoBehaviors(document);  // ← add this line
       initQuillEditors(document);
+
       prefillFromEntry(entry || { word });
-      wireEditSubmit(word);           // ← NEW: make “Guardar” work
+      wireEditSubmit(word);
     }, 0);
 
   } catch (e) {
@@ -525,6 +716,37 @@ async function editEntry(word, entry) {
     alert("No se pudo cargar el editor.");
   }
 }
+    async function deleteEntry(btn, word) {
+      if (!word) return;
+      if (!confirm(`¿Eliminar "${word}" del glosario? Esta acción no se puede deshacer.`)) return;
+
+      try {
+        const res = await fetch(`/admin/glosario/{{ country_code }}/delete`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ word })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.error || 'No se pudo eliminar');
+
+        // Remove the card from the UI
+        const card = btn.closest('.admin-entry-card');
+        if (card) card.remove();
+
+        // Update the total count text
+        const p = document.querySelector('p[style*="Total:"]');
+        if (p) {
+          const grid = document.querySelector('.admin-glossary-grid');
+          const count = grid ? grid.querySelectorAll('.admin-entry-card').length : 0;
+          p.textContent = `Total: ${count} entradas`;
+        }
+
+        alert('🗑️ Entrada eliminada');
+      } catch (err) {
+        console.error(err);
+        alert('❌ Error al eliminar: ' + err.message);
+      }
+    }
 
 /* ---------- Optional: open blank form for “Nueva entrada” ---------- */
 document.getElementById('btnNewEntry')?.addEventListener('click', async () => {
@@ -535,6 +757,7 @@ document.getElementById('btnNewEntry')?.addEventListener('click', async () => {
     setTimeout(() => {
       attachExampleBehaviors(document);
       initQuillEditors(document);
+      wireEditSubmit('');  // ← enables Guardar for brand new entries
     }, 0);
   } catch (e) {
     console.error(e);

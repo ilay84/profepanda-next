@@ -42,17 +42,18 @@
   <div class="sentido-block" data-sentido="1">
     <h4>Sentido 1</h4>
 
+    <label for="definicion_1"><strong>Definición</strong></label>
+    <div id="editor_definicion_1" class="quill-editor"></div>
+    <input type="hidden" id="definicion_1" name="definicion_1">
+
+    <!-- ⬇️ MOVED HERE: tags under the definition -->
     <label for="clase_1"><strong>Clase</strong></label>
     <input type="text" id="clase_1" name="clase_1" list="claseSuggestions" placeholder="Escribir clase (ej. sustantivo masculino)">
     <datalist id="claseSuggestions"></datalist>
 
     <label for="etiquetas_1"><strong>Etiquetas</strong></label>
     <input type="text" id="etiquetas_1" name="etiquetas_1" list="etiquetasSuggestions" placeholder="Separar con comas">
-    <datalist id="etiquetasSuggestions"></datalist>
-
-    <label for="definicion_1"><strong>Definición</strong></label>
-    <div id="editor_definicion_1" class="quill-editor"></div>
-    <input type="hidden" id="definicion_1" name="definicion_1">
+    <datalist id="etiquetasSuggestions"></datalist>    
 
     <label for="equivalentes_1"><strong>Equivalentes en inglés</strong></label>
     <input type="text" id="equivalentes_1" name="equivalentes_1" placeholder="Separar con comas">
