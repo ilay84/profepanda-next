@@ -1,97 +1,207 @@
 // static/js/exercises.js
-document.addEventListener("DOMContentLoaded", () => {
-  const modal = document.getElementById("pp-ex-modal");
-  if (!modal) return;
+(function(){
+  function init(){
+    // Support both old and new modal markups
+    const modal =
+      document.getElementById("pp-ex-modal") ||
+      document.querySelector(".pp-ex-modal") ||
+      document.getElementById("pp-exercise-modal");
 
-  const openButtons = document.querySelectorAll(".pp-ex-card, .pp-ex-card__open");
-  const closeButtons = modal.querySelectorAll("[data-close]");
+    // Do NOT early-return here: in admin preview the modal may be injected later.
+    const openButtons = document.querySelectorAll(".pp-ex-card, .pp-ex-card__open");
+    const closeButtons = modal ? modal.querySelectorAll("[data-close]") : [];
 
-  // ---------- Helpers ----------
-  async function loadExerciseData(exerciseId) {
-    const url = `/static/exercises/${exerciseId}.json`;
-    try {
-      const res = await fetch(url, { cache: "no-store" });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      // Accept either an array ([{...}]) or a single object ({...})
-      return Array.isArray(data) ? data[0] : data;
-    } catch (err) {
-      return { error: `No se pudo cargar ${url} — ${err.message}` };
+    // ---------- Helpers ----------
+    async function loadExerciseData(exerciseId) {
+      const url = `/static/exercises/${exerciseId}.json`;
+      try {
+        const res = await fetch(url, { cache: "no-store" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        return Array.isArray(data) ? data[0] : data;
+      } catch (err) {
+        return { error: `No se pudo cargar ${url} — ${err.message}` };
+      }
     }
-  }
 
-  function renderCarousel(modalEl, exercise) {
-    const titleEl = modalEl.querySelector("#pp-ex-modal-title");
-    titleEl.textContent = `Abrir ejercicio: ${exercise.title || "Ejercicio"}`;
+    function renderCarousel(modalEl, exercise) {
+      const titleEl = modalEl.querySelector("#pp-ex-modal-title");
+      if (titleEl) titleEl.textContent = `Abrir ejercicio: ${exercise.title || "Ejercicio"}`;
 
-    const content = modalEl.querySelector(".pp-ex-modal__content");
-    if (exercise.error) {
+      const content = modalEl.querySelector(".pp-ex-modal__content");
+      if (!content) return;
+
+      if (exercise.error) {
         content.innerHTML = `<p style="color:#b91c1c;"><strong>Error:</strong> ${exercise.error}</p>`;
         return;
-    }
-    if (!exercise.items || !exercise.items.length) {
+      }
+      if (!exercise.items || !exercise.items.length) {
         content.innerHTML = `<p style="color:#6b7280;">Este ejercicio no tiene ítems aún.</p>`;
         return;
-    }
+      }
 
-    // ── State for scoring ─────────────────────────────────────────────
-    const state = {
-        index: 0,
-        correct: 0,
-        responses: {} // { [q.id]: { selected: "T", isCorrect: true } }
-    };
+      // ── State ─────────────────────────────────────────────
+      const state = { index: 0, correct: 0, responses: {} };
 
-    // Restore if saved state exists
-    if (exercise._savedState) {
-      state.index = exercise._savedState.index || 0;
-      state.correct = exercise._savedState.correct || 0;
-      state.responses = exercise._savedState.responses || {};
-    }
+      // Restore if saved state exists
+      if (exercise._savedState) {
+        state.index = exercise._savedState.index || 0;
+        state.correct = exercise._savedState.correct || 0;
+        state.responses = exercise._savedState.responses || {};
+      }
 
-    // Persist to sessionStorage
-    function saveState() {
-      try {
-        const key = `pp-ex-${exercise.exercise_id || exercise.exerciseId || "unknown"}`;
-        const payload = {
-          index: state.index,
-          correct: state.correct,
-          responses: state.responses
-        };
-        sessionStorage.setItem(key, JSON.stringify(payload));
-      } catch (_) { /* ignore */ }
-    }
+      function saveState() {
+        try {
+          const key =
+            exercise._persistKey ||
+            `pp-ex-${exercise.exercise_id || exercise.exerciseId || "unknown"}`;
+          sessionStorage.setItem(key, JSON.stringify({
+            index: state.index, correct: state.correct, responses: state.responses
+          }));
+        } catch (_) {}
+      }
 
-    content.innerHTML = `
-      <div class="pp-ex-carousel" data-index="0">
-        <div class="pp-ex-progress" style="margin-bottom:.5rem;">
-          <div class="pp-ex-progressbar-wrap" style="height:6px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin-bottom:.4rem;">
-            <div class="pp-ex-progressbar" style="height:100%;width:0%;background:#2563eb;"></div>
+      content.innerHTML = `
+        <div class="pp-ex-carousel" data-index="0">
+          <div class="pp-ex-progress" style="margin-bottom:.5rem;">
+            <div class="pp-ex-progressbar-wrap" style="height:6px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin-bottom:.4rem;">
+              <div class="pp-ex-progressbar" style="height:100%;width:0%;background:#2563eb;transition:width .25s ease;"></div>
+            </div>
+            <div class="pp-ex-progresslabel" style="color:#6b7280;">
+              <span class="pp-ex-step">1</span> / ${exercise.items.length}
+            </div>
           </div>
-          <div class="pp-ex-progresslabel" style="color:#6b7280;">
-            <span class="pp-ex-step">1</span> / ${exercise.items.length}
+          <div class="pp-ex-slide" id="pp-ex-slide"></div>
+          <div class="pp-ex-nav" style="margin-top:1rem;display:flex;gap:.5rem;justify-content:flex-end;">
+            <button class="pp-ex-prev" type="button" disabled>← Anterior</button>
+            <button class="pp-ex-next" type="button">Siguiente →</button>
           </div>
         </div>
-        <div class="pp-ex-slide" id="pp-ex-slide"></div>
+      `;
 
-        <div class="pp-ex-nav" style="margin-top:1rem;display:flex;gap:.5rem;justify-content:flex-end;">
-        <button class="pp-ex-prev" type="button" disabled>← Anterior</button>
-        <button class="pp-ex-next" type="button">Siguiente →</button>
-        </div>
-      </div>
-    `;
+      const wrap = content.querySelector(".pp-ex-carousel");
+      const slide = content.querySelector("#pp-ex-slide");
+      const step  = content.querySelector(".pp-ex-step");
+      const btnPrev = content.querySelector(".pp-ex-prev");
+      const btnNext = content.querySelector(".pp-ex-next");
 
-    const wrap = content.querySelector(".pp-ex-carousel");
-    const slide = content.querySelector("#pp-ex-slide");
-    const step = content.querySelector(".pp-ex-step");
-    const btnPrev = content.querySelector(".pp-ex-prev");
-    const btnNext = content.querySelector(".pp-ex-next");
-    const barElInit = content.querySelector(".pp-ex-progressbar");
-    if (barElInit) barElInit.style.transition = "width .25s ease";
+      // --- Disabled styling + sync for nav buttons (Prev/Next) ---
+      function ppSyncBtnDisabledStyle(el){
+        if (!el) return;
+        el.style.opacity = el.disabled ? "0.5" : "1";
+        el.style.cursor  = el.disabled ? "not-allowed" : "pointer";
+        el.setAttribute("aria-disabled", el.disabled ? "true" : "false");
+      }
+      ppSyncBtnDisabledStyle(btnPrev);
+      ppSyncBtnDisabledStyle(btnNext);
 
+      // Watch the 'disabled' attribute and auto-update styles when any renderer toggles it
+      new MutationObserver(() => ppSyncBtnDisabledStyle(btnPrev))
+        .observe(btnPrev, { attributes: true, attributeFilter: ["disabled"] });
+      new MutationObserver(() => ppSyncBtnDisabledStyle(btnNext))
+        .observe(btnNext, { attributes: true, attributeFilter: ["disabled"] });
 
-    function renderSummary() {
+      function toEmbedYouTube(u) {
+        if (!u) return null;
+        try {
+          const url = new URL(u, window.location.origin);
+          const host = url.hostname.replace(/^www\./, "");
+          if (host === "youtu.be") {
+            const id = url.pathname.slice(1);
+            return id ? `https://www.youtube.com/embed/${id}` : u;
+          }
+          if (host.endsWith("youtube.com")) {
+            const id = url.searchParams.get("v");
+            return id ? `https://www.youtube.com/embed/${id}` : u;
+          }
+        } catch (_) {}
+        return u;
+      }
+
+      function resolveSrc(s, kind) {
+        if (!s || typeof s !== "string") return null;
+        if (s.startsWith("http") || s.startsWith("/") || s.startsWith("blob:") || s.startsWith("data:")) return s;
+        if (s.startsWith("exercises/media/") || s.startsWith("media/"))  return "/static/" + s.replace(/^\/?/,"");
+        if (s.startsWith("exercises/images/") || s.startsWith("images/"))return "/static/" + s.replace(/^\/?/,"");
+        if (s.startsWith("exercises/audio/") || s.startsWith("audio/"))  return "/static/" + s.replace(/^\/?/,"");
+        if (s.startsWith("exercises/video/") || s.startsWith("video/"))  return "/static/" + s.replace(/^\/?/,"");
+        if (kind === "image") return "/static/exercises/images/" + s;
+        if (kind === "audio") return "/static/exercises/audio/" + s;
+        if (kind === "video") return "/static/exercises/video/" + s;
+        return s;
+      }
+
+      function renderSummary() {
         const total = exercise.items.length;
-        const pct = Math.round((state.correct / total) * 100);
+        const pct = Math.round((state.correct / Math.max(1, total)) * 100);
+
+        const reviewHTML = (exercise.items || []).map((q, idx) => {
+          const r = state.responses[q.id] || {};
+          const tag = r.isCorrect ? "✅" : "❌";
+
+          // ---- TF / MCQ (single_choice) ----
+          if (q.type === "true_false" || q.type === "mcq" || q.type === "single_choice") {
+            const selectedKey   = r.selected;
+            const choices       = Array.isArray(q.choices) ? q.choices : [];
+            const selectedChoice = choices.find(c => c && c.key === selectedKey) || null;
+            const correctChoice  = choices.find(c => c && c.key === q.answer) || null;
+
+            const correctMsg = q.feedback_correct ?? (q.feedback && q.feedback.correct) ?? "¡Correcto!";
+            const incorrectMsg = (selectedChoice && (selectedChoice.feedback_incorrect || selectedChoice.feedback))
+                              ?? (q.feedback_incorrect ?? (q.feedback && q.feedback.incorrect) ?? "Repasá la explicación y volvé a intentar.");
+            const rationale = r.isCorrect ? correctMsg : incorrectMsg;
+
+            const yourAns  = selectedChoice ? (selectedChoice.label || selectedChoice.html || selectedKey || "-") : (selectedKey || "-");
+            const rightAns = correctChoice  ? (correctChoice.label  || correctChoice.html  || q.answer      || "-") : (q.answer || "-");
+
+            return `
+              <div class="pp-summary-item" style="border:1px solid #e5e7eb;border-radius:10px;padding:.5rem .6rem;">
+                <div style="font-weight:600;display:inline-flex;align-items:center;gap:.25rem;">${idx + 1}<span>: ${tag}</span></div>
+                <details style="margin-top:.35rem;">
+                  <summary style="cursor:pointer;user-select:none">Repasar</summary>
+                  <div style="margin-top:.4rem">
+                    <div style="color:#64748b;margin-bottom:.25rem;">${q.prompt_html || ""}</div>
+                    <div><strong>Tu respuesta:</strong> <span style="color:${r.isCorrect ? "#0a7f2e" : "#b91c1c"}">${yourAns}</span></div>
+                    <div><strong>Correcta:</strong> <span style="color:#0a7f2e">${rightAns}</span></div>
+                    <div style="margin-top:.25rem;color:#334155;">💡 ${rationale}</div>
+                  </div>
+                </details>
+              </div>
+            `;
+          }
+
+          // ---- CLOZE (per-blank rows) ----
+          const per = Array.isArray(r.perBlank) ? r.perBlank : [];
+          const rows = per.map(pb => {
+            const your  = (pb.your ?? pb.value ?? "").toString() || "—";
+            const right = Array.isArray(pb.answers) ? pb.answers.join(", ") : (pb.answers || "—");
+            const color = pb.ok ? "#0a7f2e" : "#b91c1c";
+            const fb    = pb.feedback ? `<div style="margin-top:.15rem;color:${color};">${pb.feedback}</div>` : "";
+            return `
+              <div style="display:grid;grid-template-columns:70px 1fr;gap:.5rem;align-items:start;">
+                <div class="tiny muted" style="font-weight:700;text-align:right;">${pb.key || ""}</div>
+                <div class="tiny" style="display:flex;flex-direction:column;gap:.2rem;">
+                  <div><span class="muted">Tu respuesta:</span> <code style="padding:.1rem .3rem;border:1px solid ${pb.ok ? "#86efac" : "#fecaca"};border-radius:6px;background:${pb.ok ? "#f0fdf4" : "#fef2f2"};">${your}</code></div>
+                  <div><span class="muted">Correctas:</span> <code style="padding:.1rem .3rem;border:1px solid #e5e7eb;border-radius:6px;background:#f8fafc;">${right}</code></div>
+                  ${fb}
+                </div>
+              </div>
+            `;
+          }).join("");
+
+          return `
+            <div class="pp-summary-item" style="border:1px solid #e5e7eb;border-radius:10px;padding:.5rem .6rem;">
+              <div style="font-weight:600;display:inline-flex;align-items:center;gap:.25rem;">${idx + 1}<span>: ${tag}</span></div>
+              <details style="margin-top:.35rem;">
+                <summary style="cursor:pointer;user-select:none">Repasar</summary>
+                <div style="margin-top:.4rem">
+                  <div style="color:#64748b;margin-bottom:.25rem;">${q.prompt_html || ""}</div>
+                  ${rows || "<div class='tiny muted'>Sin respuestas registradas.</div>"}
+                </div>
+              </details>
+            </div>
+          `;
+        }).join("");
 
         slide.innerHTML = `
           <div>
@@ -100,40 +210,8 @@ document.addEventListener("DOMContentLoaded", () => {
               Puntaje: <strong>${state.correct} / ${total}</strong> (${pct}%)
             </p>
             <div class="pp-ex-review-list" style="margin:.5rem 0;display:flex;flex-direction:column;gap:.5rem;">
-              ${exercise.items.map((q, idx) => {
-                const r = state.responses[q.id] || {};
-                const tag = r.isCorrect ? "✅" : "❌";
-                const selectedKey = r.selected;
-
-                const choices = Array.isArray(q.choices) ? q.choices : [];
-                const selectedChoice = choices.find(c => c && c.key === selectedKey) || null;
-                const correctChoice  = choices.find(c => c && c.key === q.answer) || null;
-
-                const correctMsg = q.feedback_correct ?? (q.feedback && q.feedback.correct) ?? "¡Correcto!";
-                const incorrectMsg = (selectedChoice && (selectedChoice.feedback_incorrect || selectedChoice.feedback))
-                                   ?? (q.feedback_incorrect ?? (q.feedback && q.feedback.incorrect) ?? "Repasá la explicación y volvé a intentar.");
-                const rationale = r.isCorrect ? correctMsg : incorrectMsg;
-
-                const yourAns  = selectedChoice ? (selectedChoice.label || selectedChoice.html || selectedKey) : (selectedKey || "-");
-                const rightAns = correctChoice  ? (correctChoice.label  || correctChoice.html  || q.answer)    : (q.answer || "-");
-
-                return `
-                  <div class="pp-summary-item" style="border:1px solid #e5e7eb;border-radius:10px;padding:.5rem .6rem;">
-                    <div style="font-weight:600;display:inline-flex;align-items:center;gap:.25rem;">${idx + 1}<span>: ${tag}</span></div>
-                    <details style="margin-top:.35rem;">
-                      <summary style="cursor:pointer;user-select:none">Repasar</summary>
-                      <div style="margin-top:.4rem">
-                        <div style="color:#64748b;margin-bottom:.25rem;">${q.prompt_html || ""}</div>
-                        <div><strong>Tu respuesta:</strong> <span style="color:${r.isCorrect ? "#0a7f2e" : "#b91c1c"}">${yourAns}</span></div>
-                        <div><strong>Correcta:</strong> <span style="color:#0a7f2e">${rightAns}</span></div>
-                        <div style="margin-top:.25rem;color:#334155;">💡 ${rationale}</div>
-                      </div>
-                    </details>
-                  </div>
-                `;
-              }).join("")}
+              ${reviewHTML}
             </div>
-
             <button class="pp-ex-retry" type="button"
               style="margin-top:1rem;background:#f59e0b;color:#fff;border:none;border-radius:8px;padding:.5rem 1rem;font-size:.9rem;cursor:pointer;">
               ↻ Intentar de nuevo
@@ -145,183 +223,201 @@ document.addEventListener("DOMContentLoaded", () => {
         btnNext.textContent = "Cerrar";
         btnPrev.disabled = total === 0;
 
-        // Wire jump-to-question buttons
-        slide.querySelectorAll(".pp-ex-jump").forEach(btn => {
-          btn.addEventListener("click", () => {
-            const idx = Number(btn.dataset.idx);
-            state.index = idx;
-            wrap.dataset.index = String(idx);
-            renderSlide(idx);
-          });
-        });
-
         const barEl = content.querySelector(".pp-ex-progressbar");
         if (barEl) barEl.style.width = "100%";
 
         const btnRetry = slide.querySelector(".pp-ex-retry");
+        if (btnRetry) {
           btnRetry.addEventListener("click", () => {
-          state.index = 0;
-          state.correct = 0;
-          state.responses = {};
-          wrap.dataset.index = "0";
-          renderSlide(0);
-          saveState();
-        });
-    }
-
-    function renderSlide(i) {
-      const total = exercise.items.length;
-
-      // Summary when i === total
-      if (i >= total) {
-        renderSummary();
-        return;
+            state.index = 0;
+            state.correct = 0;
+            state.responses = {};
+            wrap.dataset.index = "0";
+            renderSlide(0);
+            // persist reset
+            try {
+              const key = exercise._persistKey || `pp-ex-${exercise.exercise_id || exercise.exerciseId || "unknown"}`;
+              sessionStorage.setItem(key, JSON.stringify({ index: 0, correct: 0, responses: {} }));
+            } catch(_) {}
+          });
+        }
       }
 
-      const q = exercise.items[i];
+      function renderSlide(i) {
+        const total = exercise.items.length;
+        if (i >= total) { renderSummary(); return; }
 
-      // If type is not specified, default to single choice
-      const type = q.type || "single_choice";
+        const raw = exercise.items[i] || {};
+        const m   = raw.media || {};
+        const q   = { ...raw };
 
-      if (type === "true_false" || type === "mcq" || type === "single_choice") {
-        if (window.PPTypes && typeof window.PPTypes.renderSingleChoice === "function") {
-          window.PPTypes.renderSingleChoice(q, state, i, {
-            content,
-            slide,
-            step,
-            btnNext,
-            btnPrev,
-            saveState
-          }, exercise);
-        } else {
-          slide.innerHTML = `<div style="color:#b91c1c;">Error: renderSingleChoice no está cargado</div>`;
-        }
-      } else {
-        slide.innerHTML = `<div style="color:#b91c1c;">Tipo de ejercicio no soportado: ${type}</div>`;
-      }
-    }
+        // --- media normalization into flat fields the renderers already use ---
+        q.image         = resolveSrc(q.image || m.image || null, "image");
+        q.image_alt     = q.image_alt || m.image_alt || null;
+        q.image_caption = q.image_caption || m.image_alt || null;
+        q.audio         = resolveSrc(q.audio || m.audio || null, "audio");
+        q.video_mp4     = resolveSrc(q.video_mp4 || m.video || null, "video");
+        q.video_iframe  = toEmbedYouTube(q.video_iframe || m.youtube_url || null);
 
+        // --- robust type detection: prefer explicit, else infer from data ---
+        const rawType = (q.type || "").toString().toLowerCase();
+        const inferredType =
+          rawType ||
+          (Array.isArray(q.answers) && q.answers.length ? "cloze" :
+           (Array.isArray(q.choices) && q.choices.length ? "single_choice" : "single_choice"));
+        const type = inferredType;
 
-
-    // Initial render (use restored index if present)
-    wrap.dataset.index = String(state.index);
-    renderSlide(state.index);
-
-    // Wire buttons
-    btnPrev.addEventListener("click", () => {
-        if (state.index > 0) {
-        state.index -= 1;
-        wrap.dataset.index = String(state.index);
-        renderSlide(state.index);
-        saveState();
-        }
-    });
-
-    btnNext.addEventListener("click", () => {
-        const last = exercise.items.length;
-        if (state.index < last) {
-        state.index += 1;
-        wrap.dataset.index = String(state.index);
-        renderSlide(state.index);
-        saveState();
-        } else {
-        // On summary "Cerrar"
-        modalEl.setAttribute("aria-hidden", "true");
-        document.body.style.overflow = "";
-        }
-    });
-    }
-
-    // Expose for external callers (old modal styling)
-    window.PPRenderCarousel = renderCarousel;
-
-  // ---------- Open modal ----------
-  openButtons.forEach(btn => {
-    btn.addEventListener("click", async (e) => {
-      const card = e.currentTarget.closest(".pp-ex-card");
-      if (!card) return;
-
-      const id = card.dataset.exerciseId;
-      const version = card.dataset.exerciseVersion;
-      const type = card.dataset.exerciseType;
-      const title = card.getAttribute("aria-label") || "Ejercicio";
-
-      // Basic title while loading
-      modal.querySelector("#pp-ex-modal-title").textContent = title;
-      modal.querySelector(".pp-ex-modal__content").innerHTML = `<p style="margin:0;color:#6b7280;">Cargando ejercicio…</p>`;
-      modal.setAttribute("aria-hidden", "false");
-      document.body.style.overflow = "hidden";
-
-      const ex = await loadExerciseData(id);
-      // Fallback: if file missing, at least show the metadata
-      if (ex.error) {
-        modal.querySelector(".pp-ex-modal__content").innerHTML =
-          `<p><strong>ID:</strong> ${id} (v${version})</p>
-           <p><strong>Tipo:</strong> ${type}</p>
-           <p style="color:#b91c1c;"><strong>Error:</strong> ${ex.error}</p>`;
-        return;
-      }
-
-      // Validate schema (lightweight)
-      {
-        const problems = [];
-        if (!ex || typeof ex !== "object") {
-          problems.push("el archivo no es un objeto JSON válido");
-        } else {
-          if (!Array.isArray(ex.items) || ex.items.length === 0) {
-            problems.push("items[] falta o está vacío");
+        // --- route to renderer ---
+        if (type === "true_false" || type === "mcq" || type === "single_choice") {
+          if (window.PPTypes && typeof window.PPTypes.renderSingleChoice === "function") {
+            window.PPTypes.renderSingleChoice(
+              q, state, i,
+              { content, slide, step, btnNext, btnPrev, saveState },
+              exercise
+            );
           } else {
-            ex.items.forEach((q, idx) => {
-              if (!q || typeof q !== "object") problems.push(`ítem ${idx + 1}: no es un objeto`);
-              if (!q.id) problems.push(`ítem ${idx + 1}: falta "id"`);
-              if (!q.prompt_html) problems.push(`ítem ${idx + 1}: falta "prompt_html"`);
-              if (!Array.isArray(q.choices) || q.choices.length < 2) problems.push(`ítem ${idx + 1}: "choices" inválidas o < 2`);
-              if (typeof q.answer === "undefined") {
-                problems.push(`ítem ${idx + 1}: falta "answer"`);
-              } else if (!Array.isArray(q.choices) || !q.choices.some(c => c && c.key === q.answer)) {
-                problems.push(`ítem ${idx + 1}: "answer" no coincide con ningún choices.key`);
-              }
-            });
+            slide.innerHTML = `<div style="color:#b91c1c;">Error: renderSingleChoice no está cargado</div>`;
           }
-        }
-        if (problems.length) {
-          modal.querySelector(".pp-ex-modal__content").innerHTML =
-            `<div style="color:#b91c1c;">
-               <strong>Archivo de ejercicio inválido:</strong>
-               <ul style="margin:.25rem 0 0;padding-left:1.25rem;">
-                 ${problems.slice(0, 6).map(p => `<li>${p}</li>`).join("")}
-                 ${problems.length > 6 ? `<li>…y ${problems.length - 6} más</li>` : ""}
-               </ul>
-             </div>`;
           return;
         }
+
+        if (
+          type === "cloze" ||
+          type === "fitb" ||
+          type === "fill_blank" ||
+          type === "fill_in_blank" ||
+          type === "cloze_one_blank" ||
+          type === "cloze_fill"
+        ) {
+          const callCloze = () => {
+            if (window.PPTypes && typeof window.PPTypes.renderCloze === "function") {
+              window.PPTypes.renderCloze(
+                q, state, i,
+                { content, slide, step, btnNext, btnPrev, saveState },
+                exercise
+              );
+            } else {
+              slide.innerHTML = `<div style="color:#b91c1c;">Error: renderCloze no está cargado</div>`;
+            }
+          };
+
+          if (window.PPTypes && typeof window.PPTypes.renderCloze === "function") {
+            callCloze();
+          } else {
+            // Lazy-load cloze.js once if the template didn’t include it
+            const already = document.querySelector('script[data-pp-load="cloze-js"]');
+            if (!already) {
+              const s = document.createElement('script');
+              s.src = '/static/js/ex_types/cloze.js';
+              s.defer = true;
+              s.setAttribute('data-pp-load', 'cloze-js');
+              s.onload = callCloze;
+              s.onerror = () => {
+                slide.innerHTML = `<div style="color:#b91c1c;">Error: no se pudo cargar cloze.js</div>`;
+              };
+              document.head.appendChild(s);
+            } else {
+              setTimeout(callCloze, 50);
+            }
+          }
+          return;
+        }
+
+        slide.innerHTML = `<div style="color:#b91c1c;">Tipo de ejercicio no soportado: ${type}</div>`;
       }
 
-      // Ensure minimal fields
-      ex.title = ex.title || title;
+      // Initial render (use restored index if present)
+      wrap.dataset.index = String(state.index);
+      renderSlide(state.index);
 
-      // Restore state from sessionStorage (if available)
-      try {
-        const key = `pp-ex-${id}`;
-        const saved = sessionStorage.getItem(key);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          ex._savedState = parsed; // attach for renderCarousel
+      // Wire buttons
+      btnPrev.addEventListener("click", () => {
+        if (btnPrev.disabled) return; // hard block if disabled
+        if (state.index > 0) {
+          state.index -= 1;
+          wrap.dataset.index = String(state.index);
+          renderSlide(state.index);
+          saveState();
         }
-      } catch (_) { /* ignore */ }
+      });
 
-      renderCarousel(modal, ex);
-    });
-  });
+      btnNext.addEventListener("click", () => {
+        if (btnNext.disabled) return; // hard block if disabled
+        const last = exercise.items.length;
+        if (state.index < last) {
+          state.index += 1;
+          wrap.dataset.index = String(state.index);
+          renderSlide(state.index);
+          saveState();
+        } else {
+          modalEl.setAttribute("aria-hidden", "true");
+          document.body.style.overflow = "";
+        }
+      });
+    }
 
-  // ---------- Close modal ----------
-  closeButtons.forEach(btn => {
-    btn.addEventListener("click", () => {
-      modal.setAttribute("aria-hidden", "true");
-      document.body.style.overflow = "";
+    // Expose for external callers
+    window.PPRenderCarousel = renderCarousel;
+    window.renderCarousel = renderCarousel;
+
+    // ---------- Open modal ----------
+    openButtons.forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        const card = e.currentTarget.closest(".pp-ex-card");
+        if (!card) return;
+
+        const id = card.dataset.exerciseId;
+        const version = card.dataset.exerciseVersion;
+        const type = card.dataset.exerciseType;
+        const title = card.getAttribute("aria-label") || "Ejercicio";
+
+        if (modal) {
+          const t = modal.querySelector("#pp-ex-modal-title");
+          const c = modal.querySelector(".pp-ex-modal__content");
+          if (t) t.textContent = title;
+          if (c) c.innerHTML = `<p style="margin:0;color:#6b7280;">Cargando ejercicio…</p>`;
+          modal.setAttribute("aria-hidden", "false");
+          document.body.style.overflow = "hidden";
+        }
+
+        const ex = await loadExerciseData(id);
+        if (ex.error && modal) {
+          modal.querySelector(".pp-ex-modal__content").innerHTML =
+            `<p><strong>ID:</strong> ${id} (v${version})</p>
+             <p><strong>Tipo:</strong> ${type}</p>
+             <p style="color:#b91c1c;"><strong>Error:</strong> ${ex.error}</p>`;
+          return;
+        }
+
+        ex.title = ex.title || title;
+        try {
+          const key = `pp-ex-${id}`;
+          const saved = sessionStorage.getItem(key);
+          if (saved) ex._savedState = JSON.parse(saved);
+          ex._persistKey = key; // ensure saveState() uses the same key
+        } catch (_) {}
+
+        renderCarousel(modal, ex);
+      });
     });
-  });
-});
+
+    // ---------- Close modal ----------
+    closeButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        if (!modal) return;
+        modal.setAttribute("aria-hidden", "true");
+        document.body.style.overflow = "";
+      });
+    });
+  } // end init
+
+  // Run now if DOM is ready; otherwise wait for DOMContentLoaded
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
 
 // === BEGIN: Exercise Modal Loader ===
 window.PPExercises = (function(NS){
@@ -519,3 +615,48 @@ window.PPExercises = (function(NS){
   NS.openExerciseOld = openExerciseOld;
 })(window.PPExercises = window.PPExercises || {});
 // === END: Adapter to old modal & carousel ===
+
+// --- Expose carousel renderer for admin preview (TF/MCQ) with a shim ---
+(function(){
+  try {
+    if (typeof window !== 'undefined' && typeof renderCarousel === 'function') {
+      const _real = renderCarousel;
+
+      // Accept either (modalEl, exercise) or (bodyEl, exercise).
+      function shimmedRenderCarousel(el, exercise){
+        // If we were given the modal, great — call directly.
+        const looksLikeModal =
+          !!(el && el.querySelector && el.querySelector('#pp-ex-modal-title') && el.querySelector('.pp-ex-modal__content'));
+
+        if (looksLikeModal) {
+          return _real(el, exercise);
+        }
+
+        // If we were given the body element, find the modal and forward.
+        let modalEl = null;
+        try {
+          if (window.PPAdminModal && typeof window.PPAdminModal.getPPModalEls === 'function') {
+            const els = window.PPAdminModal.getPPModalEls();
+            modalEl = els && els.modal ? els.modal : null;
+          }
+        } catch(_) {}
+
+        // Fallback discovery if helper isn’t present for any reason
+        if (!modalEl) {
+          modalEl =
+            document.getElementById('pp-ex-modal') ||
+            document.querySelector('.pp-ex-modal') ||
+            document.getElementById('pp-exercise-modal') ||
+            document.body; // absolute last resort
+        }
+
+        return _real(modalEl, exercise);
+      }
+
+      // Primary name preview.js looks for
+      window.renderCarousel = shimmedRenderCarousel;
+      // Alternate name preview.js also checks
+      window.PPRenderCarousel = shimmedRenderCarousel;
+    }
+  } catch (_) { /* noop */ }
+})();

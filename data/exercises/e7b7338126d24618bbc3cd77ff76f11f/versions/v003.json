@@ -1,0 +1,64 @@
+{
+  "id": "e7b7338126d24618bbc3cd77ff76f11f",
+  "type": "cloze",
+  "title": "asdf",
+  "version": 3,
+  "created_at": "2025-10-04T13:26:29Z",
+  "items": [
+    {
+      "prompt": "Hola, mi [[B1]]. ¿Qué me [[B2]]?",
+      "blanks": [
+        {
+          "key": "B1",
+          "answers": [
+            "amor"
+          ],
+          "case_sensitive": false,
+          "normalize_accents": true
+        },
+        {
+          "key": "B2",
+          "answers": [
+            "contás"
+          ],
+          "case_sensitive": false,
+          "normalize_accents": true
+        }
+      ],
+      "feedback_correct": "sí",
+      "feedback_incorrect": "ups",
+      "hint": "1) apelativo cariñoso\n2) contar",
+      "media": {
+        "youtube_url": null,
+        "image_alt": null,
+        "image": null,
+        "audio": null,
+        "video": null
+      }
+    },
+    {
+      "prompt": "Andate a la [[B1]].",
+      "blanks": [
+        {
+          "key": "B1",
+          "answers": [
+            "mierda"
+          ],
+          "case_sensitive": false,
+          "normalize_accents": true
+        }
+      ],
+      "feedback_correct": "sí",
+      "feedback_incorrect": "ups",
+      "hint": "palabra ofensiva que comienza con \"m\"",
+      "media": {
+        "youtube_url": null,
+        "image_alt": null,
+        "image": null,
+        "audio": null,
+        "video": null
+      }
+    }
+  ],
+  "meta": {}
+}

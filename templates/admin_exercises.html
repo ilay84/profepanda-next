@@ -152,59 +152,10 @@
     background: transparent;
   }
 
-  /* Modal */
-  .ex-modal {
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    display: none;
-  }
-  .ex-modal.open { display: block; }
-  .ex-modal-backdrop {
-    position: absolute;
-    inset: 0;
-    background: rgba(15, 23, 42, 0.45);
-    backdrop-filter: blur(2px);
-  }
-  .ex-modal-panel {
-    position: relative;
-    margin: 4vh auto;
-    max-width: 980px;
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 14px;
-    box-shadow: 0 20px 60px rgba(0,0,0,.25);
-    overflow: hidden;
-  }
-  .ex-modal-panel header {
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    padding:.85rem 1rem;
-    border-bottom:1px solid #e5e7eb;
-    background:#f8fafc;
-  }
-  .ex-modal-panel header h3 {
-    margin:0;
-    font-size:1rem;
-    color:#0f172a;
-  }
-  .ex-modal-body {
-    padding:1rem;
-    max-height: 70vh;
-    overflow:auto;
-  }
-  .ex-modal-close {
-    appearance:none;
-    border:1px solid #cbd5e1;
-    background:#fff;
-    border-radius:10px;
-    padding:.4rem .6rem;
-    cursor:pointer;
-  }
-  .ex-modal-close:hover {
-    background:#f1f5f9;
-  }
+  /* Admin library preview modal: bigger panel + tall body for iframe */
+  #lib-preview-modal .ex-modal-panel { max-width: 920px; }
+  #lib-preview-modal .ex-modal-body { padding: 0; height: 78vh; }
+  #lib-preview-iframe { width: 100%; height: 100%; border: 0; display: block; }
 </style>
 
 <div class="ex-admin-wrap">
@@ -232,8 +183,9 @@
                 {% endif %}
               </div>
               <div class="row">
+                <button class="btn tiny" type="button" data-ex-preview="true" data-ex-id="{{ ex.id }}">👁️ Vista previa</button>
                 <a class="btn tiny" href="{{ url_for('admin.admin_exercises_new') }}?type={{ ex.type or 'tf' }}&id={{ ex.id }}">✏️ Editar</a>
-                <button class="btn tiny" type="button" data-ex-id="{{ ex.id }}">🗑️ Eliminar</button>
+                <button class="btn tiny" type="button" data-ex-id="{{ ex.id }}" data-ex-delete="true">🗑️ Eliminar</button>
               </div>
             </div>
           {% endfor %}
@@ -258,7 +210,7 @@
     <div class="ex-body">
       <hr style="margin:1rem 0;border:none;border-top:1px solid #e5e7eb;">
       <div>
-        <div class="tiny muted">Total ejercicios: <strong>{{ (index.exercises or [])|length }}</strong></div>
+        <div class="tiny muted">Total ejercicios: <strong>{{ index.exercises | default([]) | length }}</strong></div>
       </div>
     </div>
   </section>
@@ -273,258 +225,58 @@
       </header>
       <div class="ex-modal-body">
         {% if create_type == 'tf' %}
-        <form id="ex-tf-form" class="tiny" action="{{ url_for('admin.admin_exercises_save') }}" method="post" style="margin-top:.25rem;">
-          <input type="hidden" name="type" value="tf">
-          {% if edit_ex and edit_ex.id %}
-          <input type="hidden" name="id" value="{{ edit_ex.id }}">
-          {% endif %}
-          <!-- This hidden textarea will be filled with JSON on submit -->
-          <textarea id="itemsPayload" name="items" style="display:none;"></textarea>
+          {% include 'admin/builders/_tf.html' %}
+          <script>
+            // Safe JS/Jinja bridge
+            window.PP_TF_EDIT_EX = {{ edit_ex|tojson|safe if edit_ex else "null" }};
+            window.PP_ADMIN_LIBRARY_URL = "{{ url_for('admin.admin_exercises_library') }}";
+          </script>
+          <script defer src="{{ url_for('static', filename='js/admin/builder_tf.js') }}?v=ex1"></script>
 
-          <div style="display:flex;flex-direction:column;gap:.75rem;max-width:900px;">
-            <label><strong>Título del ejercicio</strong>
-              <input name="title" type="text" required placeholder="Ej.: SER vs ESTAR — T/F (A2)"
-                     style="width:100%;padding:.6rem;border:1px solid #cbd5e1;border-radius:8px;">
-            </label>
+        {% elif create_type == 'mcq' %}
+          {% include 'admin/builders/_mcq.html' %}
+          <script>
+            // Safe JS/Jinja bridge
+            window.PP_MCQ_EDIT_EX = {{ edit_ex|tojson|safe if edit_ex else "null" }};
+            window.PP_ADMIN_LIBRARY_URL = "{{ url_for('admin.admin_exercises_library') }}";
+          </script>
+          <script defer src="{{ url_for('static', filename='js/admin/builder_mcq.js') }}?v=ex1"></script>
 
-            <!-- Items builder -->
-            <div>
-              <div class="row" style="justify-content:space-between;align-items:center;">
-                <div class="muted" style="font-weight:600;">Preguntas (Verdadero/Falso)</div>
-                <button type="button" id="btnAddItem" class="btn">+ Agregar pregunta</button>
-              </div>
-              <div id="itemsList" style="display:flex;flex-direction:column;gap:.75rem;margin-top:.75rem;"></div>
-            </div>
+        {% elif create_type == 'cloze' %}
+          {% include 'admin/builders/_cloze.html' %}
+          <script>
+            // Safe JS/Jinja bridge
+            window.PP_CLOZE_EDIT_EX = {{ edit_ex|tojson|safe if edit_ex else "null" }};
+            window.PP_ADMIN_LIBRARY_URL = "{{ url_for('admin.admin_exercises_library') }}";
+          </script>
+          <script defer src="{{ url_for('static', filename='js/admin/builder_cloze.js') }}?v=ex1"></script>
 
-            <div class="row">
-              <button class="btn btn-primary" type="submit">Guardar versión</button>
-              <button class="btn btn-secondary" type="button" id="btnCancel">Cancelar</button>
-              <span class="tiny muted">Se guardará en <code>data/exercises/</code> y se actualizará <code>exercises.index.json</code>.</span>
-            </div>
-          </div>
-        </form>
-
-        <script>
-          (function(){
-            const itemsList = document.getElementById('itemsList');
-            const btnAdd = document.getElementById('btnAddItem');
-            const form = document.getElementById('ex-tf-form');
-            const payload = document.getElementById('itemsPayload');
-
-            const btnCancel = document.getElementById('btnCancel');
-            const modal = document.getElementById('ex-modal');
-            const modalClose = document.getElementById('ex-modal-close');
-            const modalBackdrop = document.getElementById('ex-modal-backdrop');
-
-            // Simple helper to create elements
-            function el(tag, attrs={}, children=[]){
-              const node = document.createElement(tag);
-              Object.entries(attrs).forEach(([k,v])=>{
-                if(k === 'class') node.className = v;
-                else if(k === 'style') node.setAttribute('style', v);
-                else node.setAttribute(k, v);
-              });
-              (Array.isArray(children)?children:[children]).forEach(c=>{
-                if(typeof c === 'string') node.appendChild(document.createTextNode(c)); else if(c) node.appendChild(c);
-              });
-              return node;
-            }
-
-            function itemCard(idx){
-              const wrap = el('div', {class:'tf-item', style:'border:1px solid #e5e7eb;border-radius:12px;padding:.75rem;background:#fff;'});
-              const header = el('div', {style:'display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;'});
-              header.appendChild(el('div', {class:'muted'}, [`Pregunta #${idx+1}`]));
-              const btnDel = el('button', {type:'button', class:'btn'}, 'Eliminar');
-              btnDel.addEventListener('click', () => { wrap.remove(); isDirty = true; });
-              header.appendChild(btnDel);
-
-              const prompt = el('textarea', {
-                placeholder: 'Enunciado de la afirmación…',
-                rows:'2',
-                style:'width:100%;padding:.5rem;border:1px solid #cbd5e1;border-radius:8px;margin:.25rem 0;'
-              });
-
-              const answerRow = el('div', {class:'row tf-radio', style:'gap:1rem;align-items:center;margin:.25rem 0;'});
-              const radioName = `ans-${crypto.randomUUID()}`;
-              const trueOpt = el('label', {}, [
-                el('input', {type:'radio', name:radioName, value:'true'}),
-                el('span', {}, 'Verdadero')
-              ]);
-              const falseOpt = el('label', {}, [
-                el('input', {type:'radio', name:radioName, value:'false'}),
-                el('span', {}, 'Falso')
-              ]);
-              answerRow.appendChild(el('div', {class:'muted'}, 'Respuesta correcta:'));
-
-              // Ensure both radios share the same name group
-              falseOpt.firstChild.name = trueOpt.firstChild.name;
-              answerRow.appendChild(trueOpt);
-              answerRow.appendChild(falseOpt);
-
-              const fbOk = el('textarea', {
-                placeholder:'Feedback para respuesta correcta (opcional)',
-                rows:'2',
-                style:'width:100%;padding:.5rem;border:1px solid #cbd5e1;border-radius:8px;margin:.25rem 0;'
-              });
-              const fbBad = el('textarea', {
-                placeholder:'Feedback para respuesta incorrecta (opcional)',
-                rows:'2',
-                style:'width:100%;padding:.5rem;border:1px solid #cbd5e1;border-radius:8px;margin:.25rem 0;'
-              });
-              const hint = el('textarea', {
-                placeholder:'Pista (opcional; si hay pista, el botón “Ver pista” aparecerá)',
-                rows:'2',
-                style:'width:100%;padding:.5rem;border:1px solid #cbd5e1;border-radius:8px;margin:.25rem 0;'
-              });
-
-              wrap.appendChild(header);
-              wrap.appendChild(prompt);
-              wrap.appendChild(answerRow);
-              wrap.appendChild(fbOk);
-              wrap.appendChild(fbBad);
-              wrap.appendChild(hint);
-
-              // expose getters for serialization
-              wrap._get = () => {
-                const ansTrue = trueOpt.querySelector('input').checked;
-                const ansFalse = falseOpt.querySelector('input').checked;
-                const hasAnswer = ansTrue || ansFalse;
-                return {
-                  prompt: prompt.value.trim(),
-                  answer: hasAnswer ? ansTrue : null,
-                  feedback_correct: fbOk.value.trim() || null,
-                  feedback_incorrect: fbBad.value.trim() || null,
-                  hint: hint.value.trim() || null
-                };
-              };
-              return wrap;
-            }
-
-            // Dirty tracking
-            let isDirty = false;
-            form.addEventListener('input', () => { isDirty = true; });
-            btnAdd.addEventListener('click', () => { isDirty = true; });
-
-            function renumber(){
-              const cards = [...itemsList.querySelectorAll('.tf-item')];
-              cards.forEach((c,i)=>{
-                const title = c.querySelector('.muted');
-                if(title) title.textContent = `Pregunta #${i+1}`;
-              });
-            }
-
-            btnAdd.addEventListener('click', ()=>{
-              const idx = itemsList.querySelectorAll('.tf-item').length;
-              itemsList.appendChild(itemCard(idx));
-              renumber();
-            });
-
-            {% if edit_ex %}
-            // Prefill form with existing exercise data
-            const ex = {{ edit_ex|tojson }};
-            if (ex && ex.title) {
-              form.querySelector("input[name=title]").value = ex.title;
-            }
-            if (Array.isArray(ex.items)) {
-              ex.items.forEach((it, idx) => {
-                const card = itemCard(idx);
-                itemsList.appendChild(card);
-                // fill values
-                card.querySelector("textarea").value = it.prompt || "";
-                const radios = card.querySelectorAll("input[type=radio]");
-                radios.forEach(r => { if ((r.value === "true") === !!it.answer) r.checked = true; });
-                const ta = card.querySelectorAll("textarea");
-                if (ta[1]) ta[1].value = it.feedback_correct || "";
-                if (ta[2]) ta[2].value = it.feedback_incorrect || "";
-                if (ta[3]) ta[3].value = it.hint || "";
-              });
-              renumber();
-            }
-            {% else %}
-            // Seed with one empty item for convenience
-            btnAdd.click();
-            {% endif %}
-
-            // Cancel = close modal or go back to library
-            function closeModal(){
-              modal.classList.remove('open');
-              // Optional: clean the query string when closing
-              if (window.history && window.history.replaceState) {
-                const url = new URL(window.location);
-                url.searchParams.delete('type');
-                url.searchParams.delete('id');
-                window.history.replaceState({}, '', url.pathname + url.search);
-              }
-            }
-            btnCancel.addEventListener('click', () => {
-              if (isDirty && !confirm('¿Descartar cambios no guardados?')) return;
-              closeModal();
-            });
-            modalClose.addEventListener('click', () => {
-              if (isDirty && !confirm('¿Descartar cambios no guardados?')) return;
-              closeModal();
-            });
-            modalBackdrop.addEventListener('click', () => {
-              if (isDirty && !confirm('¿Descartar cambios no guardados?')) return;
-              closeModal();
-            });
-
-            // Submit
-            form.addEventListener('submit', async (e)=>{
-              // Build items array
-              const cards = [...itemsList.querySelectorAll('.tf-item')];
-              const items = cards.map(c => c._get()).filter(it => (it.prompt && it.answer !== null));
-              if(items.length === 0){
-                e.preventDefault();
-                alert('Agregá al menos 1 pregunta y marcá su respuesta correcta (V/F).');
-                return;
-              }
-              payload.value = JSON.stringify(items);
-
-              // Intercept submit to show a toast and stay on page
-              e.preventDefault();
-
-              // Tiny toast helper (created once)
-              function showToast(msg, isErr){
-                let t = document.getElementById('pp-toast');
-                if(!t){
-                  t = document.createElement('div');
-                  t.id = 'pp-toast';
-                  t.setAttribute('style',
-                    'position:fixed;bottom:16px;right:16px;z-index:99999;padding:10px 12px;border-radius:10px;'+
-                    'border:1px solid #e5e7eb;background:#fff;box-shadow:0 8px 30px rgba(0,0,0,.12);'+
-                    'color:#0f172a;font:14px/1.2 system-ui;display:none;'
-                  );
-                  document.body.appendChild(t);
-                }
-                t.style.borderColor = isErr ? '#dc2626' : '#16a34a';
-                t.style.boxShadow   = isErr ? '0 8px 30px rgba(220,38,38,.25)' : '0 8px 30px rgba(22,163,74,.25)';
-                t.textContent = msg;
-                t.style.display = 'block';
-                setTimeout(()=>{ t.style.display = 'none'; }, 2000);
-              }
-
-              try{
-                const res = await fetch(form.action, { method:'POST', body:new FormData(form) });
-                const data = await res.json().catch(()=>({ success:false, error:'Respuesta inválida' }));
-                if(data && data.success){
-                  showToast('✔️ Ejercicio guardado', false);
-                  // brief pause, then return to library
-                  setTimeout(()=>{ window.location.href = "{{ url_for('admin.admin_exercises_library') }}"; }, 600);
-                }else{
-                  showToast('❌ ' + (data && data.error ? data.error : 'Error al guardar'), true);
-                }
-              }catch(err){
-                showToast('❌ Error de red al guardar', true);
-              }
-            });
-          })();
-        </script>
         {% else %}
-          <p class="muted">Elegí un tipo de ejercicio para comenzar. La lista de la izquierda muestra lo que ya existe.</p>
+          <p class="muted">
+            Elegí un tipo de ejercicio para comenzar. La lista de la izquierda muestra lo que ya existe.
+          </p>
         {% endif %}
       </div>
     </div>
   </div>
-</div>
+</div> <!-- /.ex-admin-wrap -->
+
+<!-- Admin URLs for JS to use -->
+<script>
+  window.PP_ADMIN_PREVIEW_URL_TMPL = "{{ url_for('admin.admin_exercises_preview', exercise_id='__ID__') }}";
+  window.PP_ADMIN_DELETE_URL_TMPL  = "{{ url_for('admin.admin_exercises_delete',  exercise_id='__ID__') }}";
+  window.PP_ADMIN_LIBRARY_URL      = "{{ url_for('admin.admin_exercises_library') }}";
+</script>
+
+<!-- Hint for preview.js to auto-load the public player if missing -->
+<script>
+  window.PP_PUBLIC_PLAYER_SRC = "{{ url_for('static', filename='js/exercises.js') }}?v=ex1";
+</script>
+
+<!-- Admin preview wiring (modal + click handlers + rendering) -->
+<script defer src="{{ url_for('static', filename='js/admin/preview.js') }}?v=ex3"></script>
+
+<!-- Preview modal markup (your existing partial) -->
+{% include "_exercise_modal.html" %}
+
 {% endblock %}

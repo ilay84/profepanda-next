@@ -2,6 +2,8 @@ from flask import Blueprint, render_template, request, jsonify, send_from_direct
 import os
 import json
 import uuid
+import glob
+import shutil
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -963,18 +965,133 @@ def _exercise_index_path():
     return os.path.join(_ensure_exercises_dir(), 'exercises.index.json')
 
 def _load_exercise_index():
+    """
+    Load exercises.index.json if present and valid; otherwise rebuild by scanning
+    the filesystem. Prefer the new foldered layout:
+
+      data/exercises/<id>/
+        meta.json
+        current.json
+        versions/vNNN.json
+
+    Also merges legacy files named "<id>@vN.json" (preferring the new vNNN.json
+    paths when both exist). Saves a refreshed exercises.index.json on rebuild.
+    """
     path = _exercise_index_path()
-    if not os.path.exists(path):
-        return {"exercises": []}
+
+    # --- 1) Try to load an existing valid index --------------------------
     try:
-        with open(path, "r", encoding="utf-8") as f:
-            data = json.load(f) or {}
-        # Normalize minimal expected structure
-        if "exercises" not in data or not isinstance(data["exercises"], list):
-            data = {"exercises": []}
-        return data
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f) or {}
+            if isinstance(data.get("exercises"), list) and data["exercises"]:
+                return data
     except Exception:
-        return {"exercises": []}
+        pass  # fall through to rebuild
+
+    # --- 2) Rebuild by scanning the filesystem ---------------------------
+    root = _exercises_root_path()
+    ex_map = {}
+
+    # Helper: safe JSON load
+    def _safe_load_json(p):
+        try:
+            with open(p, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return None
+
+    # (a) Scan folder-based records first (new layout)
+    try:
+        for name in os.listdir(root):
+            d = os.path.join(root, name)
+            if not os.path.isdir(d):
+                continue
+
+            meta_p = os.path.join(d, "meta.json")
+            current_p = os.path.join(d, "current.json")
+            versions_d = os.path.join(d, "versions")
+
+            rec = {
+                "id": name,
+                "type": None,
+                "title": None,
+                "pinned_version": None,
+                "versions": [],
+            }
+
+            meta = _safe_load_json(meta_p)
+            if meta:
+                rec["type"] = meta.get("type")
+                rec["title"] = meta.get("title")
+                if isinstance(meta.get("pinned_version"), int):
+                    rec["pinned_version"] = meta.get("pinned_version")
+
+            # enumerate vNNN.json
+            if os.path.isdir(versions_d):
+                for fn in os.listdir(versions_d):
+                    if not fn.lower().endswith(".json"):
+                        continue
+                    import re as _re
+                    m = _re.match(r"^v(\d+)\.json$", fn, _re.I)
+                    if not m:
+                        continue
+                    ver = int(m.group(1))
+                    rec["versions"].append({
+                        "version": ver,
+                        "path": os.path.join("data", "exercises", name, "versions", fn).replace("\\", "/")
+                    })
+
+            # If we found any versions, finalize the record.
+            # If no versions but current.json exists, still include the record so the UI can show it;
+            # preview will fall back to current.json (Edit #3).
+            if rec["versions"]:
+                rec["versions"].sort(key=lambda v: v.get("version", 0))
+                if rec["pinned_version"] is None:
+                    rec["pinned_version"] = rec["versions"][-1]["version"]
+                ex_map[name] = rec
+            else:
+                if os.path.exists(current_p):
+                    ex_map[name] = rec
+    except Exception:
+        pass  # continue to legacy scan regardless
+
+    # (b) Merge legacy "<id>@vN.json" files
+    try:
+        import re
+        for fn in os.listdir(root):
+            p = os.path.join(root, fn)
+            if not (os.path.isfile(p) and fn.lower().endswith(".json")):
+                continue
+            m = re.match(r"^(.+?)@v(\d+)\.json$", fn)
+            if not m:
+                continue
+            ex_id, ver = m.group(1), int(m.group(2))
+            rec = ex_map.get(ex_id)
+            if not rec:
+                rec = {"id": ex_id, "type": None, "title": None, "pinned_version": None, "versions": []}
+                ex_map[ex_id] = rec
+            # Skip if this version already exists via new layout
+            if any(v.get("version") == ver for v in rec["versions"]):
+                continue
+            rec["versions"].append({
+                "version": ver,
+                "path": os.path.join("data", "exercises", fn).replace("\\", "/")
+            })
+            if rec["pinned_version"] is None or ver > rec["pinned_version"]:
+                rec["pinned_version"] = ver
+    except Exception:
+        pass
+
+    # --- 3) Finalize & persist refreshed index ---------------------------
+    exercises = list(ex_map.values())
+    exercises.sort(key=lambda r: ((r.get("title") or "").lower(), r.get("id") or ""))
+    index_data = {"exercises": exercises}
+    try:
+        _save_exercise_index(index_data)
+    except Exception:
+        pass
+    return index_data
 
 def _save_exercise_index(index_data: dict):
     os.makedirs(os.path.dirname(_exercise_index_path()), exist_ok=True)
@@ -984,18 +1101,28 @@ def _save_exercise_index(index_data: dict):
 
 def _write_versioned_exercise(exercise_id: str, version: int, payload: dict):
     """
-    Writes a versioned exercise JSON:
-      data/exercises/<exercise_id>@v<version>.json
-    Returns the relative filepath and absolute path.
+    Writes a versioned exercise JSON using the new canonical structure:
+
+      data/exercises/<exercise_id>/
+        meta.json
+        current.json
+        versions/
+          vNNN.json
+
+    Returns: (rel_path, abs_path) for the version file, e.g.
+      ("data/exercises/<id>/versions/v003.json", "<ABSOLUTE_PATH>").
     """
-    base_dir = _ensure_exercises_dir()
-    filename = f"{exercise_id}@v{version}.json"
-    abs_path = os.path.join(base_dir, filename)
-    os.makedirs(os.path.dirname(abs_path), exist_ok=True)
-    with open(abs_path, "w", encoding="utf-8") as f:
-        json.dump(payload or {}, f, ensure_ascii=False, indent=2)
-    # Return a repo-relative path for later use, if needed
-    rel_path = os.path.join("data", "exercises", filename).replace("\\", "/")
+    # Local import so this edit only touches one spot in this file.
+    from . import storage
+
+    rel_path, abs_path = storage.write_exercise_version(
+        exercise_id,
+        int(version),
+        payload or {},
+        title=(payload or {}).get("title"),
+        ex_type=(payload or {}).get("type"),
+        pin=True,  # keep latest pinned for preview by default
+    )
     return rel_path, abs_path
 
 @bp.route("/exercises", methods=["GET"])
@@ -1054,24 +1181,198 @@ def admin_exercises_new():
         edit_ex=edit_payload
     )
 
+    return render_template(
+        "admin_exercises.html",
+        create_type=ex_type,
+        index=_load_exercise_index(),
+        edit_ex=edit_payload
+    )
+
+@bp.route("/exercises/<exercise_id>/preview", methods=["GET"])
+def admin_exercises_preview(exercise_id):
+    """
+    Return the pinned (or latest) version payload for an exercise as JSON.
+    Used by the Biblioteca 'Vista previa' button in the admin UI.
+    """
+    try:
+        index = _load_exercise_index()
+        rec = next((e for e in index.get("exercises", []) if e.get("id") == exercise_id), None)
+        if not rec:
+            return jsonify({"success": False, "error": "Exercise not found"}), 404
+
+        # choose pinned_version if present, else the highest version number
+        ver = rec.get("pinned_version")
+        if not ver:
+            if rec.get("versions"):
+                ver = max(v.get("version", 0) for v in rec["versions"])
+
+        vrow = None
+        if rec.get("versions"):
+            vrow = next((v for v in rec["versions"] if v.get("version") == ver), None)
+            if not vrow:  # fallback to last row if not found
+                vrow = rec["versions"][-1]
+
+        # Try the pinned/latest version path first; if missing, fall back to current.json
+        abs_path = None
+
+        if vrow and vrow.get("path"):
+            cand = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", vrow["path"]))
+            if os.path.exists(cand):
+                abs_path = cand
+
+        if not abs_path:
+            # Fallback to new storage layout's current.json
+            try:
+                from . import storage  # new helper module
+                cand = storage.current_path(exercise_id)
+            except Exception:
+                # Safe fallback if storage import isn't available
+                cand = os.path.abspath(os.path.join(
+                    os.path.dirname(__file__), "..", "data", "exercises", exercise_id, "current.json"
+                ))
+            if os.path.exists(cand):
+                abs_path = cand
+
+        if not abs_path:
+            return jsonify({"success": False, "error": "No version file found (and no current.json)"}), 404
+
+        with open(abs_path, "r", encoding="utf-8") as f:
+            payload = json.load(f)
+
+        # ---------- NEW: if ?as=player, return an embeddable HTML player ----------
+        if (request.args.get("as") or "").lower() == "player":
+            from flask import render_template_string
+            # minimal TF player (no external template needed)
+            html = r"""
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>{{ ex.title or 'Vista previa' }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root{--bg:#f6f8fb;--card:#fff;--muted:#64748b;--ink:#0f172a;--line:#e5e7eb;--good:#15803d;--bad:#b91c1c;}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial}
+    .wrap{padding:14px 16px}
+    .h{margin:0 0 10px;font-weight:700}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin:0 0 12px;box-shadow:0 6px 20px rgba(0,0,0,.06)}
+    .prompt{font-weight:600;margin-bottom:8px}
+    .row{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
+    .btn{appearance:none;border:1px solid var(--line);background:#fff;color:var(--ink);padding:.45rem .7rem;border-radius:10px;cursor:pointer;font-weight:600}
+    .btn:hover{background:#f8fafc}
+    .tiny{font-size:.9rem;color:var(--muted)}
+    .media{display:flex;gap:.75rem;flex-wrap:wrap;align-items:flex-start;margin-bottom:.5rem}
+    .media img{max-width:220px;border:1px solid var(--line);border-radius:8px}
+    .media video{display:block;max-width:320px;border-radius:6px}
+    .media iframe{width:320px;height:180px;border:0;border-radius:6px}
+    .fb{margin-top:.35rem}
+    .good{color:var(--good)} .bad{color:var(--bad)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h3 class="h">{{ ex.title or 'Vista previa' }}</h3>
+    {% set items_list = ex['items'] or [] %}
+    {% for it in items_list %}
+      <div class="card" data-idx="{{ loop.index0 }}">
+        {% set m = (it.media or {}) %}
+        {% if m.image or m.audio or m.video or m.youtube_url %}
+          <div class="media">
+            {% if m.image %}<img src="{{ m.image }}" alt="{{ m.image_alt or '' }}">{% endif %}
+            {% if m.audio %}<audio controls src="{{ m.audio }}"></audio>{% endif %}
+            {% if m.video %}<video controls src="{{ m.video }}"></video>{% endif %}
+            {% if m.youtube_url %}
+              {% set _id = 'v=' in m.youtube_url and m.youtube_url.split('v=')[-1].split('&')[0] or m.youtube_url.rsplit('/',1)[-1] %}
+              <iframe src="https://www.youtube.com/embed/{{ _id }}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            {% endif %}
+          </div>
+        {% endif %}
+        <div class="prompt">{{ it.prompt or '(sin enunciado)' }}</div>
+        <div class="row">
+          <button class="btn" data-a="true">Verdadero</button>
+          <button class="btn" data-a="false">Falso</button>
+          {% if it.hint %}<button class="btn" data-hint>Ver pista</button>{% endif %}
+        </div>
+        {% if it.hint %}<div class="tiny" data-hint-box style="display:none;margin-top:.35rem;">{{ it.hint }}</div>{% endif %}
+        <div class="fb tiny" data-fb></div>
+      </div>
+    {% endfor %}
+  </div>
+  <script>
+    (function(){
+      var items = {{ (payload.get("items") or [])|tojson }};
+      document.addEventListener('click', function(e){
+        var b = e.target.closest('button[data-a],button[data-hint]');
+        if(!b) return;
+        var card = b.closest('.card');
+        var idx = parseInt(card.getAttribute('data-idx')||'0',10);
+        var it = items[idx] || {};
+        if(b.hasAttribute('data-hint')){
+          var box = card.querySelector('[data-hint-box]');
+          if(box){ box.style.display = box.style.display === 'none' ? 'block' : 'none'; }
+          return;
+        }
+        var ans = b.getAttribute('data-a') === 'true';
+        var ok = (ans === !!it.answer);
+        var fb = card.querySelector('[data-fb]');
+        fb.textContent = ok ? (it.feedback_correct || '¡Correcto!') : (it.feedback_incorrect || 'No es correcto.');
+        fb.className = 'fb tiny ' + (ok ? 'good' : 'bad');
+      });
+    })();
+  </script>
+</body>
+</html>
+"""
+            return render_template_string(html, ex=payload, payload=payload)
+
+        # ---------- default JSON (unchanged) ----------
+        return jsonify({"success": True, "exercise": payload})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 @bp.route("/exercises/save", methods=["POST"])
 def admin_exercises_save():
     """
     Create or update an exercise and write a new versioned payload (GLOBAL; no region).
-    Expects form-data (or JSON) with at minimum:
+
+    Expected (form-data OR JSON):
       - type: str              ("tf" initially)
       - title: str             (admin-facing title)
-      - items: JSON string or object  (exercise content; for TF this is the list of questions)
+      - items: JSON string or object
+         For TF: [{ prompt, answer, feedback_correct?, feedback_incorrect?, hint?, media? }]
+         media may include:
+           {
+             youtube_url?: str,
+             image_alt?: str,
+             image?: "__UPLOAD__" | "/static/...",
+             audio?: "__UPLOAD__" | "/static/...",
+             video?: "__UPLOAD__" | "/static/..."
+           }
+
+    If using form-data for uploads, also include arrays aligned by item index:
+      - media_index[]        (hidden; "0", "1", "2", ...)
+      - media_image[]        (files; optional per row)
+      - media_image_alt[]    (text; already in items JSON too)
+      - media_audio[]        (files; optional per row)
+      - media_video[]        (files; optional per row)
+      - media_youtube_url[]  (text; already in items JSON too)
+
     Optional:
-      - id: str                (if omitted, new UUID4)
-      - version: int           (if omitted, auto-increment from index)
-      - meta: JSON string or object  (tags, level, etc.)
-      - overrides: JSON string or object (stored on the index record)
+      - id: str
+      - version: int
+      - meta: JSON
+      - overrides: JSON
 
     Behavior:
-      - Appends a new version file under data/exercises/.
-      - Updates/creates the exercise record in exercises.index.json with pinned_version (if not set).
+      - Saves any uploaded files under: static/exercises/media/<exercise_id>/
+      - Rewrites each item's media fields from "__UPLOAD__" to stored /static/... paths
+      - Writes a versioned JSON under data/exercises/
+      - Updates exercises.index.json
     """
+    from datetime import datetime
+    from werkzeug.utils import secure_filename
+
     # Accept both JSON and form submissions
     data = request.get_json(silent=True) or {}
     form = request.form or {}
@@ -1088,19 +1389,23 @@ def admin_exercises_save():
     exercise_id = (pick("id") or uuid.uuid4().hex)
 
     # items/meta/overrides may arrive as JSON strings
-    def ensure_obj(val):
+    def ensure_obj(val, default_empty):
         if isinstance(val, (dict, list)):
             return val
         if not val:
-            return {}
+            return default_empty
         try:
             return json.loads(val)
         except Exception:
-            return {}
+            return default_empty
 
-    items = ensure_obj(pick("items", {}))
-    meta = ensure_obj(pick("meta", {}))
-    overrides = ensure_obj(pick("overrides", {}))
+    items = ensure_obj(pick("items", {}), [])
+    meta = ensure_obj(pick("meta", {}), {})
+    overrides = ensure_obj(pick("overrides", {}), {})
+
+    # Normalize items to a list
+    if not isinstance(items, list):
+        items = []
 
     # Load index and compute next version if not given
     index_data = _load_exercise_index()
@@ -1120,16 +1425,228 @@ def admin_exercises_save():
         else:
             version = 1
 
-    # Build payload to persist
-    from datetime import datetime
+    # Track files explicitly removed by the user so we can unlink them after saving
+    deleted_media_paths = []
+
+    # ---------- Backfill prior media when not re-uploaded ----------
+    # If this is an edit and the user didn't upload a new file for a slot,
+    # keep the previously saved media path for that item — unless the form
+    # explicitly asked to delete it using the "__DELETE__" sentinel.
+    prev_items = []
+    if existing and isinstance(existing.get("versions"), list) and existing["versions"]:
+        # choose pinned_version if present, else the highest version number
+        _ver = existing.get("pinned_version")
+        if not _ver:
+            _ver = max(v.get("version", 0) for v in existing["versions"])
+        _vrow = next((v for v in existing["versions"] if v.get("version") == _ver), None) or existing["versions"][-1]
+        _path = (_vrow or {}).get("path")
+        if _path:
+            _abs = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", _path))
+            if os.path.exists(_abs):
+                try:
+                    with open(_abs, "r", encoding="utf-8") as _f:
+                        _payload_prev = json.load(_f)
+                        if isinstance(_payload_prev.get("items"), list):
+                            prev_items = _payload_prev["items"]
+                except Exception:
+                    prev_items = []
+
+    if prev_items:
+        for i, it in enumerate(items):
+            if not isinstance(it, dict):
+                continue
+            m = it.get("media") if isinstance(it.get("media"), dict) else {}
+            pm = {}
+            if i < len(prev_items) and isinstance(prev_items[i], dict):
+                pm = prev_items[i].get("media") if isinstance(prev_items[i].get("media"), dict) else {}
+
+            # Carry forward *only* when value wasn't provided.
+            # Respect "__UPLOAD__" (new file incoming) and "__DELETE__" (explicit removal).
+            def _apply(key):
+                new_val = m.get(key)
+                if new_val == "__DELETE__":
+                    # record the file we're removing (if it existed) so we can unlink later
+                    if pm.get(key):
+                        deleted_media_paths.append(pm[key])
+                    m[key] = None
+                    return
+                if (new_val is None or new_val == "") and new_val not in ("__UPLOAD__", "__DELETE__"):
+                    if pm.get(key):
+                        m[key] = pm[key]
+
+            for _k in ("image", "audio", "video"):
+                _apply(_k)
+
+            # keep YouTube/alt if newly blank; clear if explicitly deleted
+            if m.get("youtube_url") == "__DELETE__":
+                if pm.get("youtube_url"):
+                    deleted_media_paths.append(None)  # nothing to unlink for URLs
+                m["youtube_url"] = None
+            elif (m.get("youtube_url") in (None, "")) and pm.get("youtube_url"):
+                m["youtube_url"] = pm["youtube_url"]
+
+            if m.get("image_alt") == "__DELETE__":
+                m["image_alt"] = None
+            elif (m.get("image_alt") in (None, "")) and pm.get("image_alt"):
+                m["image_alt"] = pm["image_alt"]
+
+            it["media"] = m
+            items[i] = it
+
+    # ---------- Handle media uploads (form-data only) ----------
+    # (Backfill was already handled above with explicit delete support.)
+    # Browsers only include selected files in each media_*[] list, so their positions
+    # DO NOT align with item indices. We walk items and pull the NEXT available file
+    # from each list only when "__UPLOAD__" is present.
+    if request.files:
+        # Base dir for this exercise's media
+        media_dir_abs = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "..", "static", "exercises", "media", exercise_id)
+        )
+        os.makedirs(media_dir_abs, exist_ok=True)
+
+        # Get lists of files (may contain empties; filter to filename truthy)
+        raw_imgs = request.files.getlist("media_image[]")
+        raw_auds = request.files.getlist("media_audio[]")
+        raw_vids = request.files.getlist("media_video[]")
+
+        img_list = [fs for fs in raw_imgs if getattr(fs, "filename", "")]
+        aud_list = [fs for fs in raw_auds if getattr(fs, "filename", "")]
+        vid_list = [fs for fs in raw_vids if getattr(fs, "filename", "")]
+
+        # Cursors for each media list
+        img_i = 0
+        aud_i = 0
+        vid_i = 0
+
+        # Helper to save a FileStorage if present
+        def _save_file(fs, out_name_hint):
+            if not fs or not getattr(fs, "filename", ""):
+                return None
+            filename = secure_filename(fs.filename or out_name_hint)
+            _base, ext = os.path.splitext(filename)
+            if not ext:
+                mt = (getattr(fs, "mimetype", "") or "").lower()
+                if mt.startswith("image/"):
+                    ext = ".png"
+                elif mt.startswith("audio/"):
+                    ext = ".mp3"
+                elif mt.startswith("video/"):
+                    ext = ".mp4"
+                else:
+                    ext = ".bin"
+            out_name = f"{out_name_hint}{ext.lower()}"
+            abs_path = os.path.join(media_dir_abs, out_name)
+            os.makedirs(os.path.dirname(abs_path), exist_ok=True)
+            fs.save(abs_path)
+            return f"/static/exercises/media/{exercise_id}/{out_name}".replace("\\", "/")
+
+        # Walk items and attach media in order
+        for i, it in enumerate(items):
+            if not isinstance(it, dict):
+                continue
+            m = it.get("media") if isinstance(it.get("media"), dict) else {}
+
+            # IMAGE
+            if m.get("image") == "__UPLOAD__" and img_i < len(img_list):
+                saved = _save_file(img_list[img_i], f"q{i}_image")
+                img_i += 1
+                if saved:
+                    m["image"] = saved
+                else:
+                    m["image"] = None  # clear if save failed
+
+            # AUDIO
+            if m.get("audio") == "__UPLOAD__" and aud_i < len(aud_list):
+                saved = _save_file(aud_list[aud_i], f"q{i}_audio")
+                aud_i += 1
+                if saved:
+                    m["audio"] = saved
+                else:
+                    m["audio"] = None
+
+            # VIDEO
+            if m.get("video") == "__UPLOAD__" and vid_i < len(vid_list):
+                saved = _save_file(vid_list[vid_i], f"q{i}_video")
+                vid_i += 1
+                if saved:
+                    m["video"] = saved
+                else:
+                    m["video"] = None
+
+            # Normalize and assign back
+            it["media"] = {
+                "youtube_url": (m.get("youtube_url") or None),
+                "image_alt": (m.get("image_alt") or None),
+                "image": m.get("image") or None,
+                "audio": m.get("audio") or None,
+                "video": m.get("video") or None,
+            }
+            items[i] = it
+
+    else:
+        # If no files (JSON or simple form), normalize placeholders.
+        # Clear "__UPLOAD__" and honor "__DELETE__" (and record files to unlink).
+        for i, it in enumerate(items):
+            if not isinstance(it, dict):
+                continue
+            m = it.get("media") if isinstance(it.get("media"), dict) else {}
+
+            # Find previous media for potential unlink when "__DELETE__"
+            pm = {}
+            if i < len(prev_items) and isinstance(prev_items[i], dict):
+                pm = prev_items[i].get("media") if isinstance(prev_items[i].get("media"), dict) else {}
+
+            for k in ("image", "audio", "video"):
+                if m.get(k) == "__UPLOAD__":
+                    m[k] = None
+                elif m.get(k) == "__DELETE__":
+                    if pm.get(k):
+                        deleted_media_paths.append(pm[k])
+                    m[k] = None
+
+            if m.get("youtube_url") == "__DELETE__":
+                m["youtube_url"] = None
+            if m.get("image_alt") == "__DELETE__":
+                m["image_alt"] = None
+
+            it["media"] = {
+                "youtube_url": (m.get("youtube_url") or None),
+                "image_alt": (m.get("image_alt") or None),
+                "image": m.get("image") or None,
+                "audio": m.get("audio") or None,
+                "video": m.get("video") or None,
+            }
+            items[i] = it
+
+    # Remove any media files the user explicitly deleted
+    # Only unlink paths under /static/... (safety guard)
+    for rel in deleted_media_paths:
+        try:
+            if not rel or not isinstance(rel, str):
+                continue
+            if not rel.startswith("/static/"):
+                continue
+            static_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "static"))
+            abs_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", rel.lstrip("/")))
+            # ensure we only delete inside the static directory
+            if os.path.commonpath([abs_path, static_root]) != static_root:
+                continue
+            if os.path.exists(abs_path):
+                os.remove(abs_path)
+        except Exception:
+            # best-effort; ignore unlink errors
+            pass
+
+    # ---------- Build payload to persist (after media injection) ----------
     payload = {
         "id": exercise_id,
-        "type": ex_type,      # "tf", "mcq", ...
+        "type": ex_type,
         "title": title,
         "version": version,
         "created_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
-        "items": items,       # e.g., list of T/F questions with feedback & optional hints
-        "meta": meta,         # tags/CEFR/etc.
+        "items": items,
+        "meta": meta,
     }
 
     # Write versioned file
@@ -1157,6 +1674,9 @@ def admin_exercises_save():
         record["versions"].append(v_entry)
         record["versions"].sort(key=lambda v: v.get("version", 0))
 
+    # Always pin the just-saved version so Biblioteca preview shows your edits
+    record["pinned_version"] = version
+
     # Put back into list
     if existing:
         ex_list = [record if e.get("id") == exercise_id else e for e in ex_list]
@@ -1179,6 +1699,115 @@ def admin_exercises_save():
         },
         "path": rel_path
     })
+
+@bp.route("/exercises/<exercise_id>/delete", methods=["POST"])
+def admin_exercises_delete(exercise_id):
+    """
+    Delete an entire exercise (new + legacy layouts):
+      - Removes folder data/exercises/<id>/ (meta.json, current.json, versions/*)
+      - Removes any legacy files data/exercises/<id>@vN.json
+      - Removes its record from exercises.index.json
+      - Optionally deletes media under static/exercises/media/<id>/
+
+    Body JSON (optional):
+      { "purge_media": true|false }   # default: False
+    """
+    try:
+        data = request.get_json(silent=True) or {}
+        purge_media = bool(data.get("purge_media", False))
+
+        # Load index and find record
+        index_data = _load_exercise_index()
+        ex_list = index_data.get("exercises", [])
+        record = next((e for e in ex_list if e.get("id") == exercise_id), None)
+        if not record:
+            return jsonify({"success": False, "error": "Exercise not found"}), 404
+
+        # --- Paths ---
+        app_dir       = os.path.dirname(__file__)
+        project_root  = os.path.abspath(os.path.join(app_dir, ".."))
+        data_root     = os.path.abspath(os.path.join(project_root, "data"))
+        exercises_root = os.path.abspath(os.path.join(data_root, "exercises"))
+        ex_dir        = os.path.abspath(os.path.join(exercises_root, exercise_id))
+        versions_dir  = os.path.join(ex_dir, "versions")
+        meta_json     = os.path.join(ex_dir, "meta.json")
+        current_json  = os.path.join(ex_dir, "current.json")
+
+        # --- Delete versioned JSON files listed in index (corrected path base) ---
+        for v in (record.get("versions") or []):
+            p = (v or {}).get("path")
+            if not p:
+                continue
+            # stored paths are repo-relative like "data/exercises/<id>/versions/vNNN.json"
+            abs_path = os.path.abspath(os.path.join(project_root, p))
+            try:
+                if os.path.exists(abs_path):
+                    os.remove(abs_path)
+            except Exception:
+                pass  # best-effort
+
+        # --- Extra sweep: remove any versions not listed in index ---
+        try:
+            if os.path.isdir(versions_dir):
+                for fn in os.listdir(versions_dir):
+                    if fn.lower().endswith(".json"):
+                        fpath = os.path.join(versions_dir, fn)
+                        try:
+                            os.remove(fpath)
+                        except Exception:
+                            pass
+        except Exception:
+            pass
+
+        # --- Remove meta/current and then the <id> folder entirely ---
+        for f in (meta_json, current_json):
+            try:
+                if os.path.exists(f):
+                    os.remove(f)
+            except Exception:
+                pass
+        try:
+            if os.path.isdir(ex_dir) and os.path.commonpath([ex_dir, exercises_root]) == exercises_root:
+                shutil.rmtree(ex_dir)
+        except Exception:
+            pass
+
+        # --- Legacy cleanup: <id>@vN.json in data/exercises root ---
+        try:
+            legacy_pattern = os.path.join(exercises_root, f"{exercise_id}@v*.json")
+            for fpath in glob.glob(legacy_pattern):
+                try:
+                    os.remove(fpath)
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+        # --- Remove from index and save back ---
+        index_data["exercises"] = [e for e in ex_list if e.get("id") != exercise_id]
+        _save_exercise_index(index_data)
+
+        # --- Optionally purge media folder ---
+        deleted_media = False
+        if purge_media:
+            static_root = os.path.abspath(os.path.join(project_root, "static"))
+            media_dir = os.path.abspath(os.path.join(static_root, "exercises", "media", exercise_id))
+            try:
+                if os.path.commonpath([media_dir, static_root]) == static_root and os.path.isdir(media_dir):
+                    shutil.rmtree(media_dir)
+                    deleted_media = True
+            except Exception:
+                pass
+
+        return jsonify({
+            "success": True,
+            "deleted": {"id": exercise_id},
+            "deleted_media": deleted_media
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 # === END: Exercises storage + admin routes scaffolding ===
 
 # === BEGIN: Admin endpoints to read/update glossary visibility ===

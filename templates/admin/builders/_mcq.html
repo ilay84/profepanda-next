@@ -1,0 +1,35 @@
+<form id="ex-mcq-form" class="tiny" action="{{ url_for('admin.admin_exercises_save') }}" method="post" enctype="multipart/form-data" style="margin-top:.25rem;">
+  <input type="hidden" name="type" value="mcq">
+  {% if edit_ex and edit_ex.id %}
+  <input type="hidden" name="id" value="{{ edit_ex.id }}">
+  {% endif %}
+  <!-- This hidden textarea will be filled with JSON on submit -->
+  <textarea id="itemsPayload" name="items" style="display:none;"></textarea>
+
+  <div style="display:flex;flex-direction:column;gap:.75rem;max-width:900px;">
+    <label><strong>Título del ejercicio</strong>
+      <input name="title" type="text" required placeholder="Ej.: Pronombres — Opción múltiple (A2)"
+             style="width:100%;padding:.6rem;border:1px solid #cbd5e1;border-radius:8px;">
+    </label>
+
+    <!-- Items builder -->
+    <div>
+      <div class="row" style="justify-content:space-between;align-items:center;">
+        <div class="muted" style="font-weight:600;">Preguntas (Opción múltiple)</div>
+      </div>
+
+      <!-- Where MCQ items will be rendered by builder_mcq.js -->
+      <div id="itemsList" style="display:flex;flex-direction:column;gap:.75rem;margin-top:.75rem;"></div>
+
+      <div class="row" style="margin-top:.5rem;justify-content:flex-end;">
+        <button type="button" id="btnAddItem" class="btn">+ Agregar pregunta</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <button class="btn btn-primary" type="submit">Guardar versión</button>
+      <button class="btn btn-secondary" type="button" id="btnCancel">Cancelar</button>
+      <span class="tiny muted">Se guardará en <code>data/exercises/</code> y se actualizará <code>exercises.index.json</code>.</span>
+    </div>
+  </div>
+</form>

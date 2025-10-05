@@ -55,43 +55,126 @@
       : "";
     const fbColor = existing ? (existing.isCorrect ? "#0a7f2e" : "#b91c1c") : "#6b7280";
 
+    // Normalize admin-saved media into the flat fields this template already uses
+    (function normalizeMedia(){
+      const m = (q && q.media) ? q.media : null;
+      if (!m) return;
+
+      if (!q.image && m.image) q.image = m.image;
+      if (!q.image_alt && m.image_alt) q.image_alt = m.image_alt;
+      if (!q.image_caption && m.image_alt) q.image_caption = m.image_alt;
+
+      if (!q.audio && m.audio) q.audio = m.audio;
+
+      if (!q.video_mp4 && m.video) q.video_mp4 = m.video;             // local MP4 from /static/exercises/media/<id>/qX_video.mp4
+      if (!q.video_iframe && m.youtube_url) q.video_iframe = m.youtube_url; // raw YT URL
+
+      // If video_iframe is a normal YouTube URL, convert to embed URL
+      if (q.video_iframe && typeof q.video_iframe === "string") {
+        try {
+          const u = new URL(q.video_iframe, window.location.origin);
+          const host = u.hostname.replace(/^www\./, "");
+          if (host === "youtu.be") {
+            const id = u.pathname.slice(1);
+            if (id) q.video_iframe = `https://www.youtube.com/embed/${id}`;
+          } else if (host.endsWith("youtube.com")) {
+            const id = u.searchParams.get("v");
+            if (id) q.video_iframe = `https://www.youtube.com/embed/${id}`;
+          }
+        } catch (_) { /* ignore */ }
+      }
+    })();
+
     // Render block (polished media sizing)
     slide.innerHTML = `
       <div class="pp-ex-q">
-        ${q.image ? `<figure class="pp-ex-image" style="margin:0 0 .9rem 0;">
-          <img
-            src="/static/exercises/images/${q.image}"
-            alt="${(q.image_alt || "").replace(/"/g, "&quot;")}"
-            loading="lazy"
-            onerror="this.style.border='2px solid #f59e0b';this.alt='Imagen no encontrada';"
-            style="display:block;width:100%;max-height:360px;object-fit:contain;border-radius:10px;background:#f8fafc;"
-          >
-          ${q.image_caption ? `<figcaption style="margin-top:.4rem;color:#6b7280;font-size:.85rem;text-align:center;line-height:1.3;">
-            ${(q.image_caption || "").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
-          </figcaption>` : ""}
-        </figure>` : ""}
+        ${(() => {
+          const imgRaw = q.image || (q.media && q.media.image) || null;
+          if (!imgRaw) return "";
 
-        ${q.audio ? `<div class="pp-ex-audio" style="margin:0 0 .9rem 0;">
-          <audio controls
-                 src="${(q.audio || '').startsWith('http') ? q.audio : '/static/exercises/audio/' + q.audio}"
-                 style="width:100%;max-width:100%;outline:none;display:block;"></audio>
-        </div>` : ""}
+          // Consider http(s), absolute /, blob:, data: as absolute
+          const isAbs = typeof imgRaw === "string" &&
+                        (imgRaw.startsWith("http") ||
+                         imgRaw.startsWith("/")   ||
+                         imgRaw.startsWith("blob:") ||
+                         imgRaw.startsWith("data:"));
 
-        ${q.video_iframe ? `<div class="pp-ex-video" style="margin:0 0 .9rem 0;position:relative;width:100%;max-width:100%;border-radius:10px;overflow:hidden;background:#000;">
-          <div style="position:relative;padding-bottom:56.25%;height:0;">
-            <iframe
-              src="${q.video_iframe}"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowfullscreen
-              style="position:absolute;inset:0;width:100%;height:100%;border:0;"></iframe>
-          </div>
-        </div>` : ""}
+          // Resolve legacy relative names to legacy folder (keeps existing behavior)
+          const src = isAbs ? imgRaw : ("/static/exercises/images/" + imgRaw);
 
-        ${q.video_mp4 ? `<div class="pp-ex-video" style="margin:0 0 .9rem 0;">
-          <video controls
-                 src="${(q.video_mp4 || '').startsWith('http') ? q.video_mp4 : '/static/exercises/video/' + q.video_mp4}"
-                 style="display:block;width:100%;max-height:420px;border-radius:10px;background:#000;object-fit:contain;"></video>
-        </div>` : ""}
+          const alt = ((q.image_alt || (q.media && q.media.image_alt) || "") + "").replace(/"/g, "&quot;");
+          const caption = (q.image_caption || (q.media && q.media.image_alt) || "");
+
+          // DEBUG toggle via ?debugMedia=1
+          const showDebug = /\bdebugMedia=1\b/.test(window.location.search);
+          const debugLine = showDebug
+            ? `<div style="margin-top:.25rem;font-size:.75rem;color:#6b7280;word-break:break-all;">
+                 src: <a href="${src}" target="_blank" rel="noopener">${src}</a>
+               </div>`
+            : "";
+
+          return `<figure class="pp-ex-image" style="margin:0 0 .9rem 0;">
+            <img
+              src="${src}"
+              alt="${alt}"
+              loading="lazy"
+              onerror="this.style.border='2px solid #f59e0b';this.alt='Imagen no encontrada';"
+              style="display:block;width:100%;max-height:360px;object-fit:contain;border-radius:10px;background:#f8fafc;"
+            >
+            ${caption ? `<figcaption style="margin-top:.4rem;color:#6b7280;font-size:.85rem;text-align:center;line-height:1.3;">
+              ${caption.replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+            </figcaption>` : ""}
+            ${debugLine}
+          </figure>`;
+        })()}
+
+        ${(() => {
+          const audRaw = q.audio || (q.media && q.media.audio) || null;
+          if (!audRaw) return "";
+          const src = (audRaw.startsWith("http") || audRaw.startsWith("/")) ? audRaw : ("/static/exercises/audio/" + audRaw);
+          return `<div class="pp-ex-audio" style="margin:0 0 .9rem 0;">
+            <audio controls
+                   src="${src}"
+                   style="width:100%;max-width:100%;outline:none;display:block;"></audio>
+          </div>`;
+        })()}
+
+        ${(() => {
+          let yt = q.video_iframe || (q.media && q.media.youtube_url) || "";
+          if (!yt) return "";
+          try {
+            const u = new URL(yt, window.location.origin);
+            const host = u.hostname.replace(/^www\./, "");
+            if (host === "youtu.be") {
+              const id = u.pathname.slice(1);
+              if (id) yt = `https://www.youtube.com/embed/${id}`;
+            } else if (host.endsWith("youtube.com")) {
+              const id = u.searchParams.get("v");
+              if (id) yt = `https://www.youtube.com/embed/${id}`;
+            }
+          } catch (_) {}
+          return `<div class="pp-ex-video" style="margin:0 0 .9rem 0;position:relative;width:100%;max-width:100%;border-radius:10px;overflow:hidden;background:#000;">
+            <div style="position:relative;padding-bottom:56.25%;height:0;">
+              <iframe
+                src="${yt}"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowfullscreen
+                style="position:absolute;inset:0;width:100%;height:100%;border:0;"></iframe>
+            </div>
+          </div>`;
+        })()}
+
+        ${(() => {
+          const vidRaw = q.video_mp4 || (q.media && q.media.video) || "";
+          if (!vidRaw) return "";
+          const src = (vidRaw.startsWith("http") || vidRaw.startsWith("/")) ? vidRaw : ("/static/exercises/video/" + vidRaw);
+          return `<div class="pp-ex-video" style="margin:0 0 .9rem 0;">
+            <video controls preload="metadata"
+                   style="display:block;width:100%;max-height:420px;border-radius:10px;background:#000;object-fit:contain;">
+              <source src="${src}" type="video/mp4">
+            </video>
+          </div>`;
+        })()}
 
         <div class="pp-ex-prompt" style="font-weight:600;margin-bottom:.6rem;">${q.prompt_html || ""}</div>
         <div class="pp-ex-choices">${choicesHtml || "<em>(sin opciones)</em>"}</div>

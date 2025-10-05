@@ -1,15 +1,57 @@
 {
   "exercises": [
     {
-      "id": "a7996fe28d2d4b3583b9243c83ed4e68",
+      "id": "e7b7338126d24618bbc3cd77ff76f11f",
+      "type": "cloze",
+      "title": "asdf",
+      "pinned_version": 4,
+      "overrides": {},
+      "versions": [
+        {
+          "version": 1,
+          "path": "data/exercises/e7b7338126d24618bbc3cd77ff76f11f/versions/v001.json"
+        },
+        {
+          "version": 2,
+          "path": "data/exercises/e7b7338126d24618bbc3cd77ff76f11f/versions/v002.json"
+        },
+        {
+          "version": 3,
+          "path": "data/exercises/e7b7338126d24618bbc3cd77ff76f11f/versions/v003.json"
+        },
+        {
+          "version": 4,
+          "path": "data/exercises/e7b7338126d24618bbc3cd77ff76f11f/versions/v004.json"
+        }
+      ]
+    },
+    {
+      "id": "b3d8976a0ba84177900b7edf5c5b7286",
       "type": "tf",
+      "title": "Tim Robinson",
+      "pinned_version": 2,
+      "overrides": {},
+      "versions": [
+        {
+          "version": 1,
+          "path": "data/exercises/b3d8976a0ba84177900b7edf5c5b7286/versions/v001.json"
+        },
+        {
+          "version": 2,
+          "path": "data/exercises/b3d8976a0ba84177900b7edf5c5b7286/versions/v002.json"
+        }
+      ]
+    },
+    {
+      "id": "e6023176b54d4dacaf57e2daa9b5d564",
+      "type": "mcq",
       "title": "¿Quién es?",
       "pinned_version": 1,
       "overrides": {},
       "versions": [
         {
           "version": 1,
-          "path": "data/exercises/a7996fe28d2d4b3583b9243c83ed4e68@v1.json"
+          "path": "data/exercises/e6023176b54d4dacaf57e2daa9b5d564/versions/v001.json"
         }
       ]
     }

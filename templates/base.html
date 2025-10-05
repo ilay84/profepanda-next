@@ -21,15 +21,21 @@
     {% block scripts %}{% endblock %}
 
     {% include "_exercise_modal.html" %}
+
+    <!-- ✅ Ensure the public carousel is always available -->
+    <script defer src="{{ url_for('static', filename='js/public/carousel.bundle.js') }}"></script>
+
+    <!-- Your existing app scripts -->
     <script src="{{ url_for('static', filename='js/ex_types/single_choice.js') }}"></script>
     <script src="{{ url_for('static', filename='js/exercises.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/ex_types/true_false.js') }}"></script>
-  <!-- Exercise Modal -->
-  <div id="exerciseModal" class="modal" style="display:none;">
-    <div class="modal-content" style="max-width:900px;margin:auto;">
-      <span class="close" onclick="document.getElementById('exerciseModal').style.display='none'">&times;</span>
-      <div id="exerciseRoot"></div>
+    <script src="{{ url_for('static', filename='js/ex_types/true_false.js') }}"></script>
+
+    <!-- Exercise Modal (legacy) -->
+    <div id="exerciseModal" class="modal" style="display:none;">
+      <div class="modal-content" style="max-width:900px;margin:auto;">
+        <span class="close" onclick="document.getElementById('exerciseModal').style.display='none'">&times;</span>
+        <div id="exerciseRoot"></div>
+      </div>
     </div>
-  </div>
 </body>
 </html>
