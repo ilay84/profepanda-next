@@ -8,8 +8,17 @@
 
   <div style="display:flex;flex-direction:column;gap:.75rem;max-width:900px;">
     <label><strong>Título del ejercicio</strong>
-      <input name="title" type="text" required placeholder="Ej.: Pronombres — Opción múltiple (A2)"
+      <input name="title" type="text" required placeholder="Ej.: Opción múltiple — A2"
              style="width:100%;padding:.6rem;border:1px solid #cbd5e1;border-radius:8px;">
+    </label>
+
+    <!-- NEW: Optional instructions -->
+    <label><strong>Instrucciones (opcional)</strong>
+      <textarea name="instructions" id="instructionsField" placeholder="Ej.: Leé las preguntas y elegí la opción correcta."
+                style="width:100%;min-height:100px;padding:.6rem;border:1px solid #cbd5e1;border-radius:8px;line-height:1.5;font-family:inherit;"></textarea>
+      <div class="tiny muted" style="margin-top:.25rem;">
+        Podés usar <b>&lt;b&gt;</b> para negrita o <i>&lt;i&gt;</i> para cursiva.
+      </div>
     </label>
 
     <!-- Items builder -->

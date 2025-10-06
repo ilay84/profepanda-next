@@ -12,16 +12,45 @@
     const closeButtons = modal ? modal.querySelectorAll("[data-close]") : [];
 
     // ---------- Helpers ----------
-    async function loadExerciseData(exerciseId) {
-      const url = `/static/exercises/${exerciseId}.json`;
-      try {
-        const res = await fetch(url, { cache: "no-store" });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        return Array.isArray(data) ? data[0] : data;
-      } catch (err) {
-        return { error: `No se pudo cargar ${url} — ${err.message}` };
+    // NEW: loader that supports either:
+    //  - legacy IDs: "a1b2c3..."  -> /static/exercises/<id>.json
+    //  - new paths:  "tf/mi-ejercicio" -> /data/exercises/<type>/<slug>/current.json (preferred),
+    //                                          then /static/exercises/<type>/<slug>/current.json (fallback)
+    //  - direct JSON paths: "/data/exercises/tf/mi-ejercicio/001.json"
+    async function loadExerciseData(exerciseRef) {
+      const ref = String(exerciseRef || "").trim().replace(/^\/+|\/+$/g, "");
+      const isJsonPath = /\.json(\?|$)/i.test(ref);
+      const looksPath  = ref.includes("/");
+
+      // Build candidate URLs in order of preference
+      const candidates = [];
+
+      if (isJsonPath) {
+        // Caller already passed a .json; respect it as-is.
+        candidates.push(ref.startsWith("/") ? ref : `/${ref}`);
+      } else if (looksPath) {
+        // New scheme: type/slug
+        candidates.push(`/data/exercises/${ref}/current.json`);     // primary (served by app route)
+        candidates.push(`/static/exercises/${ref}/current.json`);   // fallback if mirrored under /static
+        // last fallback: treat the whole thing as an ID like before (unlikely, but harmless)
+        candidates.push(`/static/exercises/${ref}.json`);
+      } else {
+        // Legacy flat file by id
+        candidates.push(`/static/exercises/${ref}.json`);
       }
+
+      // Try in sequence until one responds OK
+      for (const url of candidates) {
+        try {
+          const res = await fetch(url, { cache: "no-store" });
+          if (!res.ok) continue;
+          const data = await res.json();
+          return Array.isArray(data) ? data[0] : data;
+        } catch (_) {
+          // try next
+        }
+      }
+      return { error: `No se pudo cargar el ejercicio (“${ref}”).` };
     }
 
     function renderCarousel(modalEl, exercise) {

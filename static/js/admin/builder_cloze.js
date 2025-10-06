@@ -371,8 +371,12 @@
   // ---------- Prefill from template global or seed one ----------
   const ex = (typeof window !== 'undefined') ? window.PP_CLOZE_EDIT_EX : null;
   if (ex && ex.title) {
-    const t = form.querySelector('input[name=title]');
-    if (t) t.value = ex.title;
+    form.querySelector('input[name=title]').value = ex.title;
+  }
+  // NEW: prefill optional instructions
+  if (ex && typeof ex.instructions === 'string' && ex.instructions.trim() !== '') {
+    const instrField = form.querySelector('textarea[name="instructions"]');
+    if (instrField) instrField.value = ex.instructions;
   }
   if (ex && Array.isArray(ex.items) && ex.items.length) {
     ex.items.forEach((it, idx) => {
@@ -599,6 +603,20 @@
   function renderClozePreview(items){
     ensurePreviewPanel();
     prevContent.innerHTML = '';
+
+    // NEW: show instructions (if any) above the preview cards
+    try {
+      const instrNode = form ? form.querySelector('textarea[name="instructions"]') : null;
+      const instrHtml = (instrNode && typeof instrNode.value === 'string') ? instrNode.value.trim() : '';
+      if (instrHtml) {
+        const box = el('div', {
+          class: 'pp-ex-instructions',
+          style: 'margin-bottom:1rem;padding:.75rem 1rem;background:#f8fafc;border-left:4px solid #2563eb;border-radius:8px;color:#0f172a;line-height:1.5;'
+        });
+        box.innerHTML = instrHtml; // allow simple HTML (bold/italics)
+        prevContent.appendChild(box);
+      }
+    } catch (_) { /* non-blocking */ }
     if (!items || !items.length) {
       prevContent.appendChild(el('div', { class:'tiny muted' }, 'No hay oraciones aún.'));
       return;

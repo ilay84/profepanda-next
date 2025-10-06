@@ -215,10 +215,11 @@
         };
       }
 
-      // ------- CLOZE carousel (auto-check on Next; no per-blank "Comprobar") -------
+      // ------- CLOZE carousel (gated buttons + save/restore + retry) -------
       function renderClozeCarousel(containerEl, playable) {
         if (!containerEl) return;
 
+        // Helpers
         function stripAccents(s){ try { return s.normalize('NFD').replace(/[\u0300-\u036f]/g,''); } catch(_){ return s; } }
         var persistKey = 'pp-ex-' + (playable.exercise_id || playable.id || 'cloze_preview');
 
@@ -259,6 +260,7 @@
         var prevBtn = containerEl.querySelector('.pp-ex-prev');
         var nextBtn = containerEl.querySelector('.pp-ex-next');
 
+        // Ensure disabled styling feels consistent
         function syncBtn(el){
           if (!el) return;
           el.style.opacity = el.disabled ? '0.5' : '1';
@@ -315,26 +317,9 @@
         }
 
         var currentItem = null;
-        var currentControls = []; // [{ key, input, fbBox }]
-
+        var currentControls = []; // [{ key, input, hintBox, fbBox }]
         function allInputsFilled() {
           return currentControls.every(function(c){ return ((c.input.value || '').trim().length > 0); });
-        }
-
-        function paintFeedback(per) {
-          currentControls.forEach(function(entry){
-            var key = entry.key;
-            var input = entry.input;
-            var fbBox = entry.fbBox;
-            var cfg = entry.cfg;
-            var rb = per.blanks[key] || { ok:false, value:'' };
-            input.style.borderColor = rb.ok ? '#16a34a' : '#b91c1c';
-            fbBox.textContent = rb.ok
-              ? ((cfg && (cfg.feedback_correct || '¡Correcto!')) || '¡Correcto!')
-              : ((cfg && (cfg.feedback_incorrect || 'Revisá esta respuesta.')) || 'Revisá esta respuesta.');
-            fbBox.style.color = rb.ok ? '#15803d' : '#b91c1c';
-            fbBox.style.display = 'block';
-          });
         }
 
         function renderSummary(){
@@ -347,6 +332,7 @@
             var r = state.results[it.id] || { ok:false, blanks:{} };
             var tag = r.ok ? '✅' : '❌';
 
+            // full sentence with user's answers filled in
             var tmp = document.createElement('div');
             tmp.innerHTML = String(it.prompt_html || '');
             var plain = tmp.textContent || (it.prompt || '');
@@ -360,10 +346,29 @@
               return '<span style="padding:.05rem .35rem;border:1px solid #cbd5e1;border-radius:6px;">' + shown + '</span>';
             }).join('');
 
+            // list each blank’s correct options
+            var blanks = Array.isArray(it.blanks) ? it.blanks : [];
+            var correctRows = blanks.map(function(b){
+              var rb = r.blanks[b.key] || { value:'', answers:[] , ok:false };
+              var yourAns = (rb.value || '').trim() || '—';
+              var rightAns = (Array.isArray(rb.answers) && rb.answers.length) ? rb.answers.join(', ') : '—';
+              return ''
+                + '<div style="display:flex;gap:.5rem;align-items:baseline;flex-wrap:wrap;margin:.15rem 0 0 0;">'
+                +   '<div><strong>Tu respuesta:</strong> <span style="color:' + (rb.ok ? '#0a7f2e' : '#b91c1c') + '">' + yourAns + '</span></div>'
+                +   '<div><strong>Correcta:</strong> <span style="color:#0a7f2e">' + rightAns + '</span></div>'
+                + '</div>';
+            }).join('');
+
             return ''
               + '<div class="pp-summary-item" style="border:1px solid #e5e7eb;border-radius:10px;padding:.5rem .6rem;">'
               +   '<div style="font-weight:600;display:inline-flex;align-items:center;gap:.25rem;">' + (idx + 1) + '<span>: ' + tag + '</span></div>'
-              +   '<div style="margin-top:.35rem;color:#334155;">' + sentence + '</div>'
+              +   '<details style="margin-top:.35rem;">'
+              +     '<summary style="cursor:pointer;user-select:none">Repasar</summary>'
+              +     '<div style="margin-top:.4rem">'
+              +       '<div style="color:#334155;margin-bottom:.35rem;">' + sentence + '</div>'
+              +       correctRows
+              +     '</div>'
+              +   '</details>'
               + '</div>';
           }).join('');
 
@@ -386,7 +391,6 @@
           if (barEl) barEl.style.width = '100%';
           prevBtn.disabled = total === 0;
           nextBtn.textContent = 'Cerrar';
-          nextBtn.disabled = false;
           syncBtn(prevBtn); syncBtn(nextBtn);
 
           var retry = slide.querySelector('.pp-ex-retry');
@@ -436,19 +440,39 @@
               var prev = state.results[it.id] && state.results[it.id].blanks && state.results[it.id].blanks[key];
               if (prev && typeof prev.value === 'string') inp.value = prev.value;
 
+              // hint + feedback
+              var hintBtn = document.createElement('button');
+              hintBtn.type = 'button';
+              hintBtn.className = 'btn tiny';
+              hintBtn.textContent = '💡';
+              var hintBox = document.createElement('div');
+              hintBox.className = 'tiny muted';
+              hintBox.style.cssText = 'display:none;margin-top:.15rem;';
+              var cfg = byKey[key];
+              var hintText = (cfg && cfg.hint) ? cfg.hint : (it.hint || '');
+              if (hintText) hintBox.textContent = hintText;
+              hintBtn.addEventListener('click', function(hb, text){
+                return function(){
+                  if (!text) return;
+                  hb.style.display = (hb.style.display === 'none') ? 'block' : 'none';
+                };
+              }(hintBox, hintText));
+
               var fbBox = document.createElement('div');
               fbBox.className = 'tiny';
               fbBox.style.cssText = 'display:none;margin-top:.15rem;';
 
               wrap.appendChild(inp);
+              wrap.appendChild(hintBtn);
+              wrap.appendChild(hintBox);
               wrap.appendChild(fbBox);
 
               row.appendChild(wrap);
-              currentControls.push({ key: key, input: inp, fbBox: fbBox, cfg: byKey[key] });
+              currentControls.push({ key: key, input: inp, hintBox: hintBox, fbBox: fbBox, cfg: cfg });
             }
           }
 
-          // Card + (optional) media
+          // Card + media (kept simple)
           var card = document.createElement('div');
           card.style.cssText = 'border:1px solid #e5e7eb;border-radius:12px;padding:.75rem;background:#fff;display:flex;flex-direction:column;gap:.6rem;';
           var m = it.media || {};
@@ -456,6 +480,85 @@
           if (m && m.audio){ var aud=document.createElement('audio'); aud.controls=true; aud.src=m.audio; aud.style.minWidth='220px'; card.appendChild(aud); }
           if (m && m.video){ var vid=document.createElement('video'); vid.controls=true; vid.src=m.video; vid.style.cssText='display:block;max-width:320px;border-radius:6px;'; card.appendChild(vid); }
           card.appendChild(row);
+
+          // Check + overall feedback
+          var overallBox = document.createElement('div');
+          overallBox.className = 'tiny';
+          overallBox.style.cssText = 'margin-top:.25rem;';
+          var checkBtn = document.createElement('button');
+          checkBtn.type = 'button';
+          checkBtn.className = 'btn tiny';
+          checkBtn.textContent = 'Comprobar';
+
+          // initial gating
+          function gate(){
+            var hasAll = allInputsFilled();
+            checkBtn.disabled = !hasAll;
+            checkBtn.style.opacity = hasAll ? '1' : '0.6';
+            checkBtn.style.cursor  = hasAll ? 'pointer' : 'not-allowed';
+
+            // NEW: Next is enabled once all blanks are filled (no need to press "Comprobar")
+            nextBtn.disabled = !hasAll;
+            syncBtn(nextBtn);
+          }
+          currentControls.forEach(function(c){ c.input.addEventListener('input', gate); });
+
+          // Restore checked UI if present
+          if (state.results[it.id] && state.results[it.id].checked) {
+            var r = state.results[it.id];
+            currentControls.forEach(function(entry){
+              var key = entry.key;
+              var input = entry.input;
+              var fbBox = entry.fbBox;
+              var cfg = entry.cfg;
+              var rb = r.blanks[key] || { ok:false, value:'' };
+              input.value = rb.value || '';
+              input.style.borderColor = rb.ok ? '#16a34a' : '#b91c1c';
+              fbBox.textContent = rb.ok
+                ? ((cfg && (cfg.feedback_correct || '¡Correcto!')) || '¡Correcto!')
+                : ((cfg && (cfg.feedback_incorrect || 'Revisá esta respuesta.')) || 'Revisá esta respuesta.');
+              fbBox.style.color = rb.ok ? '#15803d' : '#b91c1c';
+              fbBox.style.display = 'block';
+            });
+            overallBox.textContent = r.ok ? '¡Todas correctas!' : 'Algunas respuestas necesitan revisión.';
+            overallBox.style.color = r.ok ? '#15803d' : '#b91c1c';
+          }
+
+          checkBtn.addEventListener('click', function(){
+            // require all inputs first
+            if (!allInputsFilled()) return;
+
+            var per = evaluateItem(it, currentControls);
+            state.results[it.id] = per;
+            recalcCorrect();
+
+            // paint feedback and lock visuals
+            currentControls.forEach(function(entry){
+              var key = entry.key;
+              var input = entry.input;
+              var fbBox = entry.fbBox;
+              var cfg = entry.cfg;
+              var rb = per.blanks[key] || { ok:false, value:'' };
+              input.style.borderColor = rb.ok ? '#16a34a' : '#b91c1c';
+              fbBox.textContent = rb.ok
+                ? ((cfg && (cfg.feedback_correct || '¡Correcto!')) || '¡Correcto!')
+                : ((cfg && (cfg.feedback_incorrect || 'Revisá esta respuesta.')) || 'Revisá esta respuesta.');
+              fbBox.style.color = rb.ok ? '#15803d' : '#b91c1c';
+              fbBox.style.display = 'block';
+            });
+
+            overallBox.textContent = per.ok ? '¡Todas correctas!' : 'Algunas respuestas necesitan revisión.';
+            overallBox.style.color = per.ok ? '#15803d' : '#b91c1c';
+
+            // Enable Next after checked, save progress
+            nextBtn.disabled = false;
+            syncBtn(nextBtn);
+            save();
+          });
+
+          // HIDE Comprobar button for Cloze (auto-evaluated flow)
+          checkBtn.style.display = 'none';
+          card.appendChild(overallBox);
 
           slide.innerHTML = '';
           slide.appendChild(card);
@@ -468,23 +571,10 @@
           }
           prevBtn.disabled = (idx === 0);
           nextBtn.textContent = (idx === total - 1) ? 'Finalizar' : 'Siguiente →';
+          syncBtn(prevBtn);
 
-          // Gate Next until all inputs are filled (or already checked)
-          function gate(){
-            var hasAll = allInputsFilled();
-            nextBtn.disabled = !hasAll && !(state.results[it.id] && state.results[it.id].checked);
-            syncBtn(nextBtn);
-          }
-          currentControls.forEach(function(c){ c.input.addEventListener('input', gate); });
-
-          // If already checked before, repaint feedback & allow Next
-          if (state.results[it.id] && state.results[it.id].checked) {
-            paintFeedback(state.results[it.id]);
-            nextBtn.disabled = false;
-          } else {
-            nextBtn.disabled = !allInputsFilled();
-          }
-          syncBtn(prevBtn); syncBtn(nextBtn);
+          // Apply gating now that DOM is ready
+          gate();
         }
 
         function go(i){
@@ -498,24 +588,29 @@
           if (prevBtn.disabled) return;
           if (state.i > 0) go(state.i - 1);
         });
-
         nextBtn.addEventListener('click', function(){
+          if (nextBtn.disabled) return;
+
+          // NEW: if this item hasn’t been “checked” yet, auto-evaluate it now
           var it = items[state.i];
-          if (it) {
-            // Auto-check on Next
-            var per = evaluateItem(it, currentControls);
+          if (it && !(state.results[it.id] && state.results[it.id].checked)) {
+            var per = evaluateItem(it, currentControls || []);
             state.results[it.id] = per;
             recalcCorrect();
             save();
-            paintFeedback(per);
           }
-          if (state.i < items.length - 1) {
+
+          var last = items.length;
+          if (state.i < last) {
             go(state.i + 1);
           } else {
-            renderSummary();
+            // close modal on summary 'Cerrar'
+            var els = window.PPAdminModal.getPPModalEls();
+            if (els && els.modal){ els.modal.setAttribute('aria-hidden','true'); document.body.style.overflow=''; }
           }
         });
 
+        // Start on restored index
         var startIdx = Math.max(0, Math.min(state.i, Math.max(0, items.length - 1)));
         go(startIdx);
       }
@@ -761,7 +856,6 @@
               try { fn(targetEl, playable); }
               catch (_) { fn(window.PPAdminModal.getPPModalEls().modal, playable); }
             } catch (err) {
-              // If the player threw because something is still loading, keep waiting.
               console.error('Carousel upgrade error (retrying):', err);
               if (Date.now() - started < maxMs) return setTimeout(loop, 120);
             }
@@ -784,43 +878,75 @@
           exercise && exercise.type === 'cloze' ? adaptCloze(exercise) :
           exercise;
 
+        // Helper to inject the instructions box at the very top of the modal body
+        function injectInstructions() {
+          const els = window.PPAdminModal.getPPModalEls();
+          const be = els && els.bodyEl;
+          if (!be) return;
+          // avoid duplicating
+          if (be.querySelector('.pp-ex-instructions')) return;
+          if (exercise && typeof exercise.instructions === 'string' && exercise.instructions.trim() !== '') {
+            const box = document.createElement('div');
+            box.className = 'pp-ex-instructions';
+            box.innerHTML = exercise.instructions; // allow basic HTML
+            box.style.cssText = 'margin-bottom:1rem;padding:.75rem 1rem;background:#f8fafc;border-left:4px solid #2563eb;border-radius:8px;color:#0f172a;line-height:1.5;';
+            be.insertAdjacentElement('afterbegin', box);
+          }
+        }
+
         // Detect CLOZE quickly
         const isCloze = !!(playable && (
           playable.type === 'cloze' ||
           (Array.isArray(playable.items) && playable.items.some(it => it.type === 'cloze'))
         ));
 
-        // CLOZE → always use our local carousel (one oración / slide + resumen final)
+        // CLOZE → always use our local carousel (we control the body; inject instructions first)
         if (isCloze) {
-          if (bodyEl) bodyEl.innerHTML = '';
-          renderClozeCarousel(bodyEl, playable);
+          if (bodyEl) {
+            bodyEl.innerHTML = '';
+            injectInstructions();
+            // mount after instructions
+            const mount = document.createElement('div');
+            bodyEl.appendChild(mount);
+            renderClozeCarousel(mount, playable);
+          }
           return;
         }
 
-        // TF / MCQ → try the public carousel first
+        // TF / MCQ → try the public carousel first (it renders into the whole modal),
+        // then prepend the instructions (even if the player re-rendered the body).
         const playerFn = getPublicCarouselFn();
         if (playerFn) {
           try {
-            try { playerFn(modal, playable); }
-            catch (_) { playerFn(bodyEl || document.body, playable); }
+            playerFn(modal, playable);
+            // Try a few times in case the player renders asynchronously
+            injectInstructions();
+            setTimeout(injectInstructions, 50);
+            setTimeout(injectInstructions, 200);
           } catch (err) {
             console.error('Public carousel threw; falling back to minimal preview:', err);
-            if (exercise && exercise.type === 'tf') {
-              renderTFMinimal(bodyEl, playable);
-            } else {
-              renderMCQMinimal(bodyEl, playable);
+            if (bodyEl) {
+              bodyEl.innerHTML = '';
+              injectInstructions();
+              const mount = document.createElement('div');
+              bodyEl.appendChild(mount);
+              if (exercise && exercise.type === 'tf') renderTFMinimal(mount, playable);
+              else renderMCQMinimal(mount, playable);
             }
           }
           return;
         }
 
-        // No public player yet → show minimal preview immediately and auto-upgrade when ready
-        if (exercise && exercise.type === 'tf') {
-          renderTFMinimal(bodyEl, playable);
-        } else {
-          renderMCQMinimal(bodyEl, playable);
+        // No public player yet → show minimal preview immediately and auto-upgrade later.
+        if (bodyEl) {
+          bodyEl.innerHTML = '';
+          injectInstructions();
+          const mount = document.createElement('div');
+          bodyEl.appendChild(mount);
+          if (exercise && exercise.type === 'tf') renderTFMinimal(mount, playable);
+          else renderMCQMinimal(mount, playable);
+          upgradeWhenReady(modal, playable);
         }
-        upgradeWhenReady(modal, playable);
       }
 
       // ✅ EXPORT and close PPAdminPreview IIFE

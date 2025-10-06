@@ -967,19 +967,38 @@ def _exercise_index_path():
 def _load_exercise_index():
     """
     Load exercises.index.json if present and valid; otherwise rebuild by scanning
-    the filesystem. Prefer the new foldered layout:
+    the filesystem.
 
+    Supports all layouts:
+
+    NEW (2025-10):
+      data/exercises/<type>/<slug>/
+        meta.json
+        current.json
+        NNN.json        (e.g., 001.json, 002.json)
+
+    Legacy (foldered by id):
       data/exercises/<id>/
         meta.json
         current.json
-        versions/vNNN.json
+        versions/
+          vNNN.json
 
-    Also merges legacy files named "<id>@vN.json" (preferring the new vNNN.json
-    paths when both exist). Saves a refreshed exercises.index.json on rebuild.
+    Legacy (flat files):
+      data/exercises/<id>@vN.json
+
+    The resulting index has records:
+      {
+        id,                # stable exercise id from payload/meta
+        type,              # e.g., "tf", "mcq", "cloze"
+        title,             # exercise title
+        pinned_version,    # defaults to latest if not set
+        versions: [ { version, path } ]  # repo-relative "data/..." path to the version JSON
+      }
     """
     path = _exercise_index_path()
 
-    # --- 1) Try to load an existing valid index --------------------------
+    # 1) Try existing valid index
     try:
         if os.path.exists(path):
             with open(path, "r", encoding="utf-8") as f:
@@ -989,11 +1008,10 @@ def _load_exercise_index():
     except Exception:
         pass  # fall through to rebuild
 
-    # --- 2) Rebuild by scanning the filesystem ---------------------------
+    # 2) Rebuild by scanning the filesystem
     root = _exercises_root_path()
     ex_map = {}
 
-    # Helper: safe JSON load
     def _safe_load_json(p):
         try:
             with open(p, "r", encoding="utf-8") as f:
@@ -1001,62 +1019,149 @@ def _load_exercise_index():
         except Exception:
             return None
 
-    # (a) Scan folder-based records first (new layout)
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+    # (a) NEW layout: data/exercises/<type>/<slug>/{meta.json,current.json,NNN.json}
+    try:
+        for type_name in os.listdir(root):
+            type_dir = os.path.join(root, type_name)
+            if not os.path.isdir(type_dir):
+                continue
+
+            # Detect whether this is a "type" directory by looking for nested folders
+            # that contain either current.json or NNN.json files.
+            for slug_name in os.listdir(type_dir):
+                folder = os.path.join(type_dir, slug_name)
+                if not os.path.isdir(folder):
+                    continue
+
+                try:
+                    files = set(os.listdir(folder))
+                except Exception:
+                    continue
+
+                has_current = "current.json" in files
+                has_numeric_versions = any(
+                    fn.lower().endswith(".json") and fn[:-5].isdigit() for fn in files
+                )
+                if not (has_current or has_numeric_versions):
+                    continue  # not a new-layout exercise folder
+
+                meta = _safe_load_json(os.path.join(folder, "meta.json"))
+                current = _safe_load_json(os.path.join(folder, "current.json"))
+
+                # Determine id (prefer meta, then current, then last numeric file)
+                ex_id = (meta or {}).get("id") or (current or {}).get("id")
+                if not ex_id:
+                    # peek a numeric file if present
+                    numeric = sorted([fn for fn in files if fn.lower().endswith(".json") and fn[:-5].isdigit()])
+                    payload = _safe_load_json(os.path.join(folder, numeric[-1])) if numeric else None
+                    ex_id = (payload or {}).get("id") or f"{type_name}__{slug_name}"
+
+                rec = ex_map.get(ex_id) or {
+                    "id": ex_id,
+                    "type": None,
+                    "title": None,
+                    "pinned_version": None,
+                    "versions": [],
+                }
+
+                # Fill type/title from meta/current if present
+                rec["type"] = (meta or {}).get("type") or (current or {}).get("type") or rec["type"]
+                rec["title"] = (meta or {}).get("title") or (current or {}).get("title") or rec["title"]
+
+                # Collect numeric version files as versions
+                versions = []
+                for fn in files:
+                    if not fn.lower().endswith(".json"):
+                        continue
+                    stem = fn[:-5]
+                    if stem.isdigit():
+                        try:
+                            ver = int(stem)
+                        except ValueError:
+                            continue
+                        rel = os.path.join("data", "exercises", type_name, slug_name, fn).replace("\\", "/")
+                        versions.append({"version": ver, "path": rel})
+
+                versions.sort(key=lambda v: v.get("version", 0))
+                if versions:
+                    rec["versions"] = versions
+                    if rec.get("pinned_version") is None:
+                        rec["pinned_version"] = versions[-1]["version"]
+                else:
+                    # No numeric versions but include record so UI can still preview via current.json
+                    rec.setdefault("versions", [])
+
+                ex_map[ex_id] = rec
+    except Exception:
+        # Don't fail the whole indexer; continue with legacy scans.
+        pass
+
+    # (b) Legacy folder-by-id layout: data/exercises/<id>/versions/vNNN.json
     try:
         for name in os.listdir(root):
             d = os.path.join(root, name)
             if not os.path.isdir(d):
                 continue
 
+            # Skip directories already consumed as NEW layout "type" dirs above
+            # Heuristic: if any child is a folder having current.json/NNN.json, we've handled it.
+            try:
+                child_dirs = [os.path.join(d, c) for c in os.listdir(d) if os.path.isdir(os.path.join(d, c))]
+                if any(os.path.exists(os.path.join(c, "current.json")) or
+                       any((fn.lower().endswith(".json") and fn[:-5].isdigit()) for fn in os.listdir(c))
+                       for c in child_dirs):
+                    continue
+            except Exception:
+                pass
+
             meta_p = os.path.join(d, "meta.json")
             current_p = os.path.join(d, "current.json")
             versions_d = os.path.join(d, "versions")
 
-            rec = {
-                "id": name,
-                "type": None,
-                "title": None,
-                "pinned_version": None,
-                "versions": [],
-            }
+            # require at least one of these to consider legacy folder
+            if not (os.path.exists(meta_p) or os.path.exists(current_p) or os.path.isdir(versions_d)):
+                continue
 
             meta = _safe_load_json(meta_p)
-            if meta:
-                rec["type"] = meta.get("type")
-                rec["title"] = meta.get("title")
-                if isinstance(meta.get("pinned_version"), int):
-                    rec["pinned_version"] = meta.get("pinned_version")
+            current = _safe_load_json(current_p)
 
-            # enumerate vNNN.json
-            if os.path.isdir(versions_d):
-                for fn in os.listdir(versions_d):
-                    if not fn.lower().endswith(".json"):
-                        continue
-                    import re as _re
-                    m = _re.match(r"^v(\d+)\.json$", fn, _re.I)
-                    if not m:
-                        continue
-                    ver = int(m.group(1))
-                    rec["versions"].append({
-                        "version": ver,
-                        "path": os.path.join("data", "exercises", name, "versions", fn).replace("\\", "/")
-                    })
+            ex_id = name
+            # prefer ids found inside files, but folder name is fallback
+            ex_id = (meta or {}).get("id") or (current or {}).get("id") or ex_id
 
-            # If we found any versions, finalize the record.
-            # If no versions but current.json exists, still include the record so the UI can show it;
-            # preview will fall back to current.json (Edit #3).
-            if rec["versions"]:
-                rec["versions"].sort(key=lambda v: v.get("version", 0))
-                if rec["pinned_version"] is None:
-                    rec["pinned_version"] = rec["versions"][-1]["version"]
-                ex_map[name] = rec
-            else:
-                if os.path.exists(current_p):
-                    ex_map[name] = rec
+            rec = ex_map.get(ex_id) or {"id": ex_id, "type": None, "title": None, "pinned_version": None, "versions": []}
+            rec["type"] = (meta or {}).get("type") or (current or {}).get("type") or rec["type"]
+            rec["title"] = (meta or {}).get("title") or (current or {}).get("title") or rec["title"]
+
+            versions = rec.get("versions", [])
+            try:
+                if os.path.isdir(versions_d):
+                    for fn in os.listdir(versions_d):
+                        if not fn.lower().endswith(".json"):
+                            continue
+                        # vNNN.json
+                        import re as _re
+                        m = _re.match(r"^v(\d+)\.json$", fn, _re.I)
+                        if not m:
+                            continue
+                        ver = int(m.group(1))
+                        rel = os.path.join("data", "exercises", name, "versions", fn).replace("\\", "/")
+                        if not any(v.get("version") == ver for v in versions):
+                            versions.append({"version": ver, "path": rel})
+            except Exception:
+                pass
+
+            versions.sort(key=lambda v: v.get("version", 0))
+            rec["versions"] = versions
+            if versions and rec.get("pinned_version") is None:
+                rec["pinned_version"] = versions[-1]["version"]
+            ex_map[ex_id] = rec
     except Exception:
-        pass  # continue to legacy scan regardless
+        pass
 
-    # (b) Merge legacy "<id>@vN.json" files
+    # (c) Legacy flat files: data/exercises/<id>@vN.json
     try:
         import re
         for fn in os.listdir(root):
@@ -1067,25 +1172,24 @@ def _load_exercise_index():
             if not m:
                 continue
             ex_id, ver = m.group(1), int(m.group(2))
-            rec = ex_map.get(ex_id)
-            if not rec:
-                rec = {"id": ex_id, "type": None, "title": None, "pinned_version": None, "versions": []}
-                ex_map[ex_id] = rec
-            # Skip if this version already exists via new layout
-            if any(v.get("version") == ver for v in rec["versions"]):
-                continue
-            rec["versions"].append({
-                "version": ver,
-                "path": os.path.join("data", "exercises", fn).replace("\\", "/")
-            })
-            if rec["pinned_version"] is None or ver > rec["pinned_version"]:
+            rec = ex_map.get(ex_id) or {"id": ex_id, "type": None, "title": None, "pinned_version": None, "versions": []}
+            rel = os.path.join("data", "exercises", fn).replace("\\", "/")
+            if not any(v.get("version") == ver for v in rec["versions"]):
+                rec["versions"].append({"version": ver, "path": rel})
+            if rec.get("pinned_version") is None or ver > rec["pinned_version"]:
                 rec["pinned_version"] = ver
+            ex_map[ex_id] = rec
     except Exception:
         pass
 
-    # --- 3) Finalize & persist refreshed index ---------------------------
+    # 3) Finalize & persist
     exercises = list(ex_map.values())
+    # Fill missing pinned_version with latest if versions exist
+    for r in exercises:
+        if not r.get("pinned_version") and r.get("versions"):
+            r["pinned_version"] = max(v.get("version", 0) for v in r["versions"])
     exercises.sort(key=lambda r: ((r.get("title") or "").lower(), r.get("id") or ""))
+
     index_data = {"exercises": exercises}
     try:
         _save_exercise_index(index_data)
@@ -1349,6 +1453,7 @@ def admin_exercises_save():
              audio?: "__UPLOAD__" | "/static/...",
              video?: "__UPLOAD__" | "/static/..."
            }
+      - instructions: str (optional; HTML allowed, rendered above questions if present)
 
     If using form-data for uploads, also include arrays aligned by item index:
       - media_index[]        (hidden; "0", "1", "2", ...)
@@ -1403,6 +1508,19 @@ def admin_exercises_save():
     meta = ensure_obj(pick("meta", {}), {})
     overrides = ensure_obj(pick("overrides", {}), {})
 
+    # NEW: optional instructions (string/HTML). Normalize to trimmed string or None.
+    _instr = pick("instructions", None)
+    if _instr is None:
+        instructions = None
+    else:
+        try:
+            # If someone sends JSON accidentally, coerce to string safely.
+            instructions = _instr if isinstance(_instr, str) else str(_instr)
+        except Exception:
+            instructions = None
+    if isinstance(instructions, str):
+        instructions = instructions.strip() or None
+
     # Normalize items to a list
     if not isinstance(items, list):
         items = []
@@ -1429,12 +1547,8 @@ def admin_exercises_save():
     deleted_media_paths = []
 
     # ---------- Backfill prior media when not re-uploaded ----------
-    # If this is an edit and the user didn't upload a new file for a slot,
-    # keep the previously saved media path for that item — unless the form
-    # explicitly asked to delete it using the "__DELETE__" sentinel.
     prev_items = []
     if existing and isinstance(existing.get("versions"), list) and existing["versions"]:
-        # choose pinned_version if present, else the highest version number
         _ver = existing.get("pinned_version")
         if not _ver:
             _ver = max(v.get("version", 0) for v in existing["versions"])
@@ -1460,12 +1574,9 @@ def admin_exercises_save():
             if i < len(prev_items) and isinstance(prev_items[i], dict):
                 pm = prev_items[i].get("media") if isinstance(prev_items[i].get("media"), dict) else {}
 
-            # Carry forward *only* when value wasn't provided.
-            # Respect "__UPLOAD__" (new file incoming) and "__DELETE__" (explicit removal).
             def _apply(key):
                 new_val = m.get(key)
                 if new_val == "__DELETE__":
-                    # record the file we're removing (if it existed) so we can unlink later
                     if pm.get(key):
                         deleted_media_paths.append(pm[key])
                     m[key] = None
@@ -1477,10 +1588,9 @@ def admin_exercises_save():
             for _k in ("image", "audio", "video"):
                 _apply(_k)
 
-            # keep YouTube/alt if newly blank; clear if explicitly deleted
             if m.get("youtube_url") == "__DELETE__":
                 if pm.get("youtube_url"):
-                    deleted_media_paths.append(None)  # nothing to unlink for URLs
+                    deleted_media_paths.append(None)
                 m["youtube_url"] = None
             elif (m.get("youtube_url") in (None, "")) and pm.get("youtube_url"):
                 m["youtube_url"] = pm["youtube_url"]
@@ -1494,18 +1604,44 @@ def admin_exercises_save():
             items[i] = it
 
     # ---------- Handle media uploads (form-data only) ----------
-    # (Backfill was already handled above with explicit delete support.)
-    # Browsers only include selected files in each media_*[] list, so their positions
-    # DO NOT align with item indices. We walk items and pull the NEXT available file
-    # from each list only when "__UPLOAD__" is present.
     if request.files:
-        # Base dir for this exercise's media
+        # Decide target folder: /static/exercises/media/<type>/<slug>/
+        media_type = ex_type
+        media_slug = None
+
+        # Try to reuse existing slug from a stored version path (handles both "data/..." and "static/...")
+        try:
+            if existing and isinstance(existing.get("versions"), list) and existing["versions"]:
+                p = (existing["versions"][-1] or {}).get("path") or ""
+                parts = p.split("/")
+                if "exercises" in parts:
+                    i = parts.index("exercises")
+                    if len(parts) >= i + 3:
+                        media_type = parts[i + 1]
+                        media_slug = parts[i + 2]
+        except Exception:
+            pass
+
+        # Fallback: slugify current title (consistent with storage helpers)
+        if not media_slug:
+            try:
+                from .storage import slugify_title as _slugify_title
+            except Exception:
+                def _slugify_title(t):
+                    import re, unicodedata
+                    t = unicodedata.normalize("NFKD", str(t or "")).encode("ascii","ignore").decode("ascii")
+                    t = re.sub(r"[\s_]+","-", t.lower().strip())
+                    t = re.sub(r"[^a-z0-9\-]","", t)
+                    t = re.sub(r"-{2,}","-", t).strip("-")
+                    return t or "untitled"
+            media_slug = _slugify_title(title or exercise_id)
+
         media_dir_abs = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "..", "static", "exercises", "media", exercise_id)
+            os.path.join(os.path.dirname(__file__), "..", "static", "exercises", "media", media_type, media_slug)
         )
         os.makedirs(media_dir_abs, exist_ok=True)
+        media_web_base = f"/static/exercises/media/{media_type}/{media_slug}"
 
-        # Get lists of files (may contain empties; filter to filename truthy)
         raw_imgs = request.files.getlist("media_image[]")
         raw_auds = request.files.getlist("media_audio[]")
         raw_vids = request.files.getlist("media_video[]")
@@ -1514,12 +1650,10 @@ def admin_exercises_save():
         aud_list = [fs for fs in raw_auds if getattr(fs, "filename", "")]
         vid_list = [fs for fs in raw_vids if getattr(fs, "filename", "")]
 
-        # Cursors for each media list
         img_i = 0
         aud_i = 0
         vid_i = 0
 
-        # Helper to save a FileStorage if present
         def _save_file(fs, out_name_hint):
             if not fs or not getattr(fs, "filename", ""):
                 return None
@@ -1539,42 +1673,28 @@ def admin_exercises_save():
             abs_path = os.path.join(media_dir_abs, out_name)
             os.makedirs(os.path.dirname(abs_path), exist_ok=True)
             fs.save(abs_path)
-            return f"/static/exercises/media/{exercise_id}/{out_name}".replace("\\", "/")
+            return f"{media_web_base}/{out_name}".replace("\\", "/")
 
-        # Walk items and attach media in order
         for i, it in enumerate(items):
             if not isinstance(it, dict):
                 continue
             m = it.get("media") if isinstance(it.get("media"), dict) else {}
 
-            # IMAGE
             if m.get("image") == "__UPLOAD__" and img_i < len(img_list):
                 saved = _save_file(img_list[img_i], f"q{i}_image")
                 img_i += 1
-                if saved:
-                    m["image"] = saved
-                else:
-                    m["image"] = None  # clear if save failed
+                m["image"] = saved or None
 
-            # AUDIO
             if m.get("audio") == "__UPLOAD__" and aud_i < len(aud_list):
                 saved = _save_file(aud_list[aud_i], f"q{i}_audio")
                 aud_i += 1
-                if saved:
-                    m["audio"] = saved
-                else:
-                    m["audio"] = None
+                m["audio"] = saved or None
 
-            # VIDEO
             if m.get("video") == "__UPLOAD__" and vid_i < len(vid_list):
                 saved = _save_file(vid_list[vid_i], f"q{i}_video")
                 vid_i += 1
-                if saved:
-                    m["video"] = saved
-                else:
-                    m["video"] = None
+                m["video"] = saved or None
 
-            # Normalize and assign back
             it["media"] = {
                 "youtube_url": (m.get("youtube_url") or None),
                 "image_alt": (m.get("image_alt") or None),
@@ -1585,14 +1705,11 @@ def admin_exercises_save():
             items[i] = it
 
     else:
-        # If no files (JSON or simple form), normalize placeholders.
-        # Clear "__UPLOAD__" and honor "__DELETE__" (and record files to unlink).
         for i, it in enumerate(items):
             if not isinstance(it, dict):
                 continue
             m = it.get("media") if isinstance(it.get("media"), dict) else {}
 
-            # Find previous media for potential unlink when "__DELETE__"
             pm = {}
             if i < len(prev_items) and isinstance(prev_items[i], dict):
                 pm = prev_items[i].get("media") if isinstance(prev_items[i].get("media"), dict) else {}
@@ -1619,8 +1736,6 @@ def admin_exercises_save():
             }
             items[i] = it
 
-    # Remove any media files the user explicitly deleted
-    # Only unlink paths under /static/... (safety guard)
     for rel in deleted_media_paths:
         try:
             if not rel or not isinstance(rel, str):
@@ -1629,13 +1744,11 @@ def admin_exercises_save():
                 continue
             static_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "static"))
             abs_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", rel.lstrip("/")))
-            # ensure we only delete inside the static directory
             if os.path.commonpath([abs_path, static_root]) != static_root:
                 continue
             if os.path.exists(abs_path):
                 os.remove(abs_path)
         except Exception:
-            # best-effort; ignore unlink errors
             pass
 
     # ---------- Build payload to persist (after media injection) ----------
@@ -1645,6 +1758,7 @@ def admin_exercises_save():
         "title": title,
         "version": version,
         "created_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+        "instructions": instructions,   # ← NEW field (None if not provided)
         "items": items,
         "meta": meta,
     }
@@ -1657,15 +1771,13 @@ def admin_exercises_save():
         "id": exercise_id,
         "type": ex_type,
         "title": title,
-        "pinned_version": version,   # default pin to first version
-        "overrides": overrides,      # placeholder for per-insert defaults
+        "pinned_version": version,
+        "overrides": overrides,
         "versions": []
     }
-    # Keep title/type in sync if changed
     record["title"] = title
     record["type"] = ex_type
     record.setdefault("versions", [])
-    # Append/replace this version info
     v_entry = {"version": version, "path": rel_path}
     found_idx = next((i for i, v in enumerate(record["versions"]) if v.get("version") == version), -1)
     if found_idx >= 0:
@@ -1673,17 +1785,13 @@ def admin_exercises_save():
     else:
         record["versions"].append(v_entry)
         record["versions"].sort(key=lambda v: v.get("version", 0))
-
-    # Always pin the just-saved version so Biblioteca preview shows your edits
     record["pinned_version"] = version
 
-    # Put back into list
     if existing:
         ex_list = [record if e.get("id") == exercise_id else e for e in ex_list]
     else:
         ex_list.append(record)
 
-    # Save index
     index_data["exercises"] = ex_list
     _save_exercise_index(index_data)
 
@@ -1703,11 +1811,11 @@ def admin_exercises_save():
 @bp.route("/exercises/<exercise_id>/delete", methods=["POST"])
 def admin_exercises_delete(exercise_id):
     """
-    Delete an entire exercise (new + legacy layouts):
-      - Removes folder data/exercises/<id>/ (meta.json, current.json, versions/*)
-      - Removes any legacy files data/exercises/<id>@vN.json
+    Delete an entire exercise (new foldered layout + legacy):
+      - NEW: Removes folder data/exercises/<type>/<slug>/ (meta.json, current.json, NNN.json)
+      - Legacy: removes data/exercises/<exercise_id>@vN.json
       - Removes its record from exercises.index.json
-      - Optionally deletes media under static/exercises/media/<id>/
+      - Optionally deletes media under static/exercises/media/<exercise_id>/
 
     Body JSON (optional):
       { "purge_media": true|false }   # default: False
@@ -1723,54 +1831,82 @@ def admin_exercises_delete(exercise_id):
         if not record:
             return jsonify({"success": False, "error": "Exercise not found"}), 404
 
-        # --- Paths ---
+        # --- Common roots ---
         app_dir       = os.path.dirname(__file__)
         project_root  = os.path.abspath(os.path.join(app_dir, ".."))
         data_root     = os.path.abspath(os.path.join(project_root, "data"))
         exercises_root = os.path.abspath(os.path.join(data_root, "exercises"))
-        ex_dir        = os.path.abspath(os.path.join(exercises_root, exercise_id))
-        versions_dir  = os.path.join(ex_dir, "versions")
-        meta_json     = os.path.join(ex_dir, "meta.json")
-        current_json  = os.path.join(ex_dir, "current.json")
 
-        # --- Delete versioned JSON files listed in index (corrected path base) ---
-        for v in (record.get("versions") or []):
+        # --- Locate the new layout folder from any version path in the index ---
+        # Example stored path: "data/exercises/tf/mi-ejercicio/001.json"
+        version_rows = record.get("versions") or []
+        target_dir = None
+        for v in version_rows:
             p = (v or {}).get("path")
             if not p:
                 continue
-            # stored paths are repo-relative like "data/exercises/<id>/versions/vNNN.json"
+            abs_version = os.path.abspath(os.path.join(project_root, p))
+            # parent dir of "001.json" is ".../<type>/<slug>/"
+            cand = os.path.dirname(abs_version)
+            # sanity: ensure cand is inside data/exercises
+            try:
+                if os.path.commonpath([cand, exercises_root]) == exercises_root:
+                    target_dir = cand
+                    break
+            except Exception:
+                pass
+
+        # --- Fallback: if there are no versions, try current.json search by id ---
+        # We scan two levels: data/exercises/*/*/current.json and confirm id matches
+        if not target_dir:
+            for type_name in os.listdir(exercises_root):
+                type_dir = os.path.join(exercises_root, type_name)
+                if not os.path.isdir(type_dir):
+                    continue
+                for slug_name in os.listdir(type_dir):
+                    folder = os.path.join(type_dir, slug_name)
+                    if not os.path.isdir(folder):
+                        continue
+                    cand_current = os.path.join(folder, "current.json")
+                    if os.path.exists(cand_current):
+                        try:
+                            with open(cand_current, "r", encoding="utf-8") as f:
+                                payload = json.load(f) or {}
+                            if str(payload.get("id")) == str(exercise_id):
+                                target_dir = folder
+                                break
+                        except Exception:
+                            pass
+                if target_dir:
+                    break
+
+        # --- Delete all version files listed in the index (best-effort) ---
+        for v in version_rows:
+            p = (v or {}).get("path")
+            if not p:
+                continue
             abs_path = os.path.abspath(os.path.join(project_root, p))
             try:
                 if os.path.exists(abs_path):
                     os.remove(abs_path)
             except Exception:
-                pass  # best-effort
+                pass
 
-        # --- Extra sweep: remove any versions not listed in index ---
-        try:
-            if os.path.isdir(versions_dir):
-                for fn in os.listdir(versions_dir):
-                    if fn.lower().endswith(".json"):
-                        fpath = os.path.join(versions_dir, fn)
-                        try:
-                            os.remove(fpath)
-                        except Exception:
-                            pass
-        except Exception:
-            pass
-
-        # --- Remove meta/current and then the <id> folder entirely ---
-        for f in (meta_json, current_json):
+        # --- Remove meta.json and current.json in the resolved folder ---
+        if target_dir and os.path.isdir(target_dir):
+            meta_json = os.path.join(target_dir, "meta.json")
+            current_json = os.path.join(target_dir, "current.json")
+            for f in (meta_json, current_json):
+                try:
+                    if os.path.exists(f):
+                        os.remove(f)
+                except Exception:
+                    pass
+            # finally remove the folder itself
             try:
-                if os.path.exists(f):
-                    os.remove(f)
+                shutil.rmtree(target_dir)
             except Exception:
                 pass
-        try:
-            if os.path.isdir(ex_dir) and os.path.commonpath([ex_dir, exercises_root]) == exercises_root:
-                shutil.rmtree(ex_dir)
-        except Exception:
-            pass
 
         # --- Legacy cleanup: <id>@vN.json in data/exercises root ---
         try:
@@ -1787,7 +1923,7 @@ def admin_exercises_delete(exercise_id):
         index_data["exercises"] = [e for e in ex_list if e.get("id") != exercise_id]
         _save_exercise_index(index_data)
 
-        # --- Optionally purge media folder ---
+        # --- Optionally purge media folder (legacy media path by id) ---
         deleted_media = False
         if purge_media:
             static_root = os.path.abspath(os.path.join(project_root, "static"))
@@ -1802,11 +1938,11 @@ def admin_exercises_delete(exercise_id):
         return jsonify({
             "success": True,
             "deleted": {"id": exercise_id},
-            "deleted_media": deleted_media
+            "deleted_media": deleted_media,
+            "deleted_folder": (target_dir or None)
         })
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
-
 
 # === END: Exercises storage + admin routes scaffolding ===
 

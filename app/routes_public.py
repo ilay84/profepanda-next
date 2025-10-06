@@ -630,3 +630,60 @@ def public_page(slug):
         return f"Página no encontrada: {slug}", 404
     return render_template("public_page.html", page=page)
 # === END: Public Page view ===
+
+# === BEGIN: Serve new foldered exercises (type/slug) ===
+@bp.route("/data/exercises/<ex_type>/<slug>/current.json")
+def serve_exercise_current_by_type_slug(ex_type, slug):
+    """
+    Serve the canonical JSON for the new layout:
+      data/exercises/<type>/<slug>/current.json
+
+    Fallbacks:
+      - If current.json is missing, serve the highest numeric file NNN.json.
+    """
+    import re
+
+    ex_type = (ex_type or "").strip().lower()
+    slug    = (slug or "").strip().lower()
+
+    # Safety: only allow simple slugs (letters, numbers, dash, underscore)
+    if not re.fullmatch(r"[a-z0-9_-]+", ex_type):
+        abort(404, description="Invalid type")
+    if not re.fullmatch(r"[a-z0-9_-]+", slug):
+        abort(404, description="Invalid slug")
+
+    base_dir = _public_exercises_root()
+    folder   = os.path.abspath(os.path.join(base_dir, ex_type, slug))
+
+    # Must live inside data/exercises
+    try:
+        if os.path.commonpath([folder, base_dir]) != base_dir or not os.path.isdir(folder):
+            abort(404, description="Exercise folder not found")
+    except Exception:
+        abort(404, description="Exercise folder not found")
+
+    # 1) Prefer current.json
+    current_name = "current.json"
+    current_path = os.path.join(folder, current_name)
+    if os.path.exists(current_path):
+        rv = send_from_directory(folder, current_name)
+        # avoid stale caches while editing
+        rv.headers["Cache-Control"] = "no-store"
+        return rv
+
+    # 2) Fallback to latest numeric NNN.json (e.g., 001.json, 012.json)
+    try:
+        numeric = [
+            fn for fn in os.listdir(folder)
+            if fn.lower().endswith(".json") and fn[:-5].isdigit()
+        ]
+        if numeric:
+            latest = sorted(numeric, key=lambda x: int(x[:-5]))[-1]
+            rv = send_from_directory(folder, latest)
+            rv.headers["Cache-Control"] = "no-store"
+            return rv
+    except Exception:
+        pass
+
+    abort(404, description="Exercise JSON not found")
+# === END: Serve new foldered exercises (type/slug) ===

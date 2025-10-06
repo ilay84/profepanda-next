@@ -20,10 +20,19 @@
     box-shadow:0 4px 14px rgba(0,0,0,.05);
   }
   .ex-panel header {
-    padding:.75rem 1rem; border-bottom:1px solid #e5e7eb; display:flex; align-items:center; justify-content:space-between;
+    padding:.75rem 1rem;
+    border-bottom:1px solid #e5e7eb;
+    display:flex;
+    flex-wrap:wrap;          /* ⬅ allow wrapping */
+    gap:.5rem;               /* ⬅ space between rows */
+    align-items:center;
     background:#f8fafc;
   }
-  .ex-panel header h3 { margin:0; font-size:1rem; color:#0f172a; }
+  .ex-panel header h3 {
+    margin:0; font-size:1rem; color:#0f172a;
+    flex:1 0 100%;           /* ⬅ title on its own row */
+  }
+  .ex-panel header .row { width:100%; }  /* ⬅ search row full width under title */
   .ex-panel .ex-body { padding:1rem; }
 
   .ex-list { display:flex; flex-direction:column; gap:.5rem; }
@@ -32,8 +41,33 @@
     display:flex; flex-direction:column; gap:.25rem;
   }
   .ex-item .ex-title { font-weight:600; color:#0f172a; }
-  .ex-item .ex-meta { font-size:.85rem; color:#64748b; display:flex; gap:.5rem; flex-wrap:wrap; }
-  .ex-item .ex-meta .pill { background:#f1f5f9; border:1px solid #e2e8f0; padding:.1rem .5rem; border-radius:999px; }
+  .ex-item .ex-meta {
+    font-size:.85rem;
+    color:#64748b;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;   /* prevent pill from stretching full width */
+    gap:.35rem;
+  }
+  .ex-item .ex-meta .pill { display:inline-flex; align-items:center; max-width:100%; }
+  .ex-item .ex-meta .pill {
+    background:#f1f5f9;                 /* default light grey */
+    border:1px solid #e2e8f0;
+    color:#475569;
+    padding:.1rem .6rem;
+    border-radius:999px;
+  }
+  .ex-item .ex-meta .pill.type {
+    background:#eff6ff;                 /* light blue */
+    border-color:#bfdbfe;
+    color:#1e3a8a;
+    font-weight:500;
+  }
+  .ex-item .ex-meta .pill-row {
+    display:flex;
+    gap:.35rem;
+    flex-wrap:wrap;
+  }
 
   .btn {
     appearance:none;
@@ -69,6 +103,21 @@
   .muted { color:#64748b; }
   .row { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; }
   .row > * { margin: .15rem 0; }
+
+    /* Library search */
+  .ex-search-input {
+    border:1px solid #cbd5e1;
+    border-radius:10px;
+    padding:.4rem .6rem;
+    background:#fff;
+    min-width:160px;
+    font:inherit;
+  }
+  .ex-search-input:focus {
+    outline:none;
+    border-color:#0ea5e9;
+    box-shadow:0 0 0 3px rgba(14,165,233,.15);
+  }
 
   /* Radio pill buttons for TF */
   .tf-radio label {
@@ -164,9 +213,13 @@
   <section class="ex-panel">
     <header>
       <h3>Biblioteca</h3>
-      <form method="get" action="{{ url_for('admin.admin_exercises_library') }}" class="row" style="margin:0;">
-        <button type="submit" class="btn tiny" title="Refrescar">↻ Refrescar</button>
-      </form>
+      <div class="row" style="margin:0; gap:.35rem;">
+        <input type="search" id="ex-lib-search" class="ex-search-input" placeholder="Buscar..." aria-label="Buscar ejercicios">
+        <button type="button" id="ex-lib-clear" class="btn tiny" title="Limpiar búsqueda">✕</button>
+        <form method="get" action="{{ url_for('admin.admin_exercises_library') }}" style="margin:0;">
+          <button type="submit" class="btn tiny" title="Refrescar">↻</button>
+        </form>
+      </div>
     </header>
     <div class="ex-body">
       {% if index and index.exercises and index.exercises|length > 0 %}
@@ -175,17 +228,25 @@
             <div class="ex-item">
               <div class="ex-title">{{ ex.title or "(Sin título)" }}</div>
               <div class="ex-meta">
-                <span class="pill">ID: {{ ex.id }}</span>
-                <span class="pill">Tipo: {{ ex.type|upper }}</span>
-                {% if ex.pinned_version %}<span class="pill">Fijada: v{{ ex.pinned_version }}</span>{% endif %}
-                {% if ex.versions and ex.versions|length %}
-                  <span class="pill">Vers.: {{ ex.versions|length }}</span>
-                {% endif %}
+                <span class="pill type">
+                  {% if ex.type == 'tf' %}Verdadero o falso
+                  {% elif ex.type == 'mcq' %}Respuesta múltiple
+                  {% elif ex.type == 'cloze' %}Llenar los huecos
+                  {% elif ex.type == 'dnd_text' %}Arrastrar y soltar (texto)
+                  {% else %}{{ ex.type|upper }}{% endif %}
+                </span>
+                <div class="pill-row">
+                  {% if ex.pinned_version %}<span class="pill">Fijada: v{{ ex.pinned_version }}</span>{% endif %}
+                  {% if ex.versions and ex.versions|length %}
+                    <span class="pill">Vers.: {{ ex.versions|length }}</span>
+                  {% endif %}
+                </div>
               </div>
               <div class="row">
                 <button class="btn tiny" type="button" data-ex-preview="true" data-ex-id="{{ ex.id }}">👁️ Vista previa</button>
                 <a class="btn tiny" href="{{ url_for('admin.admin_exercises_new') }}?type={{ ex.type or 'tf' }}&id={{ ex.id }}">✏️ Editar</a>
                 <button class="btn tiny" type="button" data-ex-id="{{ ex.id }}" data-ex-delete="true">🗑️ Eliminar</button>
+                <button class="btn tiny" type="button" title="Copiar ID" aria-label="Copiar ID" data-ex-copy-id="{{ ex.id }}">📋</button>
               </div>
             </div>
           {% endfor %}
@@ -275,6 +336,91 @@
 
 <!-- Admin preview wiring (modal + click handlers + rendering) -->
 <script defer src="{{ url_for('static', filename='js/admin/preview.js') }}?v=ex3"></script>
+<script>
+  // Biblioteca: live search filter (title, type, id)
+  (function () {
+    const input = document.getElementById('ex-lib-search');
+    const clear = document.getElementById('ex-lib-clear');
+    if (!input) return;
+
+    const panel = input.closest('.ex-panel');
+    const list  = panel ? panel.querySelector('.ex-list') : null;
+    if (!list) return;
+
+    const norm = (s) => (String(s || "")
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase());
+
+    const items = Array.from(list.querySelectorAll('.ex-item')).map(el => {
+      const title = el.querySelector('.ex-title')?.textContent || '';
+      const type  = el.querySelector('.pill.type')?.textContent || '';
+      const idBtn = el.querySelector('[data-ex-preview]') || el.querySelector('[data-ex-delete]');
+      const exId  = idBtn ? (idBtn.getAttribute('data-ex-id') || '') : '';
+      return { el, hay: norm([title, type, exId].join(' ')) };
+    });
+
+    function filter(q) {
+      const needle = norm(q).trim();
+      items.forEach(({ el, hay }) => {
+        el.style.display = (!needle || hay.includes(needle)) ? '' : 'none';
+      });
+    }
+
+    input.addEventListener('input', (e) => filter(e.target.value));
+    clear?.addEventListener('click', () => { input.value = ''; filter(''); input.focus(); });
+
+    // Quick focus with "/" (outside inputs)
+    document.addEventListener('keydown', (e) => {
+      if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        const t = e.target;
+        if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+        e.preventDefault(); input.focus();
+      }
+    });
+  })();
+</script>
+
+<script>
+  // Copy-ID handler with a tiny toast
+  (function () {
+    document.addEventListener('click', function (e) {
+      const btn = e.target.closest('button[data-ex-copy-id]');
+      if (!btn) return;
+      const id = btn.getAttribute('data-ex-copy-id') || '';
+      const done = (ok) => {
+        let t = document.getElementById('pp-toast');
+        if (!t) {
+          t = document.createElement('div');
+          t.id = 'pp-toast';
+          t.setAttribute('style',
+            'position:fixed;bottom:16px;right:16px;z-index:99999;padding:10px 12px;border-radius:10px;' +
+            'border:1px solid #e5e7eb;background:#fff;box-shadow:0 8px 30px rgba(0,0,0,.12);' +
+            'color:#0f172a;font:14px/1.2 system-ui;display:none;'
+          );
+          document.body.appendChild(t);
+        }
+        t.style.borderColor = ok ? '#16a34a' : '#dc2626';
+        t.style.boxShadow   = ok ? '0 8px 30px rgba(22,163,74,.25)' : '0 8px 30px rgba(220,38,38,.25)';
+        t.textContent = ok ? 'ID copiado' : 'No se pudo copiar el ID';
+        t.style.display = 'block';
+        setTimeout(() => { t.style.display = 'none'; }, 1600);
+      };
+
+      if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        navigator.clipboard.writeText(id).then(() => done(true)).catch(() => done(false));
+      } else {
+        // Fallback
+        try {
+          const ta = document.createElement('textarea');
+          ta.value = id; ta.style.position='fixed'; ta.style.opacity='0';
+          document.body.appendChild(ta); ta.select();
+          const ok = document.execCommand('copy');
+          ta.remove(); done(ok);
+        } catch (_) { done(false); }
+      }
+    });
+  })();
+</script>
 
 <!-- Preview modal markup (your existing partial) -->
 {% include "_exercise_modal.html" %}
