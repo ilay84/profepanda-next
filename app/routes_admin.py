@@ -78,6 +78,35 @@ def admin_home():
                            countries=countries,
                            settings=settings)
 
+@bp.route("/glosario")
+def glosarios_index():
+    """
+    Admin landing page for all glossaries.
+    Displays sidebar with countries and loads country glossaries dynamically.
+    """
+    pretty_names = {
+        "ar": "Argentina", "bo": "Bolivia", "cl": "Chile", "co": "Colombia",
+        "cr": "Costa Rica", "cu": "Cuba", "do": "República Dominicana",
+        "ec": "Ecuador", "sv": "El Salvador", "gq": "Guinea Ecuatorial",
+        "gt": "Guatemala", "hn": "Honduras", "mx": "México", "ni": "Nicaragua",
+        "pa": "Panamá", "py": "Paraguay", "pe": "Perú", "pr": "Puerto Rico",
+        "es": "España", "uy": "Uruguay", "ve": "Venezuela"
+    }
+
+    countries = [
+        {
+            "code": code,
+            "name": pretty_names.get(code, code.upper()),
+            "flag": f"/static/assets/flags/{code}.png"
+        }
+        for code in sorted(country_map.keys())
+    ]
+
+    # pass enabled/disabled map for the toggle
+    settings = load_glossary_settings()
+
+    return render_template("admin_glosarios.html", countries=countries, settings=settings)
+
 @bp.route("/glosario/<country_code>")
 def glosario(country_code):
     if country_code not in country_map:
@@ -101,6 +130,17 @@ def glosario(country_code):
 
     entries.sort(key=lambda e: normalize_for_sort(e.get("word", "")))
 
+    # If ?partial=1 (or any ?partial query), return a template that contains only the
+    # inner cards/modals + scripts, without the base chrome. This will be injected
+    # into /admin/glosario (landing) via fetch().
+    if request.args.get("partial"):
+        return render_template(
+            "admin_glosario_partial.html",
+            country_code=country_code,
+            country_name=country_name,
+            entries=entries
+        )
+
     # --- TEMP PROBE: shows a yellow badge if this route is hit ---
     probe_html = (
         f"<!-- probe -->\n"
@@ -110,10 +150,12 @@ def glosario(country_code):
         f"padding:6px 8px;border-radius:8px;font:12px/1.1 system-ui'>"
         f"ROUTE HIT: /admin/glosario/{country_code}</div>"
     )
-    page = render_template("admin_glosario.html",
-                           country_code=country_code,
-                           country_name=country_name,
-                           entries=entries)
+    page = render_template(
+        "admin_glosario.html",
+        country_code=country_code,
+        country_name=country_name,
+        entries=entries
+    )
     return probe_html + page
 
 @bp.route("/glosario/<country_code>/delete", methods=["POST"])

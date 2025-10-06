@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+{% block title %}Admin — Glosarios{% endblock %}
+
+{% block admin_nav %}
+  {% include "_admin_bar.html" %}
+{% endblock %}
+
+{% block content %}
+<h2 style="display:flex;align-items:center;gap:.5rem;margin:.25rem 0 1rem;">
+  📚 Administrar Glosarios
+</h2>
+
+<style>
+  /* Page-scoped override: let admin glossaries use full width */
+  main {
+    max-width: none;
+    width: 100%;
+    margin: 0 auto;
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+
+  /* Layout: full width with a fixed-width sidebar */
+  .g-wrap {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 1.25rem;
+    width: 100%;
+    margin: 0 0 2rem 0;
+  }
+  @media (max-width: 900px){
+    .g-wrap { grid-template-columns: 1fr; }
+  }
+
+  /* Panels */
+  .g-panel {
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-radius:14px;
+    overflow:hidden;
+    box-shadow:0 4px 14px rgba(0,0,0,.05);
+  }
+  .g-panel header {
+    padding:.75rem 1rem;
+    border-bottom:1px solid #e5e7eb;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:#f8fafc;
+  }
+  .g-panel header .muted { color:#64748b; font-weight:600; }
+
+  /* Sidebar */
+  .g-left { position: sticky; top: 80px; align-self: start; }
+  #country-list { max-height: calc(100vh - 160px); overflow: auto; }
+
+  .g-left .country {
+    display:flex;
+    align-items:center;
+    gap:.6rem;
+    padding:.5rem .75rem;
+    border-bottom:1px solid #eef2f7;
+    cursor:pointer;
+    user-select:none;
+  }
+  .g-left .country:hover { background:#f8fafc; }
+  .g-left .country.is-active {
+    background:#eef6ff;
+    border-left:4px solid #3b82f6;
+    padding-left:.55rem;
+  }
+  .g-left .country img {
+    width:20px; height:14px; object-fit:cover;
+    border:1px solid #e5e7eb; border-radius:2px;
+  }
+  .g-left .country .name { font-weight:600; }
+
+  /* Main top bar + toggle */
+  .g-main .topbar {
+    display:flex;
+    align-items:center;
+    gap:.75rem;
+    padding:.5rem .75rem .5rem;
+  }
+  .g-main .spacer { flex:1; }
+  .toggle {
+    display:inline-flex;
+    align-items:center;
+    gap:.5rem;
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-radius:999px;
+    padding:.25rem .5rem;
+  }
+  .toggle input {
+    width:38px; height:20px;
+    appearance:none; background:#e5e7eb;
+    border-radius:999px; position:relative;
+    outline:none; cursor:pointer;
+    transition:background .18s ease;
+  }
+  .toggle input:checked { background:#22c55e; }
+  .toggle input::after {
+    content:""; position:absolute; top:2px; left:2px;
+    width:16px; height:16px; background:#fff;
+    border-radius:50%; transition:left .18s ease;
+    box-shadow:0 1px 2px rgba(0,0,0,.2);
+  }
+  .toggle input:checked::after { left:20px; }
+  .toggle .label { font-weight:600; color:#334155; }
+
+  /* Welcome/empty states */
+  .welcome { padding:1rem 1rem 1.25rem 1rem; }
+  .welcome h3 { margin:.25rem 0 .5rem; }
+  .welcome p { margin:.25rem 0; color:#475569; }
+  .welcome ul { margin:.5rem 0 0 1rem; color:#475569; }
+
+  .loading { padding:1rem; color:#64748b; font-style:italic; border-top:1px dashed #e5e7eb; }
+  .error { padding:1rem; color:#b91c1c; font-weight:600; }
+  .country-empty { padding:1rem; color:#64748b; }
+
+  /* Container for per-country partial */
+  #country-content { min-height:240px; }
+
+  /* Main panel adjustments */
+  .g-panel.g-main {
+    padding: .25rem .5rem 1rem .5rem;
+  }
+
+  /* Adjusted: make the grid one column narrower */
+    .g-panel.g-main .admin-glossary-grid {
+      display: grid;
+      gap: .9rem;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));  /* was 220px → 280px */
+      max-width: 96% !important;     /* gives a tiny margin on both sides */
+      margin: 0 auto 1.25rem auto !important;
+      padding: 0 .25rem;
+    }
+
+  /* Align +Nueva entrada and total flush with grid */
+  .g-panel.g-main .admin-toolbar,
+  .g-panel.g-main p[style*="Total:"],
+  .g-panel.g-main button#btnNewEntry {
+    margin-left: .25rem !important;
+  }
+</style>
+
+<div class="g-wrap">
+  <!-- LEFT: Countries list -->
+  <aside class="g-panel g-left">
+    <header>
+      <div class="muted">🌎 Países</div>
+    </header>
+    <div id="country-list">
+      {% for c in countries %}
+      <div class="country" data-code="{{ c.code }}" data-enabled="{{ settings.get(c.code, False)|lower }}">
+        <img src="{{ c.flag }}" alt="{{ c.code|upper }} flag">
+        <div class="name">{{ c.name }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </aside>
+
+  <!-- RIGHT: Main panel -->
+  <section class="g-panel g-main">
+    <header>
+      <div class="topbar">
+        <div id="country-title" class="muted">Bienvenido/a</div>
+        <div class="spacer"></div>
+        <!-- Enable/disable toggle -->
+        <label class="toggle" title="Mostrar/Ocultar este glosario en el sitio público">
+          <span class="label">Visible públicamente</span>
+          <input id="public-toggle" type="checkbox" disabled>
+        </label>
+      </div>
+    </header>
+    <div id="country-content">
+      <!-- Welcome state -->
+      <div class="welcome">
+        <h3>Bienvenido/a a Glosarios</h3>
+        <p>Elegí un país en la columna izquierda para ver y editar su glosario.</p>
+        <ul>
+          <li>El interruptor arriba a la derecha habilita/inhabilita la visibilidad pública del glosario seleccionado.</li>
+          <li>La edición de entradas funciona igual que antes; solo estamos cargando el contenido dentro de este panel.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  const list   = document.getElementById('country-list');
+  const title  = document.getElementById('country-title');
+  const panel  = document.getElementById('country-content');
+  const toggle = document.getElementById('public-toggle');
+
+  // Settings map was passed by the server for initial state
+  const SETTINGS = {{ (settings or {})|tojson }};
+
+  function setActive(code){
+    // highlight
+    Array.from(list.querySelectorAll('.country')).forEach(el=>{
+      el.classList.toggle('is-active', el.getAttribute('data-code') === code);
+    });
+
+    // header title
+    title.textContent = `Glosario — ${code.toUpperCase()}`;
+
+    // set toggle (and enable it now that we have a country)
+    try {
+      toggle.disabled = false;
+      toggle.dataset.code = code;
+      toggle.checked = !!SETTINGS[code];
+    } catch(e){}
+
+    // try to load the partial view first; if not available, fall back to full page nav
+    const urlPartial = `/admin/glosario/${encodeURIComponent(code)}?partial=1`;
+    panel.innerHTML = `<div class="loading">Cargando ${code.toUpperCase()}...</div>`;
+
+    fetch(urlPartial, { headers: { 'X-Requested-With': 'fetch' }})
+      .then(r=>{
+        if(r.ok) return r.text();
+        // if 404 or not supported yet, redirect to the full page
+        window.location.href = `/admin/glosario/${encodeURIComponent(code)}`;
+      })
+      .then(html=>{
+        if(!html) return;
+        panel.innerHTML = html;
+
+        // Re-execute any <script> tags in the injected HTML (inline and external)
+        const injectedScripts = panel.querySelectorAll('script');
+        injectedScripts.forEach((old) => {
+          const s = document.createElement('script');
+          // copy type to respect modules (if ever used)
+          if (old.type) s.type = old.type;
+          // external script
+          if (old.src) {
+            s.src = old.src;
+            s.async = false; // preserve order
+          } else {
+            s.textContent = old.textContent || '';
+          }
+          // move inline attributes that might matter
+          for (const attr of old.attributes) {
+            if (attr.name !== 'src' && attr.name !== 'type') {
+              s.setAttribute(attr.name, attr.value);
+            }
+          }
+          // append to body so it runs in global scope
+          document.body.appendChild(s);
+          // remove the old node to avoid duplicates
+          old.parentNode && old.parentNode.removeChild(old);
+        });
+      })
+      .catch(()=>{
+        panel.innerHTML = `<div class="error">No se pudo cargar el glosario de ${code.toUpperCase()}.</div>`;
+      });
+  }
+
+  // Click handling for countries
+  list.addEventListener('click', (e)=>{
+    const item = e.target.closest('.country');
+    if(!item) return;
+    const code = item.getAttribute('data-code');
+    setActive(code);
+  });
+
+  // Public visibility toggle
+  toggle.addEventListener('change', ()=>{
+    const code = toggle.dataset.code;
+    if(!code){ return; }
+
+    const enabled = !!toggle.checked;
+    // Optimistic UI update; revert on error
+    const prev = !enabled;
+
+    fetch('/admin/glosarios/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, enabled })
+    })
+    .then(r=>r.json())
+    .then(j=>{
+      if(!j.success){
+        toggle.checked = prev;
+        alert(j.error || 'No se pudo actualizar la visibilidad.');
+      }else{
+        // Update local cache too
+        SETTINGS[code] = enabled;
+      }
+    })
+    .catch(()=>{
+      toggle.checked = prev;
+      alert('Error de red al guardar. Intentá de nuevo.');
+    });
+  });
+})();
+</script>
+{% endblock %}
