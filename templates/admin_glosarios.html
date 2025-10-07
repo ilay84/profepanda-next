@@ -167,8 +167,9 @@
       <div class="topbar">
         <div id="country-title" class="muted">Bienvenido/a</div>
         <div class="spacer"></div>
-        <!-- Enable/disable toggle -->
-        <label class="toggle" title="Mostrar/Ocultar este glosario en el sitio público">
+        <!-- Enable/disable toggle (hidden until a country is selected) -->
+        <label id="public-toggle-wrap" class="toggle" style="display:none;"
+               title="Mostrar/Ocultar este glosario en el sitio público">
           <span class="label">Visible públicamente</span>
           <input id="public-toggle" type="checkbox" disabled>
         </label>
@@ -212,6 +213,9 @@
       toggle.disabled = false;
       toggle.dataset.code = code;
       toggle.checked = !!SETTINGS[code];
+      // NEW: reveal the toggle wrapper when a country is active
+      var wrap = document.getElementById('public-toggle-wrap');
+      if (wrap) { wrap.style.display = 'flex'; }
     } catch(e){}
 
     // try to load the partial view first; if not available, fall back to full page nav

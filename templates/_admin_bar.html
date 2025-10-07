@@ -1,5 +1,5 @@
-<nav class="admin-bar">
-  <ul>
+<nav class="admin-bar" style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;">
+  <ul style="display:flex;align-items:center;gap:.75rem;margin:0;padding:0;list-style:none;">
     <li><a href="{{ url_for('admin.admin_home') }}">🏠 Inicio</a></li>
     <li><a href="{{ url_for('admin.glosarios_index') }}">📚 Glosarios</a></li>
     <li><a href="{{ url_for('admin.admin_pages_index') }}">📝 Guías</a></li>
@@ -7,4 +7,10 @@
     <li><a href="{{ url_for('admin.admin_exercises_library') }}">🎯 Ejercicios</a></li>
     <li><a href="#">⚙️ Ajustes</a></li>
   </ul>
+  <a href="{{ url_for('public.index') }}" target="_blank" rel="noopener noreferrer"
+     style="display:inline-flex;align-items:center;gap:.4rem;background:#2563eb;color:white;
+            font-weight:600;padding:.4rem .8rem;border-radius:10px;text-decoration:none;
+            font-size:.95rem;">
+    👁️ Ver sitio público
+  </a>
 </nav>
