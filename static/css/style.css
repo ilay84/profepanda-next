@@ -1062,3 +1062,44 @@ html, body {
   color: #065f46; /* deep teal for hint text */
   line-height: 1.35;
 }
+
+/* -------------------------------------------------
+   Accent Helper Bar (Cloze FITB)
+-------------------------------------------------- */
+
+.pp-ex-accentbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+  justify-content: flex-start;
+  margin-top: .75rem;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.pp-ex-accentbar .accent-btn {
+  padding: .3rem .55rem;
+  font-size: 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #f9fafb;
+  color: #111827;
+  cursor: pointer;
+  transition: background-color .15s ease, transform .1s ease;
+}
+
+.pp-ex-accentbar .accent-btn:hover {
+  background: #e5e7eb;
+  transform: translateY(-1px);
+}
+
+.pp-ex-accentbar .accent-btn:active {
+  transform: translateY(0);
+  background: #dbeafe;
+}
+
+/* Hide accent bar on small screens */
+@media (max-width: 768px) {
+  .pp-ex-accentbar {
+    display: none !important;
+  }
+}

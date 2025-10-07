@@ -481,6 +481,67 @@
           if (m && m.video){ var vid=document.createElement('video'); vid.controls=true; vid.src=m.video; vid.style.cssText='display:block;max-width:320px;border-radius:6px;'; card.appendChild(vid); }
           card.appendChild(row);
 
+          // --- Accent helper (desktop-only, hybrid: insert-into-focused OR copy) ---
+          (function(){
+            var isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+            // Title row (placed below buttons, shorter label)
+            var title = document.createElement('div');
+            title.className = 'pp-ex-accentbar-title';
+            title.textContent = '📋 Copiar';
+            title.style.cssText = 'margin-top:.35rem;font-size:.85rem;color:#4b5563;';
+
+            // Buttons row
+            var accentBar = document.createElement('div');
+            accentBar.className = 'pp-ex-accentbar';
+            accentBar.style.cssText = 'display:' + (isMobile ? 'none' : 'flex') + ';flex-wrap:wrap;gap:.4rem;';
+            var chars = ['á','é','í','ó','ú','ü','ö','¿','¡'];
+            accentBar.innerHTML = chars.map(function(ch){
+              return '<button type="button" class="accent-btn" data-ch="' + ch + '" ' +
+                     'style="position:relative;padding:.3rem .55rem;font-size:1rem;border:1px solid #d1d5db;' +
+                     'border-radius:6px;background:#f9fafb;color:#111827;cursor:pointer;">' + ch + '</button>';
+            }).join('');
+            card.appendChild(accentBar);
+            card.appendChild(title);
+
+            // Track focused input among currentControls
+            var activeInput = null;
+            (currentControls || []).forEach(function(c){
+              if (!c || !c.input) return;
+              c.input.addEventListener('focusin', function(){ activeInput = c.input; });
+              c.input.addEventListener('focusout', function(){ activeInput = null; });
+            });
+
+            // Click → insert if an input is focused; otherwise copy to clipboard (with tooltip)
+            accentBar.addEventListener('click', function(e){
+              var btn = e.target && e.target.closest('.accent-btn');
+              if (!btn) return;
+              var ch = btn.getAttribute('data-ch') || '';
+              if (activeInput) {
+                var start = activeInput.selectionStart || 0;
+                var end   = activeInput.selectionEnd   || 0;
+                var val   = activeInput.value || '';
+                activeInput.value = val.slice(0, start) + ch + val.slice(end);
+                activeInput.focus();
+                activeInput.selectionStart = activeInput.selectionEnd = start + ch.length;
+                activeInput.dispatchEvent(new Event('input'));
+              } else {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                  navigator.clipboard.writeText(ch).then(function(){
+                    // Tooltip: ¡Copiado!
+                    var tip = document.createElement('span');
+                    tip.textContent = '¡Copiado!';
+                    tip.style.cssText = 'position:absolute;left:50%;transform:translate(-50%,-140%);' +
+                      'background:#111827;color:#fff;font-size:.75rem;padding:.15rem .4rem;border-radius:4px;white-space:nowrap;';
+                    btn.style.position = 'relative';
+                    btn.appendChild(tip);
+                    setTimeout(function(){ if (tip.parentNode) tip.parentNode.removeChild(tip); }, 900);
+                  }).catch(function(){});
+                }
+              }
+            });
+          })();                  
+
           // Check + overall feedback
           var overallBox = document.createElement('div');
           overallBox.className = 'tiny';
