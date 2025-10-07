@@ -130,11 +130,12 @@
           title: ex.title || 'Ejercicio Opción múltiple',
           items: items.map((it, idx) => {
             const m = it.media || {};
-            const choices = (Array.isArray(it.choices) ? it.choices : []).map((c, j) => {
+const choices = (Array.isArray(it.choices) ? it.choices : []).map((c, j) => {
               const key = (c && c.key) ? c.key : String.fromCharCode(65 + j); // A, B, C…
               const label = (c && (c.text != null ? c.text : c.label)) || ('Opción ' + key);
               const html  = (c && (c.html != null ? c.html : (c.text != null ? c.text : c.label))) || label;
-              return { key, label, html };
+              const feedback = (c && c.feedback != null) ? c.feedback : null; // carry per-choice feedback
+              return { key, label, html, feedback };
             });
             return {
               id: it.id || ('q' + (idx+1)),
@@ -760,11 +761,27 @@
           btn.addEventListener('click', () => {
             const chosen = card.querySelector(`input[name="${groupName}"]:checked`);
             const isCorrect = !!(chosen && String(chosen.value) === String(it.answer));
-            fb.textContent = isCorrect ? (it.feedback_correct || '¡Correcto!') : (it.feedback_incorrect || 'Revisá tu respuesta.');
+
+            // Try per-choice feedback first
+            let chosenFeedback = null;
+            if (chosen) {
+                const chosenKey = String(chosen.value);
+                const found = (Array.isArray(it.choices) ? it.choices : []).find(c => String(c.key) === chosenKey);
+                if (found && found.feedback) chosenFeedback = String(found.feedback);
+            }
+
+            // Fallbacks to generic exercise-level feedback
+            if (chosenFeedback && chosenFeedback.trim()) {
+                fb.textContent = chosenFeedback;
+            } else {
+                fb.textContent = isCorrect
+                ? (it.feedback_correct || '¡Correcto!')
+                : (it.feedback_incorrect || 'Revisá tu respuesta.');
+            }
             fb.style.color = isCorrect ? '#15803d' : '#b91c1c';
-          });
-          card.appendChild(btn);
-          card.appendChild(fb);
+            });
+            card.appendChild(btn);
+            card.appendChild(fb);
 
           containerEl.appendChild(card);
         });

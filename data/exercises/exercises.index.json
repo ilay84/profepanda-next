@@ -1,3 +1,30 @@
 {
-  "exercises": []
+  "exercises": [
+    {
+      "id": "24b62635c98c49079d10eb23e896c8d6",
+      "type": "cloze",
+      "title": "Test",
+      "pinned_version": 1,
+      "overrides": {},
+      "versions": [
+        {
+          "version": 1,
+          "path": "data/exercises/cloze/test/001.json"
+        }
+      ]
+    },
+    {
+      "id": "166ce18b2ac341b99f507ae5237b39ee",
+      "type": "mcq",
+      "title": "MCQ test",
+      "pinned_version": 1,
+      "overrides": {},
+      "versions": [
+        {
+          "version": 1,
+          "path": "data/exercises/mcq/mcq-test/001.json"
+        }
+      ]
+    }
+  ]
 }

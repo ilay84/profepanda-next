@@ -175,10 +175,13 @@
             const selectedChoice = choices.find(c => c && c.key === selectedKey) || null;
             const correctChoice  = choices.find(c => c && c.key === q.answer) || null;
 
-            const correctMsg = q.feedback_correct ?? (q.feedback && q.feedback.correct) ?? "¡Correcto!";
-            const incorrectMsg = (selectedChoice && (selectedChoice.feedback_incorrect || selectedChoice.feedback))
-                              ?? (q.feedback_incorrect ?? (q.feedback && q.feedback.incorrect) ?? "Repasá la explicación y volvé a intentar.");
-            const rationale = r.isCorrect ? correctMsg : incorrectMsg;
+            // Prefer per-choice feedback (if the selected option provided one), else fall back
+            const perChoiceMsg = selectedChoice && selectedChoice.feedback ? selectedChoice.feedback : null;
+            const correctMsg   = q.feedback_correct ?? (q.feedback && q.feedback.correct) ?? "¡Correcto!";
+            const incorrectMsg = q.feedback_incorrect ?? (q.feedback && q.feedback.incorrect) ?? "Repasá la explicación y volvé a intentar.";
+            const rationale    = (perChoiceMsg && perChoiceMsg.trim())
+              ? perChoiceMsg
+              : (r.isCorrect ? correctMsg : incorrectMsg);
 
             const yourAns  = selectedChoice ? (selectedChoice.label || selectedChoice.html || selectedKey || "-") : (selectedKey || "-");
             const rightAns = correctChoice  ? (correctChoice.label  || correctChoice.html  || q.answer      || "-") : (q.answer || "-");
@@ -337,7 +340,7 @@
             const already = document.querySelector('script[data-pp-load="cloze-js"]');
             if (!already) {
               const s = document.createElement('script');
-              s.src = '/static/js/ex_types/cloze.js';
+              s.src = '/static/js/ex_types/cloze.js?v=accent1';
               s.defer = true;
               s.setAttribute('data-pp-load', 'cloze-js');
               s.onload = callCloze;

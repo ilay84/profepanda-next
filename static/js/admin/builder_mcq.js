@@ -158,32 +158,56 @@
     const prompt = el('textarea', { placeholder:'Enunciado de la pregunta…', rows:'2', style:'width:100%;padding:.5rem;border:1px solid #cbd5e1;border-radius:8px;margin:.25rem 0;' });
     wrap.appendChild(prompt);
 
-    // CHOICES (A-D)
+    // CHOICES (A-D) — with per-option feedback + indicator pill
     const choicesWrap = el('div', { style:'display:flex;flex-direction:column;gap:.4rem;' });
     choicesWrap.appendChild(el('div', { class:'muted' }, 'Opciones'));
     const opts = [];
     const letters = ['A','B','C','D'];
     letters.forEach((L,i)=>{
+      // Row: label+radio + option text
       const row = el('div', { style:'display:grid;grid-template-columns: 140px 1fr; gap:.6rem; align-items:center; margin:.4rem 0;' });
       const lab = el('label', { class:'tiny muted', style:'display:flex;align-items:center;gap:.4rem;' });
       const radio = el('input', { type:'radio', name:`ans-${idx}-${Date.now()}`, value:L, style:'transform:translateY(1px);' });
-      // give more space between radio and text input
       lab.appendChild(radio);
       lab.appendChild(el('span', {}, `Correcta`));
       const input = el('input', { type:'text', placeholder:`Opción ${L}`, style:'padding:.45rem .55rem;border:1px solid #cbd5e1;border-radius:8px;width:100%;' });
       row.appendChild(lab);
       row.appendChild(input);
+
+      // Indicator row (shows only when this option has feedback)
+      const indRow = el('div', { style:'display:grid;grid-template-columns: 140px 1fr; gap:.6rem; align-items:center; margin:-.25rem 0 .1rem;' });
+      indRow.appendChild(el('div', {}, '')); // spacer
+      const fbBadge = el('span', {
+        class:'tiny',
+        style:'display:none;width:max-content;padding:.15rem .55rem;border:1px solid #e2e8f0;border-radius:999px;background:#f1f5f9;color:#475569;'
+      }, '💬 Con feedback');
+      indRow.appendChild(fbBadge);
+
+      // Row (feedback for this option): label spacer + small textarea
+      const fbRow = el('div', { style:'display:grid;grid-template-columns: 140px 1fr; gap:.6rem; align-items:start; margin:-.1rem 0 .4rem;' });
+      fbRow.appendChild(el('div', {}, '')); // spacer under the radio
+      const fb = el('textarea', {
+        rows: '1',
+        placeholder: '💬 Feedback si eligen esta opción (opcional)',
+        style:'padding:.4rem .55rem;border:1px solid #cbd5e1;border-radius:8px;width:100%;min-height:2.25rem;resize:vertical;'
+      });
+      // Live toggle of the badge based on textarea content
+      fb.addEventListener('input', () => {
+        const has = !!fb.value.trim();
+        fbBadge.style.display = has ? 'inline-block' : 'none';
+      });
+      fbRow.appendChild(fb);
+
       choicesWrap.appendChild(row);
-      opts.push({ radio, input, key:L });
+      choicesWrap.appendChild(indRow);
+      choicesWrap.appendChild(fbRow);
+
+      opts.push({ radio, input, fb, fbBadge, key:L });
     });
     wrap.appendChild(choicesWrap);
 
-    // FEEDBACK + HINT
-    const fbOk   = el('textarea', { placeholder:'Feedback para respuesta correcta (opcional)', rows:'2', style:'width:100%;padding:.5rem;border:1px solid #cbd5e1;border-radius:8px;margin:.25rem 0;' });
-    const fbBad  = el('textarea', { placeholder:'Feedback para respuesta incorrecta (opcional)', rows:'2', style:'width:100%;padding:.5rem;border:1px solid #cbd5e1;border-radius:8px;margin:.25rem 0;' });
-    const hint   = el('textarea', { placeholder:'Pista (opcional; si hay pista, el botón “Ver pista” aparecerá)', rows:'2', style:'width:100%;padding:.5rem;border:1px solid #cbd5e1;border-radius:8px;margin:.25rem 0;' });
-    wrap.appendChild(fbOk);
-    wrap.appendChild(fbBad);
+    // HINT ONLY (per-choice feedback lives under each option now)
+    const hint = el('textarea', { placeholder:'Pista (opcional; si hay pista, el botón “Ver pista” aparecerá)', rows:'2', style:'width:100%;padding:.5rem;border:1px solid #cbd5e1;border-radius:8px;margin:.25rem 0;' });
     wrap.appendChild(hint);
 
     // getter
@@ -204,7 +228,8 @@
 
       const choices = opts.map(o => ({
         key: o.key,
-        text: (o.input.value || '').trim()
+        text: (o.input.value || '').trim(),
+        feedback: (o.fb && o.fb.value ? o.fb.value.trim() : '') || null
       })).filter(c => c.text); // drop empties
 
       const picked = opts.find(o => o.radio.checked);
@@ -214,10 +239,8 @@
         prompt: (prompt.value || '').trim(),
         choices,
         answer,
-        feedback_correct: (fbOk.value || '').trim() || null,
-        feedback_incorrect: (fbBad.value || '').trim() || null,
         hint: (hint.value || '').trim() || null,
-        media: { youtube_url, image_alt, image, audio, video }
+        media: { youtube_url, image, image_alt: altVal, audio, video }
       };
     };
 
@@ -266,13 +289,18 @@
       // prompt
       card.querySelector('textarea').value = it.prompt || '';
 
-      // choices
-      const refs = card._refs || {};
-      const opts = refs.opts || [];
-      const choices = Array.isArray(it.choices) ? it.choices : [];
-      choices.forEach((c, i) => {
-        if (opts[i]) opts[i].input.value = c.text || c.label || c.html || '';
-      });
+    // choices
+    const refs = card._refs || {};
+    const opts = refs.opts || [];
+    const choices = Array.isArray(it.choices) ? it.choices : [];
+    choices.forEach((c, i) => {
+      if (opts[i]) opts[i].input.value = c.text || c.label || c.html || '';
+      if (opts[i] && opts[i].fb) {
+        opts[i].fb.value = c.feedback || '';
+        const has = !!(c && c.feedback && String(c.feedback).trim());
+        if (opts[i].fbBadge) opts[i].fbBadge.style.display = has ? 'inline-block' : 'none';
+      }
+    });
 
       // answer
       const ans = (it.answer || '').toString().trim().toUpperCase();
@@ -323,195 +351,17 @@
   if (modalClose) modalClose.addEventListener('click', ()=>{ if (isDirty && !confirm('¿Descartar cambios no guardados?')) return; closeModal(); });
   if (modalBackdrop) modalBackdrop.addEventListener('click', ()=>{ if (isDirty && !confirm('¿Descartar cambios no guardados?')) return; closeModal(); });
 
-  // ---------- Inline preview (like TF) ----------
-  let prevWrap, prevBody, prevContent, btnPrevToggle, btnPrevRefresh;
+  // ---------- Inline preview (DISABLED) ----------
+  // The inline builder preview has been removed for MCQ.
+  // We keep no-op stubs so existing calls (togglePreview, refreshPreview, _autoPreview) don't error.
 
-  function ensurePreviewPanel() {
-    if (prevWrap) return;
-    prevWrap = el('div', { id:'ex-preview-wrap', class:'ex-panel', style:'border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;margin-top:.5rem;' });
-    const header = el('header', { style:'display:flex;align-items:center;justify-content:space-between;background:#f8fafc;padding:.6rem .8rem;border-bottom:1px solid #e5e7eb;' });
-    const title  = el('div', { class:'muted', style:'font-weight:600;' }, '👀 Vista previa');
-    const ctrls  = el('div', { class:'row', style:'gap:.4rem;' });
-    btnPrevToggle  = el('button', { type:'button', class:'btn tiny' }, '+ Mostrar');
-    btnPrevRefresh = el('button', { type:'button', class:'btn tiny' }, 'Actualizar vista');
-    ctrls.appendChild(btnPrevToggle); ctrls.appendChild(btnPrevRefresh);
-    header.appendChild(title); header.appendChild(ctrls);
+  function ensurePreviewPanel(){ /* preview removed */ }
+  function togglePreview(){ /* no-op */ }
+  function refreshPreview(){ /* no-op */ }
 
-    prevBody = el('div', { id:'ex-preview-body', style:'display:none;padding:.75rem;background:#fff;' });
-    prevBody.appendChild(el('div', { class:'tiny muted', style:'margin-bottom:.5rem;' }, 'Esta vista previa no guarda cambios. Usa “Actualizar vista” para refrescar.'));
-    prevContent = el('div', { id:'ex-preview-content', style:'display:flex;flex-direction:column;gap:.75rem;' });
-
-    prevBody.appendChild(prevContent);
-    prevWrap.appendChild(header);
-    prevWrap.appendChild(prevBody);
-
-    const submitBtn = form.querySelector('button[type="submit"]');
-    const buttonsRow = submitBtn ? submitBtn.closest('.row') : null;
-    if (buttonsRow && buttonsRow.parentNode) buttonsRow.parentNode.insertBefore(prevWrap, buttonsRow);
-    else form.appendChild(prevWrap);
-
-    btnPrevToggle.addEventListener('click', ()=>{ togglePreview(); if (prevBody && prevBody.style.display !== 'none') refreshPreview(); });
-    btnPrevRefresh.addEventListener('click', ()=>{ togglePreview(true); refreshPreview(); });
-  }
-
-  function togglePreview(open){
-    ensurePreviewPanel();
-    const isOpen = (prevBody.style.display !== 'none');
-    const next = (typeof open === 'boolean') ? open : !isOpen;
-    prevBody.style.display = next ? 'block' : 'none';
-    btnPrevToggle.textContent = next ? '− Ocultar' : '+ Mostrar';
-  }
-
-  function buildItemsSnapshot(){
-    const toAbs = (p) => {
-      if (!p) return null;
-      p = String(p);
-      if (/^(https?:|blob:|data:)/i.test(p)) return p;
-      if (p.startsWith('static/')) p = '/' + p;
-      if (p.startsWith('/')) return window.location.origin + p;
-      return window.location.origin + '/' + p;
-    };
-
-    const cards = [...itemsList.querySelectorAll('.mcq-item')];
-    return cards.map((card, i) => {
-      const snap = (typeof card._get === 'function') ? card._get() : null;
-      if (!snap) return null;
-      snap._idx = i;
-
-      const m = (snap.media && typeof snap.media === 'object') ? snap.media : {};
-      const prev = card._existingMedia || {};
-
-      if (m.image === '__UPLOAD__') m.image = prev.image || null;
-      if (m.audio === '__UPLOAD__') m.audio = prev.audio || null;
-      if (m.video === '__UPLOAD__') m.video = prev.video || null;
-
-      m.image = toAbs(m.image);
-      m.audio = toAbs(m.audio);
-      m.video = toAbs(m.video);
-
-      const imgIn = card.querySelector('input[name="media_image[]"]');
-      const audIn = card.querySelector('input[name="media_audio[]"]');
-      const vidIn = card.querySelector('input[name="media_video[]"]');
-      if (imgIn?.files?.[0]) m.image = URL.createObjectURL(imgIn.files[0]);
-      if (audIn?.files?.[0]) m.audio = URL.createObjectURL(audIn.files[0]);
-      if (vidIn?.files?.[0]) m.video = URL.createObjectURL(vidIn.files[0]);
-
-      snap.media = m;
-      return snap;
-    }).filter(Boolean);
-  }
-
-  function renderMCQPreview(items) {
-    ensurePreviewPanel();
-    prevContent.innerHTML = '';
-
-    // NEW: show instructions (if any) above the preview cards
-    try {
-      const instrNode = form ? form.querySelector('textarea[name="instructions"]') : null;
-      const instrHtml = (instrNode && typeof instrNode.value === 'string') ? instrNode.value.trim() : '';
-      if (instrHtml) {
-        const box = el('div', {
-          class: 'pp-ex-instructions',
-          style: 'margin-bottom:1rem;padding:.75rem 1rem;background:#f8fafc;border-left:4px solid #2563eb;border-radius:8px;color:#0f172a;line-height:1.5;'
-        });
-        box.innerHTML = instrHtml; // allow simple HTML (bold/italics)
-        prevContent.appendChild(box);
-      }
-    } catch (_) { /* non-blocking */ }
-
-    if (!items || !items.length) {
-      prevContent.appendChild(el('div', { class:'tiny muted' }, 'No hay preguntas aún.'));
-      return;
-    }
-
-    items.forEach((it) => {
-      const card = el('div', { style:'border:1px solid #e5e7eb;border-radius:12px;padding:.75rem;background:#fff;display:flex;flex-direction:column;gap:.5rem;' });
-
-      // media
-      const m = it.media || {};
-      const mediaRow = el('div', { style:'display:flex;gap:.75rem;flex-wrap:wrap;align-items:flex-start;' });
-      let hasMedia = false;
-      if (m.image) { hasMedia = true; mediaRow.appendChild(el('img', { src:m.image, alt:m.image_alt || '', style:'max-width:220px;border:1px solid #e5e7eb;border-radius:8px;' })); }
-      if (m.audio) { hasMedia = true; const a = el('audio', { controls:'', style:'display:block;min-width:220px;' }); a.src = m.audio; mediaRow.appendChild(a); }
-      if (m.video) { hasMedia = true; const v = el('video', { controls:'', style:'display:block;max-width:320px;border-radius:6px;' }); v.src = m.video; mediaRow.appendChild(v); }
-      if (m.youtube_url) {
-        hasMedia = true;
-        try {
-          const url = new URL(m.youtube_url, window.location.href);
-          let id = url.searchParams.get('v'); if (!id) id = url.pathname.split('/').pop();
-          mediaRow.appendChild(el('iframe', { src:`https://www.youtube.com/embed/${id}`, allow:'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture', allowfullscreen:'', style:'width:320px;height:180px;border:0;border-radius:6px;' }));
-        } catch(_) {}
-      }
-      if (hasMedia) card.appendChild(mediaRow);
-
-      // prompt
-      card.appendChild(el('div', { style:'font-weight:600;color:#0f172a;' }, it.prompt || '(sin enunciado)'));
-
-      // choices
-      const list = el('div', { style:'display:flex;flex-direction:column;gap:.35rem;' });
-      (Array.isArray(it.choices) ? it.choices : []).forEach(ch => {
-        const row = el('div', { style:'display:grid;grid-template-columns: 48px 1fr; gap:.5rem; align-items:center;' });
-        row.appendChild(el('span', { class:'tiny muted' }, ch.key || ''));
-        row.appendChild(el('div', {}, ch.text || ch.label || ch.html || ''));
-        list.appendChild(row);
-      });
-      card.appendChild(list);
-
-      // hint/feedback + fake grading
-      let selected = null;
-      const radioRow = el('div', { style:'display:flex;gap:.5rem;flex-wrap:wrap;' });
-      (Array.isArray(it.choices) ? it.choices : []).forEach(ch => {
-        const b = el('button', { type:'button', class:'btn tiny' }, ch.key || '');
-        b.addEventListener('click', ()=> { selected = (ch.key || '').toString().toUpperCase(); });
-        radioRow.appendChild(b);
-      });
-      card.appendChild(radioRow);
-
-      if (it.hint) {
-        const hintBtn = el('button', { type:'button', class:'btn tiny' }, 'Ver pista');
-        const hintBox = el('div', { class:'tiny muted', style:'display:none;margin-top:.25rem;' }, it.hint);
-        hintBtn.addEventListener('click', ()=> {
-          hintBox.style.display = (hintBox.style.display === 'none') ? 'block' : 'none';
-        });
-        card.appendChild(hintBtn);
-        card.appendChild(hintBox);
-      }
-
-      const fbBox = el('div', { style:'margin-top:.25rem;' });
-      const checkBtn = el('button', { type:'button', class:'btn tiny' }, 'Comprobar');
-      checkBtn.addEventListener('click', ()=>{
-        const ok = selected && (selected === String(it.answer || '').toUpperCase());
-        fbBox.textContent = ok ? (it.feedback_correct || '¡Correcto!') : (it.feedback_incorrect || 'No es correcto.');
-        fbBox.style.color = ok ? '#15803d' : '#b91c1c';
-      });
-      card.appendChild(checkBtn);
-      card.appendChild(fbBox);
-
-      prevContent.appendChild(card);
-    });
-  }
-
-  function refreshPreview(){ renderMCQPreview(buildItemsSnapshot()); }
-
-  // build preview shell now (collapsed)
-  ensurePreviewPanel();
-
-  // throttle preview
-  function _throttle(fn, wait){
-    let t=0, last=0;
-    return function(...args){
-      const now=Date.now(); const remain = wait - (now - last);
-      clearTimeout(t);
-      if (remain <= 0) { last = now; fn.apply(this, args); }
-      else { t = setTimeout(()=>{ last = Date.now(); fn.apply(this, args); }, remain); }
-    };
-  }
-  const _autoPreview = _throttle(()=>{ if (prevBody && prevBody.style.display !== 'none') refreshPreview(); }, 250);
-  form.addEventListener('input', _autoPreview);
-  itemsList.addEventListener('click', (e)=>{
-    const t = e.target;
-    if (t && (t.id === 'btnAddItem' || t.textContent === 'Eliminar')) setTimeout(_autoPreview, 0);
-  });
+  // No-op throttle and handler used by existing listeners
+  function _throttle(fn, wait){ return function(){ /* no-op */ }; }
+  const _autoPreview = function(){ /* no-op */ };
 
   // ---------- submit ----------
   form.addEventListener('submit', async (e)=>{
