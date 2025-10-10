@@ -19,7 +19,7 @@
         <span id="closeEntryModal" class="close">&times;</span>
       </div>
     </div>
-    <div class="modal-body" style="max-height: calc(100vh - 180px); overflow:auto; padding-bottom:.5rem;">
+    <div class="modal-body" style="max-height:none; overflow:visible; padding-bottom:.5rem;">
       <!-- 🔹 Tab headers -->
       <div id="entryTabs" class="tab-header"
           style="position:sticky; top:0; z-index:10; background:#fff;
@@ -28,7 +28,7 @@
       </div>
 
       <!-- 🔹 Tab content panels -->
-      <div id="entryTabContents" class="tab-contents">
+      <div id="entryTabContents" class="tab-contents" style="max-height: calc(100vh - 220px); overflow:auto;">
         <div class="tab-panel active" data-tab="main" id="modalWordContent">
           <!-- Word details will be injected here -->
         </div>
@@ -910,6 +910,27 @@ function makeSourceMenu(chip){
   return menu;
 }
 
+function ensureVisibleInScroll(el){
+  try {
+    // Prefer the inner scroller where the modal content lives
+    const scroller =
+      el.closest('#entryTabContents') ||
+      el.closest('.tab-contents') ||
+      el.closest('.modal-body');
+    if (!scroller) return;
+
+    const menuRect = el.getBoundingClientRect();
+    const scRect   = scroller.getBoundingClientRect();
+
+    // If the menu extends below/above the visible area, scroll just enough
+    const overflowDown = menuRect.bottom - scRect.bottom;
+    const overflowUp   = scRect.top - menuRect.top;
+
+    if (overflowDown > 0) scroller.scrollTop += overflowDown + 12;
+    else if (overflowUp > 0) scroller.scrollTop -= overflowUp + 12;
+  } catch (_) {}
+}
+
 function bindSourceChips(container){
   if (!container) return;
   container.querySelectorAll('.js-source-chip').forEach(chip => {
@@ -927,7 +948,7 @@ function bindSourceChips(container){
         if (existing) { existing.remove(); return; }
         closeAnySourceMenus(chip.closest('.modal-body') || document);
         const menu = makeSourceMenu(chip); // offers "Este episodio" / "Toda la serie"
-        if (menu) chip.appendChild(menu);
+        if (menu) { chip.appendChild(menu); ensureVisibleInScroll(menu); }
       } else {
         // For non-series: open Source Mode directly in a new tab (single option).
         window.open(sourceModeUrlFromChip(chip, 'series'), '_blank');
@@ -944,6 +965,7 @@ function bindSourceChips(container){
         closeAnySourceMenus(chip.closest('.modal-body') || document);
         const menu = makeSourceMenu(chip);
         chip.appendChild(menu);
+        ensureVisibleInScroll(menu);
       });
     }
   });

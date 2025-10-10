@@ -109,10 +109,10 @@ button.add { background-color: #27ae60; }       button.add:hover { background-co
   padding: 1.5rem;
   border-radius: 12px;
   max-width: 95vw;     /* almost full width */
-  max-height: 95vh;    /* almost full height */
+  max-height: 98vh;    /* cap to viewport */
   width: 95vw;         /* stretch to viewport */
-  height: 95vh;
-  overflow-y: auto;    /* scroll if content exceeds */
+  height: auto;        /* let inner content define height */
+  overflow: visible;   /* no outer scrolling; dropdowns can overflow */
   box-shadow: 0 4px 20px rgba(0,0,0,0.25);
 }
 
