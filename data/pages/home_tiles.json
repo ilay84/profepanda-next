@@ -3,18 +3,30 @@
     "id": "glossaries",
     "title": "Glosarios Regionales",
     "subtitle": "Glosarios con ejemplos auténticos de la cultura popular, siempre con audio.",
-    "image": "assets/tiles/glosarios.png",
+    "image": "/static/assets/tiles/tile-glossaries.png",
     "href": "/glosarios",
     "enabled": true,
-    "order": 0
+    "order": 0,
+    "description": "Glosarios con ejemplos auténticos de la cultura popular, siempre con audio.",
+    "slug": "glosarios-regionales",
+    "image_url": "/static/assets/tiles/tile-glossaries.png",
+    "title_en": "Regional Glossaries",
+    "subtitle_en": "Glossaries with authentic examples from pop culture, always with the audio so you can hear it!",
+    "description_en": "Glossaries with authentic examples from pop culture, always with the audio so you can hear it!"
   },
   {
     "id": "guides",
     "title": "Guías",
     "subtitle": "Explicaciones claras de estructuras del español para comunicarte mejor.",
-    "image": "assets/tiles/guias.png",
+    "image": "/static/assets/tiles/tile-guides.png",
     "href": "/pages",
     "enabled": true,
-    "order": 1
+    "order": 1,
+    "description": "Explicaciones claras de estructuras del español para comunicarte mejor.",
+    "slug": "guias",
+    "image_url": "/static/assets/tiles/tile-guides.png",
+    "title_en": "Guides",
+    "subtitle_en": "Clear explanations of Spanish structures to help you communicate better.",
+    "description_en": "Clear explanations of Spanish structures to help you communicate better."
   }
 ]

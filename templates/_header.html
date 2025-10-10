@@ -1,16 +1,108 @@
 <header>
-  <div class="header-inner">
-    <div class="logo">
+  <div class="header-inner" style="display:flex; align-items:center;">
+    <div class="logo" style="display:flex; align-items:center; gap:.5rem;">
       <img src="{{ url_for('static', filename='assets/logo.png') }}" alt="Profe Panda">
       <span>Profe Panda</span>
     </div>
-    <div class="custom-dropdown">
-      <button class="dropdown-button">Menú ▾</button>
-      <div class="dropdown-content">
-        <a href="{{ url_for('public.index') }}">🏠 ProfePanda</a>
-        <a href="{{ url_for('public.glosarios_index') }}">📚 Glosarios Regionales</a>
-        <a href="{{ url_for('public.public_pages_index') }}">🧭 Guías</a>
+
+    <!-- Right side actions: language pill + dropdown -->
+    <div class="header-actions" style="margin-left:auto; display:flex; align-items:center; gap:12px;">
+      <!-- Segmented pill language switcher (cookie-based, no route prefix) -->
+      <nav class="pp-lang" aria-label="Language" style="
+        display:flex; align-items:center; overflow:hidden;
+        border:1px solid #e5e7eb; border-radius:999px; background:#fff;
+        box-shadow:0 1px 2px rgba(0,0,0,.06);
+      ">
+        <a id="pp-lang-es" href="#"
+           lang="es" hreflang="es"
+           style="padding:.35rem .7rem; text-decoration:none; font-weight:600; font-size:.9rem; line-height:1;">
+          ES
+        </a>
+        <span aria-hidden="true" style="width:1px;height:20px;background:#e5e7eb;display:block;"></span>
+        <a id="pp-lang-en" href="#"
+           lang="en" hreflang="en"
+           style="padding:.35rem .7rem; text-decoration:none; font-weight:600; font-size:.9rem; line-height:1;">
+          EN
+        </a>
+      </nav>
+
+      <div class="custom-dropdown">
+        <button class="dropdown-button">{{ 'Menú ▾' if lang == 'es' else 'Menu ▾' }}</button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('public.index') }}">🏠 ProfePanda</a>
+          <a href="{{ url_for('public.glosarios_index') }}">📚 {{ 'Glosarios Regionales' if lang == 'es' else 'Regional Glossaries' }}</a>
+          <a href="{{ url_for('public.public_pages_index') }}">🧭 {{ 'Guías' if lang == 'es' else 'Guides' }}</a>
+        </div>
       </div>
     </div>
   </div>
+
+  <script>
+    (function () {
+      try {
+        // --- simple cookie helpers (robust) ---
+        function getCookie(name) {
+          var pairs = document.cookie ? document.cookie.split(';') : [];
+          for (var i = 0; i < pairs.length; i++) {
+            var p = pairs[i].trim();
+            if (p.indexOf(name + '=') === 0) {
+              return decodeURIComponent(p.substring(name.length + 1));
+            }
+          }
+          return null;
+        }
+        function setCookie(name, value, days) {
+          var d = new Date();
+          d.setTime(d.getTime() + (days * 86400000));
+          document.cookie = name + "=" + encodeURIComponent(value) + ";path=/;expires=" + d.toUTCString();
+        }
+        function reloadSamePath() {
+          // hard reload same path to ensure server sees new cookie
+          window.location.assign(window.location.pathname + (window.location.search || '') + (window.location.hash || ''));
+        }
+
+        var cur = getCookie('pp_lang') || 'es';
+        var esA = document.getElementById('pp-lang-es');
+        var enA = document.getElementById('pp-lang-en');
+
+        // Active styling
+        function setActive(lang) {
+          if (esA && enA) {
+            var on  = (lang === 'en') ? enA : esA;
+            var off = (lang === 'en') ? esA : enA;
+            on.setAttribute('aria-current', 'page');
+            on.style.background = '#4338ca';
+            on.style.color = '#fff';
+            on.style.transition = 'all .2s';
+            off.removeAttribute('aria-current');
+            off.style.background = 'transparent';
+            off.style.color = '#111';
+            esA.style.cursor = 'pointer';
+            enA.style.cursor = 'pointer';
+          }
+        }
+        setActive(cur);
+
+        // Click handlers (redundant binding for safety)
+        function choose(lang, ev) {
+          if (ev) ev.preventDefault();
+          try { setCookie('pp_lang', lang, 365); } catch(_) {}
+          // Defer to ensure cookie write completes before reload
+          setTimeout(reloadSamePath, 0);
+          return false;
+        }
+
+        // Primary binding
+        if (esA) esA.addEventListener('click', function (e) { return choose('es', e); }, { passive: false });
+        if (enA) enA.addEventListener('click', function (e) { return choose('en', e); }, { passive: false });
+
+        // Fallback inline handlers in case addEventListener fails (older browsers)
+        if (esA && !esA.onclick) esA.onclick = function(e){ return choose('es', e); };
+        if (enA && !enA.onclick) enA.onclick = function(e){ return choose('en', e); };
+
+      } catch (e) {
+        // no-op
+      }
+    })();
+  </script>
 </header>

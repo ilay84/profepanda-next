@@ -52,10 +52,14 @@
 
     <div class="pages-body">
       <form id="pageForm">
-        <!-- Title -->
+        <!-- Language -->
         <div class="field">
-          <label class="label" for="title">Title</label>
-          <input class="input" id="title" name="title" type="text" placeholder="Add a page title…" required />
+          <label class="label" for="lang">Language</label>
+          <select class="input" id="lang" name="lang" required>
+            <option value="es" selected>Español (es)</option>
+            <option value="en">English (en)</option>
+          </select>
+          <div class="help">Choose the language this page is written in. You’ll create the other language as a separate page.</div>
         </div>
 
         <!-- Tags -->
@@ -234,7 +238,7 @@
         if (!data || !data.page) return;
 
         const p = data.page;
-        $('#title').value = p.title || '';
+        $('#lang').value = (p.lang === 'en' ? 'en' : 'es');
         $('#tags').value = Array.isArray(p.tags) ? p.tags.join(', ') : (p.tags || '');
 
         const ed = await waitForEditor();
@@ -256,6 +260,7 @@
     const title = $('#title').value.trim();
     const tags = $('#tags').value.trim();
     const html = tinymce.get('editor') ? tinymce.get('editor').getContent() : '';
+    const lang = ($('#lang') ? $('#lang').value : 'es');
     const slug = getSlugParam();
 
     if (!title || !html) {
@@ -267,6 +272,7 @@
     form.append('title', title);
     form.append('tags', tags);
     form.append('html', html);
+    form.append('lang', lang);
 
     // Create vs Update endpoint
     const endpoint = slug ? `/admin/pages/${slug}/update` : '/admin/pages';

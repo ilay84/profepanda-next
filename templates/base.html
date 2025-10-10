@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="{{ lang }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -37,5 +37,13 @@
         <div id="exerciseRoot"></div>
       </div>
     </div>
+
+    <footer style="text-align:center;margin-top:2rem;padding:.75rem 0;font-size:.85rem;color:#777;border-top:1px solid #eee;">
+      {% if lang == 'es' %}
+        Idioma actual: <strong>Español</strong>
+      {% else %}
+        Current language: <strong>English</strong>
+      {% endif %}
+    </footer>
 </body>
 </html>

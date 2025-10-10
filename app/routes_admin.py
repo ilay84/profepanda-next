@@ -705,10 +705,12 @@ def admin_tiles_save():
         norm = _coerce_tile_shape(t)
         indexed[str(norm["id"])] = {**t, **norm}  # keep originals + normalized
 
-    # Read form fields
+    # Read form fields (ES + EN)
     tile_id = (request.form.get("id") or "").strip()
     title = (request.form.get("title") or "").strip()
     subtitle = (request.form.get("subtitle") or "").strip()
+    title_en = (request.form.get("title_en") or "").strip()
+    subtitle_en = (request.form.get("subtitle_en") or "").strip()
 
     if not title:
         return jsonify({"success": False, "error": "El título es obligatorio."}), 400
@@ -723,9 +725,12 @@ def admin_tiles_save():
     current = {
         "id": tile_id,
         "title": title,
+        "title_en": title_en,
         # store both subtitle and description for compatibility
         "subtitle": subtitle,
+        "subtitle_en": subtitle_en,
         "description": subtitle,
+        "description_en": subtitle_en,
         "order": existing.get("order", 9999),
         "enabled": existing.get("enabled", True),
         "href": existing.get("href") or existing.get("link") or "",

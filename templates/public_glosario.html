@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Glosario Regional: {{ country_code|capitalize }}{% endblock %}
+{% block title %}{{ 'Glosario Regional:' if lang == 'es' else 'Regional Glossary:' }} {{ country_code|capitalize }}{% endblock %}
 
 {% block content %}
 
@@ -42,7 +42,7 @@
   <div class="modal-content large-modal">
     <div class="modal-header">
       <h2 style="display:flex;align-items:center;gap:.5rem;">
-        <span>🌐 Búsqueda global</span>
+        <span>{{ '🌐 Búsqueda global' if lang == 'es' else '🌐 Global Search' }}</span>
         <small id="globalSearchQuery" style="font-weight:normal;opacity:.7;"></small>
       </h2>
       <span id="closeGlobalSearchModal" class="close">&times;</span>
@@ -57,7 +57,9 @@
 <div class="glossary-shell" style="display:flex; gap:1rem; align-items:flex-start; margin-left:calc(50% - 50vw); margin-right:calc(50% - 50vw); box-sizing:border-box; padding-left:2rem; padding-right:2rem;">
   <!-- LEFT: Sidebar list of glossaries -->
   <aside class="glossary-sidebar" style="flex:0 0 260px; background:#fff; border:1px solid #e6eef5; border-radius:10px; padding:0.75rem;">
-    <h3 style="margin:0 0 .5rem; font-size:1.05rem;">Glosarios Regionales</h3>
+    <h3 style="margin:0 0 .5rem; font-size:1.05rem;">
+      {{ 'Glosarios Regionales' if lang == 'es' else 'Regional Glossaries' }}
+    </h3>
         <ul style="list-style:none; padding:0; margin:0;">
           {% set enabled = enabled_glossaries|default([country_code]) %}
           {% set names = {
@@ -104,9 +106,11 @@
 
           <!-- Right: Global search -->
           <form id="global-search-form" onsubmit="return false;" style="display:flex; align-items:center; gap:.5rem; padding:.25rem 0;">
-            <input id="global-search-input" type="text" placeholder="🔎 Buscar en todos los glosarios…" autocomplete="off"
+            <input id="global-search-input" type="text" placeholder="{{ '🔎 Buscar en todos los glosarios…' if lang == 'es' else '🔎 Search all glossaries…' }}" ...
                   style="min-width:260px; padding:.5rem .7rem; border:1px solid #cfe3fb; border-radius:8px;">
-            <button id="global-search-btn" type="button" class="btn-primary" style="padding:.5rem .8rem;">Buscar</button>
+            <button id="global-search-btn" type="button" class="btn-primary" style="padding:.5rem .8rem;">
+              {{ 'Buscar' if lang == 'es' else 'Search' }}
+            </button>
           </form>
         </div>
 
@@ -125,7 +129,7 @@
             <img src="{{ url_for('static', filename='assets/flags/' + country_code + '.png') }}"
                 alt="{{ country_code|upper }}"
                 style="height:16px; width:auto; border-radius:2px;">
-            <input type="text" id="glossarySearch" placeholder="Buscar..." oninput="filterGlossary()" />
+            <input type="text" id="glossarySearch" placeholder="{{ 'Buscar...' if lang == 'es' else 'Search...' }}" oninput="filterGlossary()" />
           </div>
 
           <!-- 🔹 Grid of word/phrase cards -->
@@ -160,6 +164,60 @@
 console.log('public_glosario script loaded');
 
 let CURRENT_ENTRY = null;
+
+/* ---------- i18n for modal & examples ---------- */
+const LANG = "{{ lang }}";
+const I = (LANG === 'en') ? {
+  principal_tab: "Main",
+  variants_title: "Variant forms",
+  fem: "Feminine:",
+  masc: "Masculine:",
+  diminutive: "Diminutive:",
+  augmentative: "Augmentative:",
+  examples_summary: "👀 🎧 See & hear authentic examples",
+  source_prefix: "🔖 Source:",
+  other_words_prefix: "🔗 Other words in the example:",
+  entry_not_found: "Linked entry not found in this glossary.",
+  loading: "Loading…",
+  source_load_error: "Oops, the source couldn’t be loaded.",
+  no_more_from_source: "No entries from this source (yet).",
+  filtered_view: "— filtered view",
+  clear_filter_btn: "✖ Remove filter",
+  write_to_search: "Type a word or phrase to search.",
+  searching: "Searching…",
+  no_results: "No results found.",
+  search_error: "An error occurred while searching. Please try again.",
+  copy_link_ok: "Link copied to clipboard ✅",
+  share_title_prefix: "Entry: ",
+  source_view_all: "🔎 See all from this source",
+  source_series_all: "📺 Entire series",
+  source_episode: "🔹 This episode"
+} : {
+  principal_tab: "Principal",
+  variants_title: "Formas variantes",
+  fem: "Femenino:",
+  masc: "Masculino:",
+  diminutive: "Diminutivo:",
+  augmentative: "Aumentativo:",
+  examples_summary: "👀 🎧 Ver y escuchar ejemplos auténticos",
+  source_prefix: "🔖 Fuente:",
+  other_words_prefix: "🔗 Otras palabras en el ejemplo:",
+  entry_not_found: "Entrada vinculada no encontrada en este glosario.",
+  loading: "Cargando…",
+  source_load_error: "Ups, no se pudo cargar esta fuente.",
+  no_more_from_source: "No hay entradas de esta fuente (todavía).",
+  filtered_view: "— vista filtrada",
+  clear_filter_btn: "✖ Quitar filtro",
+  write_to_search: "Escribí una palabra o frase para buscar.",
+  searching: "Buscando…",
+  no_results: "No se encontraron resultados.",
+  search_error: "Ocurrió un error al buscar. Probá de nuevo.",
+  copy_link_ok: "Enlace copiado al portapapeles ✅",
+  share_title_prefix: "Entrada: ",
+  source_view_all: "🔎 Ver todas de esta fuente",
+  source_series_all: "📺 Toda la serie",
+  source_episode: "🔹 Este episodio"
+};
 
 /* ---------- helpers ---------- */
 function slugify(text) {
@@ -279,15 +337,15 @@ window.openEntryModal = function(entry) {
 
         return `
             <details>
-            <summary class="collapsible-summary examples-summary">Formas variantes</summary>
+            <summary class="collapsible-summary examples-summary">${I.variants_title}</summary>
             <div style="display:inline-block;">
                 <table class="variants-table"
                     style="border-collapse:collapse; border-spacing:0; width:auto; margin-top:0.5rem; border:0!important;">
                 <tbody>
-                    ${row("Femenino:", fem)}
-                    ${row("Masculino:", masc)}
-                    ${row("Diminutivo:", dim)}
-                    ${row("Aumentativo:", aug)}
+                    ${row(I.fem, fem)}
+                    ${row(I.masc, masc)}
+                    ${row(I.diminutive, dim)}
+                    ${row(I.augmentative, aug)}
                 </tbody>
                 </table>
             </div>
@@ -306,7 +364,7 @@ window.openEntryModal = function(entry) {
         const definition = sense.definition ? `<div class="sense-definition">${sense.definition}</div>` : "";
 
         const equivalents = (Array.isArray(sense.equivalents) && sense.equivalents.length)
-          ? `<div style="margin-top:.5rem;"><strong>🇺🇸 Equivalentes en inglés:</strong>
+          ? `<div style="margin-top:.5rem;"><strong>🇺🇸 ${LANG === 'en' ? 'English equivalents:' : 'Equivalentes en inglés:'}</strong>
                <ul class="us-equivalents">
                  ${sense.equivalents.map(eq => `<li>${eq}</li>`).join("")}
                </ul>
@@ -321,7 +379,7 @@ window.openEntryModal = function(entry) {
 
         const examples = (Array.isArray(sense.examples) && sense.examples.length)
           ? `<details class="ex-collapsible" style="margin-top:0.5rem;">
-               <summary class="collapsible-summary examples-summary">👀 🎧 Ver y escuchar ejemplos auténticos</summary>
+               <summary class="collapsible-summary examples-summary">${I.examples_summary}</summary>
                <div>
                  ${sense.examples.map(ex => `
                    <div class="example-block" style="margin:.75rem 0; background:#f9fcff; border-left:4px solid #d0e7ff; padding:0.75rem; border-radius:4px;">
@@ -333,36 +391,36 @@ window.openEntryModal = function(entry) {
                      ${ex.source
                       ? (() => {
                           const kind = ex.source.kind || '';
-                          let label = 'Fuente';
+                          let label = LANG === 'en' ? 'Source' : 'Fuente';
                           let emoji = '';
 
                           if (kind === 'pelicula') {
                             emoji = '🎞️';
-                            const title = ex.source.title || 'Película';
+                            const title = ex.source.title || (LANG === 'en' ? 'Film' : 'Película');
                             const year  = ex.source.year ? ` (${ex.source.year})` : '';
                             label = `${title}${year}`;
                           } else if (kind === 'serie') {
                             emoji = '📺';
-                            const title   = ex.source.title || ex.source.name || ex.source.text || ex.source.handle || ex.source.song || 'Serie';
+                            const title   = ex.source.title || ex.source.name || ex.source.text || ex.source.handle || ex.source.song || (LANG === 'en' ? 'Series' : 'Serie');
                             const year    = ex.source.year ? ` (${ex.source.year})` : '';
-                            const season  = ex.source.season ? ` T${ex.source.season}` : '';
-                            const episode = ex.source.episode ? ` E${ex.source.episode}` : '';
+                            const season  = ex.source.season ? ` ${LANG === 'en' ? 'S' : 'T'}${ex.source.season}` : '';
+                            const episode = ex.source.episode ? ` ${LANG === 'en' ? 'E' : 'E'}${ex.source.episode}` : '';
                             label = `${title}${year}${season}${episode}`;
                           } else if (kind === 'redes') {
                             emoji = '🌐';
-                            label = ex.source.handle || 'Redes';
+                            label = ex.source.handle || (LANG === 'en' ? 'Social' : 'Redes');
                           } else if (kind === 'cancion') {
                             emoji = '🎵';
-                            const song   = ex.source.song || 'Canción';
+                            const song   = ex.source.song || (LANG === 'en' ? 'Song' : 'Canción');
                             const artist = ex.source.artist ? ` — ${ex.source.artist}` : '';
                             label = `${song}${artist}`;
                           } else if (kind === 'otro') {
                             emoji = '🛈';
-                            label = ex.source.text || 'Fuente';
+                            label = ex.source.text || (LANG === 'en' ? 'Source' : 'Fuente');
                           } else {
                             // Fallback for older entries without kind
                             emoji = '';
-                            label = ex.source.title || ex.source.song || ex.source.handle || ex.source.text || 'Fuente';
+                            label = ex.source.title || ex.source.song || ex.source.handle || ex.source.text || (LANG === 'en' ? 'Source' : 'Fuente');
                             if (ex.source.year) label += ` (${ex.source.year})`;
                           }
 
@@ -372,7 +430,7 @@ window.openEntryModal = function(entry) {
 
                           return `
                             <div class="example-source">
-                              🔖 Fuente:
+                              ${I.source_prefix}
                               <span class="source-chip js-source-chip"
                                 data-kind="${kind}"
                                 data-title="${(ex.source.title || ex.source.name || ex.source.text || ex.source.handle || ex.source.song || '').replace(/"/g,'&quot;')}"
@@ -396,7 +454,7 @@ window.openEntryModal = function(entry) {
                       const linkedWords = getLinkedWords(ex);
                       return linkedWords.length ? `
                         <div class="example-linked" style="margin-top:.5rem;">
-                          <span style="opacity:.85; margin-right:.35rem;">🔗 Otras palabras en el ejemplo:</span>
+                          <span style="opacity:.85; margin-right:.35rem;">${I.other_words_prefix}</span>
                           ${linkedWords.map(w => {
                             const s = slugify(w || "");
                             const safe = (w || "").replace(/"/g, '&quot;');
@@ -425,14 +483,14 @@ window.openEntryModal = function(entry) {
       }).join("")
     : "";
 
-  // Render the main tab ("Principal")
+  // Render the main tab ("Principal"/"Main")
   body.innerHTML = `${mainAudio}${variantsSection}${sensesSection}`;
 
   // ===== In-modal tab helpers =====
   const tabsHeader   = document.getElementById('entryTabs');
   const tabsContent  = document.getElementById('entryTabContents');
 
-  // Put the current word into the first tab (no “Principal” label)
+  // Put the current word into the first tab
   const mainTabBtn = tabsHeader.querySelector('.tab-btn[data-tab="main"]');
   if (mainTabBtn) {
     const label = entry.word || "";
@@ -514,7 +572,7 @@ window.openEntryModal = function(entry) {
     return panel;
   }
 
-    // Make the default "Principal" tab switch correctly
+  // Make the default "Principal"/"Main" tab switch correctly
   const mainBtn = tabsHeader.querySelector('.tab-btn[data-tab="main"]');
   if (mainBtn && !mainBtn.dataset.bound) {
     mainBtn.addEventListener('click', () => activateInnerTab('main'));
@@ -529,33 +587,33 @@ window.openEntryModal = function(entry) {
     const buildSource = (ex) => {
       if (!ex.source) return ``;
       const kind = ex.source.kind || '';
-      let label = 'Fuente', emoji = '';
+      let label = (LANG === 'en' ? 'Source' : 'Fuente'), emoji = '';
 
       if (kind === 'pelicula') {
         emoji = '🎞️';
-        const title = ex.source.title || 'Película';
+        const title = ex.source.title || (LANG === 'en' ? 'Film' : 'Película');
         const year  = ex.source.year ? ` (${ex.source.year})` : '';
         label = `${title}${year}`;
       } else if (kind === 'serie') {
         emoji = '📺';
-        const title   = ex.source.title || ex.source.name || ex.source.text || ex.source.handle || ex.source.song || 'Serie';
+        const title   = ex.source.title || ex.source.name || ex.source.text || ex.source.handle || ex.source.song || (LANG === 'en' ? 'Series' : 'Serie');
         const year    = ex.source.year ? ` (${ex.source.year})` : '';
-        const season  = ex.source.season ? ` T${ex.source.season}` : '';
-        const episode = ex.source.episode ? ` E${ex.source.episode}` : '';
+        const season  = ex.source.season ? ` ${LANG === 'en' ? 'S' : 'T'}${ex.source.season}` : '';
+        const episode = ex.source.episode ? ` ${LANG === 'en' ? 'E' : 'E'}${ex.source.episode}` : '';
         label = `${title}${year}${season}${episode}`;
       } else if (kind === 'redes') {
         emoji = '🌐';
-        label = ex.source.handle || 'Redes';
+        label = ex.source.handle || (LANG === 'en' ? 'Social' : 'Redes');
       } else if (kind === 'cancion') {
         emoji = '🎵';
-        const song   = ex.source.song || 'Canción';
+        const song   = ex.source.song || (LANG === 'en' ? 'Song' : 'Canción');
         const artist = ex.source.artist ? ` — ${ex.source.artist}` : '';
         label = `${song}${artist}`;
       } else if (kind === 'otro') {
         emoji = '🛈';
-        label = ex.source.text || 'Fuente';
+        label = ex.source.text || (LANG === 'en' ? 'Source' : 'Fuente');
       } else {
-        label = ex.source.title || ex.source.song || ex.source.handle || ex.source.text || 'Fuente';
+        label = ex.source.title || ex.source.song || ex.source.handle || ex.source.text || (LANG === 'en' ? 'Source' : 'Fuente');
         if (ex.source.year) label += ` (${ex.source.year})`;
       }
 
@@ -563,7 +621,7 @@ window.openEntryModal = function(entry) {
 
       return `
         <div class="example-source">
-          🔖 Fuente:
+          ${I.source_prefix}
           <span class="source-chip js-source-chip"
             data-kind="${kind}"
             data-title="${(ex.source.title || ex.source.name || ex.source.text || ex.source.handle || ex.source.song || '').replace(/"/g,'&quot;')}"
@@ -596,11 +654,11 @@ window.openEntryModal = function(entry) {
           <td style="border:0!important; padding:4px 8px;"><em>${vals.join(", ")}</em></td>
         </tr>`;
       return `<details>
-          <summary class="collapsible-summary examples-summary">Formas variantes</summary>
+          <summary class="collapsible-summary examples-summary">${I.variants_title}</summary>
           <div style="display:inline-block;">
             <table class="variants-table" style="border-collapse:collapse; border-spacing:0; width:auto; margin-top:0.5rem; border:0!important;">
               <tbody>
-                ${row("Femenino:", fem)}${row("Masculino:", masc)}${row("Diminutivo:", dim)}${row("Aumentativo:", aug)}
+                ${row(I.fem, fem)}${row(I.masc, masc)}${row(I.diminutive, dim)}${row(I.augmentative, aug)}
               </tbody>
             </table>
           </div>
@@ -610,14 +668,14 @@ window.openEntryModal = function(entry) {
     const senses = (Array.isArray(e.senses) && e.senses.length) ? e.senses.map((s, idx) => {
       const definition = s.definition ? `<div class="sense-definition">${s.definition}</div>` : "";
       const equivalents = (Array.isArray(s.equivalents) && s.equivalents.length)
-        ? `<div style="margin-top:.5rem;"><strong>🇺🇸 Equivalentes en inglés:</strong>
+        ? `<div style="margin-top:.5rem;"><strong>🇺🇸 ${LANG === 'en' ? 'English equivalents:' : 'Equivalentes en inglés:'}</strong>
              <ul class="us-equivalents">${s.equivalents.map(eq => `<li>${eq}</li>`).join("")}</ul>
            </div>` : "";
       const generalTags = (Array.isArray(s.tag_general) && s.tag_general.length)
         ? `<div style="margin:.5rem 0;">${s.tag_general.map(tag => `<span class="tag-btn tag-general">${tag}</span>`).join(" ")}</div>` : "";
       const examples = (Array.isArray(s.examples) && s.examples.length) ? `
         <details class="ex-collapsible" style="margin-top:0.5rem;">
-          <summary class="collapsible-summary examples-summary">👀 🎧 Ver y escuchar ejemplos auténticos</summary>
+          <summary class="collapsible-summary examples-summary">${I.examples_summary}</summary>
           <div>
             ${s.examples.map(ex => `
               <div class="example-block" style="margin:.75rem 0; background:#f9fcff; border-left:4px solid #d0e7ff; padding:0.75rem; border-radius:4px;">
@@ -629,7 +687,7 @@ window.openEntryModal = function(entry) {
                 const linkedWords = getLinkedWords(ex);
                 return linkedWords.length ? `
                   <div class="example-linked" style="margin-top:.5rem;">
-                    <span style="opacity:.85; margin-right:.35rem;">🔗 Otras palabras en el ejemplo:</span>
+                    <span style="opacity:.85; margin-right:.35rem;">${I.other_words_prefix}</span>
                     ${linkedWords.map(w => {
                       const sslug = slugify(w || "");
                       const safe  = (w || "").replace(/"/g, '&quot;');
@@ -642,7 +700,7 @@ window.openEntryModal = function(entry) {
           </div>
         </details>` : "";
       return `<section class="sense-block" style="margin-top:1rem;">
-          <h3 style="margin:.25rem 0 0.25rem;">(${idx + 1}) ${wordClass(s)}</h3>
+          <h3 style="margin:.25rem 0 0.25rem;">(${idx + 1}) ${(Array.isArray(s.tag_word_class) && s.tag_word_class.length) ? `<span class="tag-btn tag-class">${s.tag_word_class[0]}</span>` : ""}</h3>
           ${definition}${equivalents}${generalTags}${examples}
         </section>`;
     }).join("") : "";
@@ -658,7 +716,7 @@ window.openEntryModal = function(entry) {
         const slug = btn.getAttribute('data-linked-slug') || '';
         const word = btn.getAttribute('data-linked-word') || '';
         const target = findEntryBySlug(slug) || findEntryByWord(word);
-        if (!target) return alert('Entrada vinculada no encontrada en este glosario.');
+        if (!target) return alert(I.entry_not_found);
 
         const key   = target.slug || slugify(target.word);
         const title = target.word || key;
@@ -674,10 +732,7 @@ window.openEntryModal = function(entry) {
     });
   }
 
-  // Initial bind for the main body content
-  bindLinkedChips(body);
-
-  /* ===== Source-chips: popover + API fetch → new modal tab ===== */
+  // ===== Source-chips: popover + API fetch → new modal tab =====
 function closeAnySourceMenus(container){
   (container || document).querySelectorAll('.source-menu').forEach(m => m.remove());
 }
@@ -750,19 +805,19 @@ async function openSourceTabFromChip(chip, scope){
 
     let tabKey, tabTitle;
     if (kind === 'serie' && scope === 'episode' && (season || episode)) {
-      const se = `${season ? 'T'+season : ''}${episode ? 'E'+episode : ''}`.trim();
+      const se = `${season ? (LANG==='en'?'S':'T')+season : ''}${episode ? ' E'+episode : ''}`.trim();
       tabKey   = `src_${kind}_${title.replace(/\s+/g,'-').toLowerCase()}_${se || 'ep'}`;
       tabTitle = `${emoji} ${title} — ${se}`;
     } else if (kind === 'serie' && scope === 'series'){
       tabKey   = `src_${kind}_${title.replace(/\s+/g,'-').toLowerCase()}_all`;
-      tabTitle = `${emoji} ${title} — Toda la serie`;
+      tabTitle = `${emoji} ${title} — ${I.source_series_all}`;
     } else {
       tabKey   = `src_${kind}_${(title||'').replace(/\s+/g,'-').toLowerCase()}`;
       tabTitle = `${emoji} ${title}`;
     }
 
     const panel = ensureInnerTab(tabKey, tabTitle);
-    panel.innerHTML = `<p style="opacity:.8;">Cargando…</p>`;
+    panel.innerHTML = `<p style="opacity:.8;">${I.loading}</p>`;
 
     const resp = await fetch(url, { headers: { "Accept":"application/json" } });
 
@@ -781,7 +836,7 @@ async function openSourceTabFromChip(chip, scope){
     }
 
     if (!data.results || !data.results.length){
-      panel.innerHTML = `<p>No hay más palabras de esta fuente (todavía).</p>`;
+      panel.innerHTML = `<p>${I.no_more_from_source}</p>`;
       activateInnerTab(tabKey);
       return;
     }
@@ -804,7 +859,7 @@ async function openSourceTabFromChip(chip, scope){
         const slug = card.getAttribute('data-slug');
         const entry = findEntryBySlug(slug);
         if (!entry){
-          alert('Entrada no encontrada en este glosario.');
+          alert(I.entry_not_found);
           return;
         }
         const key   = entry.slug || slugify(entry.word);
@@ -821,7 +876,7 @@ async function openSourceTabFromChip(chip, scope){
 
   } catch (err){
     console.error(err);
-    alert('No se pudo cargar la fuente.');
+    alert(I.source_load_error);
   }
 }
 
@@ -834,12 +889,12 @@ function makeSourceMenu(chip){
   let inner = '';
 
   if (canEpisode){
-    inner += `<button type="button" data-scope="episode">🔹 Este episodio</button>`;
-    inner += `<button type="button" data-scope="series">📺 Toda la serie</button>`;
+    inner += `<button type="button" data-scope="episode">${I.source_episode}</button>`;
+    inner += `<button type="button" data-scope="series">${I.source_series_all}</button>`;
   } else if (kind === 'serie'){
-    inner += `<button type="button" data-scope="series">📺 Toda la serie</button>`;
+    inner += `<button type="button" data-scope="series">${I.source_series_all}</button>`;
   } else {
-    inner += `<button type="button" data-scope="series">🔎 Ver todas de esta fuente</button>`;
+    inner += `<button type="button" data-scope="series">${I.source_view_all}</button>`;
   }
   menu.innerHTML = inner;
 
@@ -905,18 +960,31 @@ bindSourceChips(body);
   // Wire up the share button for this entry
   const shareBtn = document.getElementById("shareButton");
   if (shareBtn) {
+    // Localize label + accessibility
+    shareBtn.innerHTML = (LANG === 'en' ? '📤 Share' : '📤 Compartir');
+    shareBtn.setAttribute('aria-label', (LANG === 'en' ? 'Share this entry' : 'Compartir esta entrada'));
+    shareBtn.setAttribute('title', (LANG === 'en' ? 'Share this entry' : 'Compartir esta entrada'));
+
+    // Also localize the close button tooltip/aria (if present)
+    const closeBtn = document.getElementById("closeEntryModal");
+    if (closeBtn) {
+      closeBtn.innerHTML = (LANG === 'en' ? '❌ Close' : '❌ Cerrar');
+      closeBtn.setAttribute('aria-label', (LANG === 'en' ? 'Close' : 'Cerrar'));
+      closeBtn.setAttribute('title', (LANG === 'en' ? 'Close' : 'Cerrar'));
+    }
+
     shareBtn.onclick = async () => {
       const url = buildShareUrl(entry);
       try {
         if (navigator.share) {
           await navigator.share({
             title: entry.word,
-            text: `Entrada: ${entry.word}`,
+            text: I.share_title_prefix + (entry.word || ''),
             url
           });
         } else if (navigator.clipboard && window.isSecureContext) {
           await navigator.clipboard.writeText(url);
-          alert("Enlace copiado al portapapeles ✅");
+          alert(I.copy_link_ok);
         } else {
           // Fallback
           const ta = document.createElement("textarea");
@@ -925,7 +993,7 @@ bindSourceChips(body);
           ta.select();
           document.execCommand("copy");
           document.body.removeChild(ta);
-          alert("Enlace copiado al portapapeles ✅");
+          alert(I.copy_link_ok);
         }
       } catch (err) {
         console.error("Share failed:", err);
@@ -948,7 +1016,7 @@ document.getElementById("closeEntryModal").onclick = function() {
   const tabsHeader  = document.getElementById("entryTabs");
   const tabsContent = document.getElementById("entryTabContents");
   if (tabsHeader) {
-    tabsHeader.innerHTML = '<button class="tab-btn active" data-tab="main">Principal</button>';
+    tabsHeader.innerHTML = `<button class="tab-btn active" data-tab="main">${I.principal_tab}</button>`;
   }
   if (tabsContent) {
     tabsContent.innerHTML = '<div class="tab-panel active" data-tab="main" id="modalWordContent"></div>';
@@ -1095,7 +1163,7 @@ async function applySourceModeFromURL(){
   if (!grid || !panelScroll) return;
 
   buildAllEntriesMap(); // cache all entries before we clear the grid
-  grid.innerHTML = `<p style="margin:.5rem 0; opacity:.8;">Cargando…</p>`;
+  grid.innerHTML = `<p style="margin:.5rem 0; opacity:.8;">${I.loading}</p>`;
 
   const url = `/api/${CURRENT_COUNTRY}/by-source?` + qs.toString();
 
@@ -1104,7 +1172,7 @@ async function applySourceModeFromURL(){
     if (!resp.ok) {
       const text = await resp.text().catch(()=>"(no body)");
       console.error('Source mode fetch error', resp.status, text);
-      grid.innerHTML = `<p>Ups, no se pudo cargar esta fuente.</p>`;
+      grid.innerHTML = `<p>${I.source_load_error}</p>`;
       return;
     }
     const data = await resp.json();
@@ -1117,15 +1185,15 @@ async function applySourceModeFromURL(){
     banner.style.cssText = 'position:sticky; top:0; z-index:6; background:#fff7e6; border:1px solid #f7d8a1; border-radius:10px; padding:.5rem .75rem; margin:.5rem 0; display:flex; align-items:center; gap:.5rem;';
     const k = (p.get('kind') || '').toLowerCase();
     const emoji = k==='serie' ? '📺' : k==='pelicula' ? '🎞️' : k==='cancion' ? '🎵' : k==='redes' ? '🌐' : '🔖';
-    const label = p.get('title') || p.get('song') || p.get('handle') || p.get('text') || 'Fuente';
-    banner.innerHTML = `<strong>${emoji} ${label}</strong><span style="opacity:.7">— vista filtrada</span><span style="flex:1"></span><button id="clearSourceMode" style="padding:.35rem .65rem; border:1px solid #d0e7ff; border-radius:8px; background:#fff; color:#0f172a; font-weight:700; line-height:1; display:inline-flex; align-items:center; gap:.35rem;">✖ <span>Quitar filtro</span></button>`;
+    const label = p.get('title') || p.get('song') || p.get('handle') || p.get('text') || (LANG==='en'?'Source':'Fuente');
+    banner.innerHTML = `<strong>${emoji} ${label}</strong><span style="opacity:.7">${I.filtered_view}</span><span style="flex:1"></span><button id="clearSourceMode" style="padding:.35rem .65rem; border:1px solid #d0e7ff; border-radius:8px; background:#fff; color:#0f172a; font-weight:700; line-height:1; display:inline-flex; align-items:center; gap:.35rem;">${I.clear_filter_btn}</button>`;
     const beforeNode = panelScroll.querySelector('.glossary-search-container') || panelScroll.firstChild;
     panelScroll.insertBefore(banner, beforeNode);
 
     // 🔁 Replace grid with only the results (reusing existing entry JSON so click → modal works)
     buildAllEntriesMap();
     if (!data.results || !data.results.length){
-      grid.innerHTML = `<p>No hay entradas de esta fuente (todavía).</p>`;
+      grid.innerHTML = `<p>${I.no_more_from_source}</p>`;
       return;
     }
     let html = '';
@@ -1147,7 +1215,7 @@ async function applySourceModeFromURL(){
     }
   } catch (e){
     console.error(e);
-    grid.innerHTML = `<p>Ups, no se pudo cargar esta fuente.</p>`;
+    grid.innerHTML = `<p>${I.source_load_error}</p>`;
   }
 }
 
@@ -1175,12 +1243,12 @@ async function runGlobalSearch(query) {
   const qLabel = document.getElementById("globalSearchQuery");
   if (!q) {
     qLabel.textContent = "";
-    resultsBox.innerHTML = "<p>Escribí una palabra o frase para buscar.</p>";
+    resultsBox.innerHTML = `<p>${I.write_to_search}</p>`;
     openGlobalSearchModal();
     return;
   }
   qLabel.textContent = `“${q}”`;
-  resultsBox.innerHTML = "<p>Buscando…</p>";
+  resultsBox.innerHTML = `<p>${I.searching}</p>`;
   openGlobalSearchModal();
 
   try {
@@ -1190,7 +1258,7 @@ async function runGlobalSearch(query) {
     const groups = groupBy(data.results || [], "country_name");
 
     if (!data.results || !data.results.length) {
-      resultsBox.innerHTML = "<p>No se encontraron resultados.</p>";
+      resultsBox.innerHTML = `<p>${I.no_results}</p>`;
       return;
     }
 
@@ -1234,7 +1302,7 @@ async function runGlobalSearch(query) {
 
   } catch (err) {
     console.error(err);
-    resultsBox.innerHTML = "<p>Ocurrió un error al buscar. Probá de nuevo.</p>";
+    resultsBox.innerHTML = `<p>${I.search_error}</p>`;
   }
 }
 

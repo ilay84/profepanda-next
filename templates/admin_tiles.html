@@ -103,6 +103,30 @@
             {% if t.href %}
               <span class="pill">Link: <a href="{{ t.href }}" target="_blank" rel="noopener" style="color:#2563eb;text-decoration:none;">{{ t.href }}</a></span>
             {% endif %}
+
+            {# Language badges #}
+            {% set has_es = (t.title or t.subtitle) %}
+            {% set has_en = (t.title_en or t.subtitle_en) %}
+
+            {% if has_es %}
+              <span class="pill" title="Contenido en Español">
+                🌐 <strong>ES</strong>
+              </span>
+            {% else %}
+              <span class="pill" style="opacity:.55;" title="Falta contenido en Español">
+                🌐 ES
+              </span>
+            {% endif %}
+
+            {% if has_en %}
+              <span class="pill" style="border-color:#93c5fd;background:#eff6ff;color:#1e3a8a;" title="English copy present">
+                🌐 <strong>EN</strong>
+              </span>
+            {% else %}
+              <span class="pill" style="opacity:.55;" title="Missing English copy">
+                🌐 EN
+              </span>
+            {% endif %}
           </div>
           {% set subtitle = t.subtitle or t.description or t.desc %}
           {% if subtitle %}
@@ -110,16 +134,18 @@
           {% endif %}
 
           <div class="tile-admin-actions">
-            <a href="#"
-                class="btn btn-primary"
-                data-tile-id="{{ (t.id or t.slug or t.title or 'unknown') }}"
-                data-tile-title="{{ t.title or '' }}"
-                data-tile-subtitle="{{ t.subtitle or t.desc or '' }}"
-                data-tile-image="{{ t.image or '' }}"
-                data-tile-href="{{ t.href or t.link or '' }}"
-                onclick="openEditTile(this); return false;">
-                Editar
-            </a>
+              <a href="#"
+                  class="btn btn-primary"
+                  data-tile-id="{{ (t.id or t.slug or t.title or 'unknown') }}"
+                  data-tile-title="{{ t.title or '' }}"
+                  data-tile-subtitle="{{ t.subtitle or t.desc or '' }}"
+                  data-tile-title-en="{{ t.title_en or '' }}"
+                  data-tile-subtitle-en="{{ t.subtitle_en or '' }}"
+                  data-tile-image="{{ t.image or '' }}"
+                  data-tile-href="{{ t.href or t.link or '' }}"
+                  onclick="openEditTile(this); return false;">
+                  Editar
+              </a>
 
             <a href="#"
                 class="btn btn-danger"
@@ -134,13 +160,11 @@
   </div>
 {% endif %}
 <script>
-/* ========== Tiles Admin: Edit + Delete ==========
-   This block adds:
-   - openEditTile(btn): opens a modal with title/subtitle/image
-   - save handler → POST /admin/tiles/save (multipart/form-data)
-   - deleteTile(tileId, btnEl): unchanged
-   The modal is created dynamically (no extra HTML paste needed).
-==================================================*/
+/* ========== Tiles Admin: Edit + Delete (with EN fields) ==========
+   - Modal now has: Title (ES), Title (EN), Subtitle (ES), Subtitle (EN)
+   - Form posts all fields (multipart) to /admin/tiles/save
+   - Backward compatible: existing "title" and "subtitle" (Spanish) stay
+===================================================================*/
 
 (function initTileEditor(){
   // --- Create modal once and attach to document ---
@@ -149,7 +173,7 @@
   modal.className = 'modal';
   modal.style.display = 'none';
   modal.innerHTML = `
-    <div class="modal-content" style="max-width:720px; height:auto; max-height:90vh;">
+    <div class="modal-content" style="max-width:780px; height:auto; max-height:90vh;">
       <div class="modal-header">
         <h2 id="tileEditHeading" style="margin:0;">Editar tarjeta</h2>
         <span class="close" id="tileEditClose" style="cursor:pointer;">&times;</span>
@@ -158,6 +182,7 @@
         <form id="tileEditForm">
           <input type="hidden" name="id" id="tileEditId">
 
+          <!-- Image -->
           <label for="tileEditImage">Imagen (opcional)</label>
           <div style="display:flex; gap:1rem; align-items:flex-start;">
             <img id="tileEditPreview" alt="Vista previa" style="width:120px; height:80px; object-fit:cover; border:1px solid #e5e7eb; border-radius:8px; background:#f1f5f9;">
@@ -169,11 +194,29 @@
             </div>
           </div>
 
-          <label for="tileEditTitle" style="margin-top:1rem;">Título</label>
-          <input type="text" id="tileEditTitle" name="title" required>
+          <!-- Titles -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:1rem;">
+            <div>
+              <label for="tileEditTitle">Título (ES)</label>
+              <input type="text" id="tileEditTitle" name="title" required>
+            </div>
+            <div>
+              <label for="tileEditTitleEn">Title (EN)</label>
+              <input type="text" id="tileEditTitleEn" name="title_en" placeholder="Optional (English)">
+            </div>
+          </div>
 
-          <label for="tileEditSubtitle" style="margin-top:.8rem;">Subtítulo</label>
-          <input type="text" id="tileEditSubtitle" name="subtitle" placeholder="Opcional">
+          <!-- Subtitles -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:.8rem;">
+            <div>
+              <label for="tileEditSubtitle">Subtítulo (ES)</label>
+              <input type="text" id="tileEditSubtitle" name="subtitle" placeholder="Opcional">
+            </div>
+            <div>
+              <label for="tileEditSubtitleEn">Subtitle (EN)</label>
+              <input type="text" id="tileEditSubtitleEn" name="subtitle_en" placeholder="Optional (English)">
+            </div>
+          </div>
 
           <div style="display:flex; gap:.5rem; margin-top:1rem; justify-content:flex-end;">
             <button type="button" id="tileEditCancel" class="btn">Cancelar</button>
@@ -190,8 +233,10 @@
   const cancel   = modal.querySelector('#tileEditCancel');
   const form     = modal.querySelector('#tileEditForm');
   const fId      = modal.querySelector('#tileEditId');
-  const fTitle   = modal.querySelector('#tileEditTitle');
-  const fSub     = modal.querySelector('#tileEditSubtitle');
+  const fTitleES = modal.querySelector('#tileEditTitle');
+  const fTitleEN = modal.querySelector('#tileEditTitleEn');
+  const fSubES   = modal.querySelector('#tileEditSubtitle');
+  const fSubEN   = modal.querySelector('#tileEditSubtitleEn');
   const fImg     = modal.querySelector('#tileEditImage');
   const fPrev    = modal.querySelector('#tileEditPreview');
 
@@ -210,12 +255,14 @@
     reader.readAsDataURL(file);
   });
 
-  // Expose openEditTile globally (used by the new Editar button)
+  // Expose openEditTile globally (used by the "Editar" buttons)
   window.openEditTile = function(btn){
     const d = btn.dataset || {};
-    fId.value    = (d.tileId || '').trim();
-    fTitle.value = d.tileTitle || '';
-    fSub.value   = d.tileSubtitle || '';
+    fId.value      = (d.tileId || '').trim();
+    fTitleES.value = d.tileTitle || '';
+    fSubES.value   = d.tileSubtitle || '';
+    fTitleEN.value = d.tileTitleEn || '';
+    fSubEN.value   = d.tileSubtitleEn || '';
     const img    = d.tileImage || '';
     if (img) fPrev.src = img.startsWith('/static') || img.startsWith('http') ? img : ('/static/' + img.replace(/^\/+/, ''));
     else fPrev.removeAttribute('src');
@@ -226,13 +273,12 @@
   form.addEventListener('submit', async (e)=>{
     e.preventDefault();
     try {
-      const fd = new FormData(form);
+      const fd = new FormData(form); // includes title, title_en, subtitle, subtitle_en, image, id
       const resp = await fetch('/admin/tiles/save', { method:'POST', body: fd });
       const out  = await resp.json();
       if (!resp.ok || !out.success) throw new Error(out.error || `HTTP ${resp.status}`);
       close();
-      // simple refresh to reflect changes
-      location.reload();
+      location.reload(); // reflect changes
     } catch (err){
       console.error(err);
       alert('No se pudo guardar la tarjeta.');

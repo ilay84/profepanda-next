@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Glosarios Regionales{% endblock %}
+{% block title %}{{ 'Glosarios Regionales' if lang == 'es' else 'Regional Glossaries' }}{% endblock %}
 
 {% block content %}
 <!-- Layout mirrors public_glosario.html: left sidebar + right panel -->
@@ -8,7 +8,9 @@
 
   <!-- LEFT: Sidebar list of glossaries (countries) -->
   <aside class="glossary-sidebar" style="flex:0 0 260px; background:#fff; border:1px solid #e6eef5; border-radius:10px; padding:0.75rem;">
-    <h3 style="margin:0 0 .5rem; font-size:1.05rem;">Glosarios Regionales</h3>
+    <h3 style="margin:0 0 .5rem; font-size:1.05rem;">
+      {{ 'Glosarios Regionales' if lang == 'es' else 'Regional Glossaries' }}
+    </h3>
     <ul style="list-style:none; padding:0; margin:0;">
       {% if countries and countries|length > 0 %}
         {% for c in countries %}
@@ -28,7 +30,9 @@
         </li>
         {% endfor %}
       {% else %}
-        <li style="margin:.25rem 0; color:#64748b;">No hay glosarios disponibles todavía.</li>
+        <li style="margin:.25rem 0; color:#64748b;">
+          {{ 'No hay glosarios disponibles todavía.' if lang == 'es' else 'No glossaries available yet.' }}
+        </li>
       {% endif %}
     </ul>
   </aside>
@@ -37,20 +41,22 @@
   <section class="glossary-main" style="flex:1 1 auto;">
     <div style="background:#fff; border:1px solid #e6eef5; border-radius:10px; padding:2rem; min-height:60vh; display:flex; align-items:center; justify-content:center;">
       <div style="text-align:center; max-width:720px;">
-        <h1 style="margin:0 0 .5rem;">📚 Glosarios Regionales</h1>
+        <h1 style="margin:0 0 .5rem;">📚 {{ 'Glosarios Regionales' if lang == 'es' else 'Regional Glossaries' }}</h1>
         <p style="margin:0 0 1.25rem; color:#475569; font-size:1.05rem;">
-          🗝️ Hacé click en un país y destrabá su tesoro lingüístico.
+          {{ '🗝️ Hacé click en un país y destrabá su tesoro lingüístico.' if lang == 'es' else '🗝️ Click a country to unlock its linguistic treasures.' }}
         </p>
 
         <!-- Simple modern animation: pulsing hand + floating arrow -->
         <div style="position:relative; display:inline-block; padding:1.5rem 2rem; border:1px dashed #cfe3fb; border-radius:14px;">
           <div class="pulse-hand" style="font-size:2.25rem; line-height:1; animation:pulse 1.6s ease-in-out infinite;">👈</div>
-          <div style="margin-top:.75rem; color:#0f172a;">Hacé clic en el país que querés explorar</div>
+          <div style="margin-top:.75rem; color:#0f172a;">
+            {{ 'Hacé clic en el país que querés explorar' if lang == 'es' else 'Click the country you want to explore' }}
+          </div>
         </div>
 
         <!-- Optional mini-help -->
         <div style="margin-top:1.5rem; font-size:.95rem; color:#64748b;">
-          ¿No ves tu país? Iremos sumando más glosarios. Paciencia...
+          {{ '¿No ves tu país? Iremos sumando más glosarios. Paciencia...' if lang == 'es' else "Don't see your country? More glossaries are on the way. Please be patient..." }}
         </div>
       </div>
     </div>

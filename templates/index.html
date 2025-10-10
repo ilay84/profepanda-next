@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 
-{% block title %}Inicio – ProfePanda{% endblock %}
+{% block title %}{{ 'Inicio – ProfePanda' if lang == 'es' else 'Home – ProfePanda' }}{% endblock %}
 
 {% block content %}
-<h2>Bienvenido a ProfePanda</h2>
-<p>Tu portal para recursos de aprendizaje del español.</p>
+<h2>{{ 'Bienvenido a ProfePanda' if lang == 'es' else 'Welcome to ProfePanda' }}</h2>
+<p>{{ 'Un lugar para explorar el mundo del español.' if lang == 'es' else 'A place to explore the world of Spanish.' }}</p>
 
 <style>
   /* 🔷 Simple responsive 3-col grid */
@@ -103,15 +103,17 @@
 ] %}
 
 <div class="tiles-grid">
-  {% for t in (local_tiles | selectattr('enabled') | selectattr('enabled') | list | sort(attribute='order')) %}
+  {% for t in (local_tiles | selectattr('enabled') | list | sort(attribute='order')) %}
+    {% set display_title = (t.title_en if (lang == 'en' and t.title_en) else (t.title_es if t.title_es else t.title)) %}
+    {% set display_desc  = (t.desc_en  if (lang == 'en' and t.desc_en)  else (t.desc_es  if t.desc_es  else t.desc)) %}
     <a class="tile-link" href="{{ t.href }}">
       <article class="tile-card">
         <div class="tile-media">
-          <img src="{{ url_for('static', filename=t.image) }}" alt="{{ t.title }}">
+          <img src="{{ url_for('static', filename=t.image) }}" alt="{{ display_title }}">
         </div>
         <div class="tile-body">
-          <h3 class="tile-title">{{ t.title }}</h3>
-          <p class="tile-desc">{{ t.desc }}</p>
+          <h3 class="tile-title">{{ display_title }}</h3>
+          <p class="tile-desc">{{ display_desc }}</p>
         </div>
       </article>
     </a>

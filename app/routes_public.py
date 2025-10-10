@@ -202,53 +202,106 @@ def _public_load_pages():
     return [p for p in merged.values() if (p.get("status") != "hidden")]
 # === END: Public Pages loader ===
 
+# ------------------------------------------------------
+# Simple in-memory cache for homepage tiles per language
+# ------------------------------------------------------
+from time import time
+
+_tiles_cache = {"es": None, "en": None}
+_tiles_cache_time = {"es": 0, "en": 0}
+_CACHE_TTL = 60 * 5  # 5 minutes
+
+def _get_cached_tiles(lang):
+    """Return cached tiles for lang if still valid."""
+    now = time()
+    if _tiles_cache[lang] and (now - _tiles_cache_time[lang]) < _CACHE_TTL:
+        return _tiles_cache[lang]
+    return None
+
+def _set_cached_tiles(lang, tiles):
+    """Store tiles in cache for lang."""
+    _tiles_cache[lang] = tiles
+    _tiles_cache_time[lang] = time()
+
 @bp.route("/")
 def index():
     """
     Home page: load tiles from data/pages/home_tiles.json (if present),
     normalize fields to match the template, and pass them in.
-    If the file is missing/empty, we do NOT pass `tiles` so the template's
-    fallback (local_tiles) renders instead.
+    Uses a small per-language in-memory cache that auto-invalidates when
+    the JSON file changes (based on its mtime).
     """
+    from flask import g
+
+    # --- per-lang cache (created once) ---
+    cache = globals().setdefault("_HOMEPAGE_TILES_CACHE", {"es": {"tiles": None, "mtime": -1}, "en": {"tiles": None, "mtime": -1}})
+    lang = getattr(g, "lang", "es") if getattr(g, "lang", "es") in ("es", "en") else "es"
+
+    # Paths
     tiles = []
     try:
         base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-        tiles_path = os.path.join(base_dir, "data", "pages", "home_tiles.json")  # <-- fixed path
-        if os.path.exists(tiles_path):
-            with open(tiles_path, "r", encoding="utf-8") as f:
-                raw = json.load(f) or []
-                if isinstance(raw, list):
-                    normd = []
-                    for t in raw:
-                        if not isinstance(t, dict):
-                            continue
-                        # Only enabled tiles (default True)
-                        if not t.get("enabled", True):
-                            continue
+        tiles_path = os.path.join(base_dir, "data", "pages", "home_tiles.json")
 
-                        title = t.get("title") or ""
-                        desc  = t.get("subtitle") or t.get("description") or t.get("desc") or ""
-                        href  = t.get("href") or t.get("link") or "#"
+        # If file exists, consider cache
+        current_mtime = os.path.getmtime(tiles_path) if os.path.exists(tiles_path) else -1
 
-                        # Image: prefer image_url, then image; strip leading /static/ if present
-                        img = (t.get("image_url") or t.get("image") or "").strip()
-                        if img.startswith("/static/"):
-                            img = img[len("/static/"):]
-                        elif img.startswith("static/"):
-                            img = img[len("static/"):]
-                        # At this point `img` should be relative to /static so the template’s
-                        # url_for('static', filename=img) works (e.g., assets/tiles/foo.jpg)
+        # Serve from cache if valid
+        if current_mtime >= 0 and cache.get(lang, {}).get("tiles") is not None and cache[lang].get("mtime") == current_mtime:
+            tiles = cache[lang]["tiles"]
+        else:
+            # (Re)load from disk
+            loaded_tiles = []
+            if os.path.exists(tiles_path):
+                with open(tiles_path, "r", encoding="utf-8") as f:
+                    raw = json.load(f) or []
+                    if isinstance(raw, list):
+                        normd = []
+                        for t in raw:
+                            if not isinstance(t, dict):
+                                continue
+                            # Only enabled tiles (default True)
+                            if not t.get("enabled", True):
+                                continue
 
-                        normd.append({
-                            "title": title,
-                            "desc": desc,
-                            "href": href,
-                            "image": img,
-                            "enabled": True,
-                            "order": int(t.get("order", 9999)) if str(t.get("order", "")).isdigit() else 9999
-                        })
+                            # --- Pull both ES + EN fields ---
+                            title_es = t.get("title") or ""
+                            desc_es  = t.get("subtitle") or t.get("description") or t.get("desc") or ""
+                            title_en = t.get("title_en") or ""
+                            desc_en  = t.get("subtitle_en") or t.get("description_en") or ""
 
-                    tiles = sorted(normd, key=lambda x: x.get("order", 9999))
+                            href = t.get("href") or t.get("link") or "#"
+
+                            # Image normalization → store path relative to /static
+                            img = (t.get("image_url") or t.get("image") or "").strip()
+                            if img.startswith("/static/"):
+                                img = img[len("/static/"):]
+                            elif img.startswith("static/"):
+                                img = img[len("static/"):]
+
+                            normd.append({
+                                "title": title_es,
+                                "desc": desc_es,
+                                "title_en": title_en,
+                                "desc_en": desc_en,
+                                "href": href,
+                                "image": img,
+                                "enabled": True,
+                                "order": int(t.get("order", 9999)) if str(t.get("order", "")).isdigit() else 9999
+                            })
+
+                        loaded_tiles = sorted(normd, key=lambda x: x.get("order", 9999))
+
+            tiles = loaded_tiles
+
+            # Update cache for this lang (also when empty list)
+            if current_mtime >= 0:
+                cache[lang] = {"tiles": tiles, "mtime": current_mtime}
+            else:
+                # no file → invalidate cache for both langs
+                cache["es"] = {"tiles": None, "mtime": -1}
+                cache["en"] = {"tiles": None, "mtime": -1}
+
     except Exception:
         tiles = []
 
@@ -694,11 +747,47 @@ def global_search():
 @bp.route("/pages", methods=["GET"])
 def public_pages_index():
     """
-    Public list of all pages (newest first).
-    Renders a simple index with links to /pages/<slug>.
+    Public list of all pages (newest first), showing friendly Spanish-formatted
+    last updated date and tags.
     """
+    from datetime import datetime
+
+    def parse_date(s):
+        if not s:
+            return None
+        s = str(s).strip()
+        # Try ISO first (handles: 2025-10-10T11:52:31Z / with or without 'Z' / with ms)
+        try:
+            return datetime.fromisoformat(s.replace("Z", "").replace("z", ""))
+        except Exception:
+            pass
+        # Fallbacks for common formats
+        for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d"):
+            try:
+                return datetime.strptime(s, fmt)
+            except Exception:
+                continue
+        return None
+
+    def format_spanish_date(dt):
+        if not dt:
+            return ""
+        meses = {
+            1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril", 5: "Mayo", 6: "Junio",
+            7: "Julio", 8: "Agosto", 9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre"
+        }
+        return f"{dt.day} de {meses.get(dt.month, '')}, {dt.year}"
+
     pages = _public_load_pages()
+    # Sort newest-first by created_at string
     pages = sorted(pages, key=lambda p: p.get("created_at", ""), reverse=True)
+
+    # Add display_date for template use (prefer updated_at)
+    for p in pages:
+        raw = p.get("updated_at") or p.get("created_at")
+        dt = parse_date(raw)
+        p["display_date"] = format_spanish_date(dt)
+
     return render_template("public_pages_index.html", pages=pages)
 
 @bp.route("/exercises/test")
