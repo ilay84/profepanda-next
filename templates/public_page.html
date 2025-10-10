@@ -12,6 +12,36 @@
   .page-content img{max-width:100%; height:auto;}
   .page-content iframe{max-width:100%; width:100%; border:0; margin:.75rem 0;}
   .divider{margin:1rem 0 1.25rem; border:0; border-top:1px solid #e5e7eb;}
+
+  /* Accordion styling for public pages */
+  .page-content details.pp-accordion {
+    border:1px solid #e5e7eb;
+    border-radius:10px;
+    background:#fff;
+    margin:.75rem 0;
+  }
+  .page-content details.pp-accordion + details.pp-accordion { margin-top:.5rem; }
+  .page-content details.pp-accordion > summary {
+    cursor:pointer;
+    list-style:none;
+    padding:.6rem .8rem;
+    font-weight:600;
+    color:#0f172a;
+    display:flex;
+    align-items:center;
+    gap:.5rem;
+  }
+  .page-content details.pp-accordion > summary::-webkit-details-marker { display:none; }
+  .page-content details.pp-accordion > summary::before {
+    content:"▸";
+    transform: translateY(1px);
+  }
+  .page-content details.pp-accordion[open] > summary::before { content:"▾"; }
+  .page-content .pp-accordion-body {
+    padding:.6rem .8rem .8rem;
+    border-top:1px solid #e5e7eb;
+    color:#334155;
+  }
 </style>
 
 <div class="page-wrap">
@@ -37,4 +67,29 @@
     {{ page.html | safe }}
   </div>
 </div>
+<script>
+  // Allow only one <details.pp-accordion> open at a time (within .page-content)
+  (function () {
+    var root = document.querySelector('.page-content');
+    if (!root) return;
+
+    function wire() {
+      var accs = root.querySelectorAll('details.pp-accordion');
+      accs.forEach(function (d) {
+        // Avoid double-wiring
+        if (d.__ppWired) return;
+        d.__ppWired = true;
+
+        d.addEventListener('toggle', function () {
+          if (!d.open) return;
+          accs.forEach(function (o) {
+            if (o !== d) o.removeAttribute('open');
+          });
+        });
+      });
+    }
+
+    wire();
+  })();
+</script>
 {% endblock %}

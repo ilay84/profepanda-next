@@ -3,13 +3,57 @@
     {
       "id": "24b62635c98c49079d10eb23e896c8d6",
       "type": "cloze",
-      "title": "Test",
-      "pinned_version": 1,
+      "title": "CLOZE Test",
+      "pinned_version": 12,
       "overrides": {},
       "versions": [
         {
           "version": 1,
           "path": "data/exercises/cloze/test/001.json"
+        },
+        {
+          "version": 2,
+          "path": "data/exercises/cloze/test/002.json"
+        },
+        {
+          "version": 3,
+          "path": "data/exercises/cloze/test/003.json"
+        },
+        {
+          "version": 4,
+          "path": "data/exercises/cloze/test/004.json"
+        },
+        {
+          "version": 5,
+          "path": "data/exercises/cloze/test/005.json"
+        },
+        {
+          "version": 6,
+          "path": "data/exercises/cloze/test/006.json"
+        },
+        {
+          "version": 7,
+          "path": "data/exercises/cloze/test/007.json"
+        },
+        {
+          "version": 8,
+          "path": "data/exercises/cloze/cloze-test/008.json"
+        },
+        {
+          "version": 9,
+          "path": "data/exercises/cloze/cloze-test/009.json"
+        },
+        {
+          "version": 10,
+          "path": "data/exercises/cloze/cloze-test/010.json"
+        },
+        {
+          "version": 11,
+          "path": "data/exercises/cloze/cloze-test/011.json"
+        },
+        {
+          "version": 12,
+          "path": "data/exercises/cloze/cloze-test/012.json"
         }
       ]
     },
@@ -17,12 +61,152 @@
       "id": "166ce18b2ac341b99f507ae5237b39ee",
       "type": "mcq",
       "title": "MCQ test",
-      "pinned_version": 1,
+      "pinned_version": 4,
       "overrides": {},
       "versions": [
         {
           "version": 1,
           "path": "data/exercises/mcq/mcq-test/001.json"
+        },
+        {
+          "version": 2,
+          "path": "data/exercises/mcq/mcq-test/002.json"
+        },
+        {
+          "version": 3,
+          "path": "data/exercises/mcq/mcq-test/003.json"
+        },
+        {
+          "version": 4,
+          "path": "data/exercises/mcq/mcq-test/004.json"
+        }
+      ]
+    },
+    {
+      "id": "d83db7d5efbb4f02bccea1d072b15d43",
+      "type": "dnd_text",
+      "title": "Ser y Estar (funciones)",
+      "pinned_version": 1,
+      "overrides": {},
+      "versions": [
+        {
+          "version": 1,
+          "path": "data/exercises/dnd-text/ser-y-estar-funciones/001.json"
+        }
+      ]
+    },
+    {
+      "id": "03c047acb8264551829cf3ce7cb2c05a",
+      "type": "dnd_text",
+      "title": "DND test",
+      "pinned_version": 18,
+      "overrides": {},
+      "versions": [
+        {
+          "version": 1,
+          "path": "data/exercises/dnd-text/dnd-test/001.json"
+        },
+        {
+          "version": 2,
+          "path": "data/exercises/dnd-text/dnd-test/002.json"
+        },
+        {
+          "version": 3,
+          "path": "data/exercises/dnd-text/dnd-test/003.json"
+        },
+        {
+          "version": 4,
+          "path": "data/exercises/dnd-text/dnd-test/004.json"
+        },
+        {
+          "version": 5,
+          "path": "data/exercises/dnd-text/dnd-test/005.json"
+        },
+        {
+          "version": 6,
+          "path": "data/exercises/dnd-text/dnd-test/006.json"
+        },
+        {
+          "version": 7,
+          "path": "data/exercises/dnd-text/dnd-test/007.json"
+        },
+        {
+          "version": 8,
+          "path": "data/exercises/dnd-text/dnd-test/008.json"
+        },
+        {
+          "version": 9,
+          "path": "data/exercises/dnd-text/dnd-test/009.json"
+        },
+        {
+          "version": 10,
+          "path": "data/exercises/dnd-text/dnd-test/010.json"
+        },
+        {
+          "version": 11,
+          "path": "data/exercises/dnd-text/dnd-test/011.json"
+        },
+        {
+          "version": 12,
+          "path": "data/exercises/dnd-text/dnd-test/012.json"
+        },
+        {
+          "version": 13,
+          "path": "data/exercises/dnd-text/dnd-test/013.json"
+        },
+        {
+          "version": 14,
+          "path": "data/exercises/dnd-text/dnd-test/014.json"
+        },
+        {
+          "version": 15,
+          "path": "data/exercises/dnd-text/dnd-test/015.json"
+        },
+        {
+          "version": 16,
+          "path": "data/exercises/dnd-text/dnd-test/016.json"
+        },
+        {
+          "version": 17,
+          "path": "data/exercises/dnd-text/dnd-test/017.json"
+        },
+        {
+          "version": 18,
+          "path": "data/exercises/dnd-text/dnd-test/018.json"
+        }
+      ]
+    },
+    {
+      "id": "fdc80fa894c344cb8fd3885a94a86d38",
+      "type": "tf",
+      "title": "TF test",
+      "pinned_version": 1,
+      "overrides": {},
+      "versions": [
+        {
+          "version": 1,
+          "path": "data/exercises/tf/tf-test/001.json"
+        }
+      ]
+    },
+    {
+      "id": "1206073174fe4ca59c4d83bb1de5d03c",
+      "type": "dictation",
+      "title": "DICTADO test",
+      "pinned_version": 3,
+      "overrides": {},
+      "versions": [
+        {
+          "version": 1,
+          "path": "data/exercises/dictation/dictado-test/001.json"
+        },
+        {
+          "version": 2,
+          "path": "data/exercises/dictation/dictado-test/002.json"
+        },
+        {
+          "version": 3,
+          "path": "data/exercises/dictation/dictado-test/003.json"
         }
       ]
     }

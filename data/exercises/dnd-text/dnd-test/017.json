@@ -1,0 +1,58 @@
+{
+  "id": "03c047acb8264551829cf3ce7cb2c05a",
+  "type": "dnd_text",
+  "title": "DND test",
+  "media": {
+    "image": "/static/exercises/media/dnd-text/dnd-test/global_image.jpg"
+  },
+  "version": 17,
+  "created_at": "2025-10-09T18:04:47Z",
+  "instructions": "¿Qué ítems van con <b>SER</b> y cuáles van con <b>ESTAR</b>?",
+  "columns": [
+    {
+      "id": "ser",
+      "label": "Ser"
+    },
+    {
+      "id": "estar",
+      "label": "Estar"
+    }
+  ],
+  "items": [
+    {
+      "id": "i1",
+      "text": "material",
+      "correct_column": "ser",
+      "feedback_correct": "¡Eso! El material de algo describe la esencia de algo.",
+      "feedback_incorrect": "¡Ups! El material no describe la situación sino la esencia de algo.",
+      "media": {
+        "youtube_url": null,
+        "image_alt": null,
+        "image": null,
+        "audio": null,
+        "video": null
+      }
+    },
+    {
+      "id": "i2",
+      "text": "ubicación del gato",
+      "correct_column": "estar",
+      "feedback_correct": "¡Eso! La ubicación del gato es situacional.",
+      "feedback_incorrect": "¡Ups! La ubicación del gato es situacional, no tienen nada que ver con su esencia.",
+      "media": {
+        "youtube_url": null,
+        "image_alt": null,
+        "image": null,
+        "audio": null,
+        "video": null
+      }
+    }
+  ],
+  "settings": {
+    "shuffle_items": false,
+    "allow_partial_submit": false,
+    "show_hints": true,
+    "max_columns": 6
+  },
+  "meta": {}
+}

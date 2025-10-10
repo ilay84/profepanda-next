@@ -1,0 +1,48 @@
+{
+  "id": "166ce18b2ac341b99f507ae5237b39ee",
+  "type": "mcq",
+  "title": "MCQ test",
+  "media": null,
+  "version": 2,
+  "created_at": "2025-10-09T12:46:35Z",
+  "instructions": null,
+  "columns": {},
+  "items": [
+    {
+      "prompt": "¿Cómo se llama mi pareja?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Rodrigo",
+          "feedback": "No, no soy gay."
+        },
+        {
+          "key": "B",
+          "text": "Romina",
+          "feedback": "¡Sí, es ella!"
+        },
+        {
+          "key": "C",
+          "text": "Pau",
+          "feedback": "Ni conozco a ninguna Pau."
+        },
+        {
+          "key": "D",
+          "text": "Botis",
+          "feedback": "No, botis es una IA."
+        }
+      ],
+      "answer": "B",
+      "hint": null,
+      "media": {
+        "youtube_url": null,
+        "image_alt": null,
+        "image": "/static/exercises/media/mcq/mcq-test/q0_image.png",
+        "audio": null,
+        "video": null
+      }
+    }
+  ],
+  "settings": {},
+  "meta": {}
+}

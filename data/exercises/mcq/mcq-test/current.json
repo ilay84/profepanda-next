@@ -2,9 +2,11 @@
   "id": "166ce18b2ac341b99f507ae5237b39ee",
   "type": "mcq",
   "title": "MCQ test",
-  "version": 1,
-  "created_at": "2025-10-07T14:11:44Z",
+  "media": null,
+  "version": 4,
+  "created_at": "2025-10-09T13:03:28Z",
   "instructions": null,
+  "columns": {},
   "items": [
     {
       "prompt": "¿Cómo se llama mi pareja?",
@@ -31,17 +33,16 @@
         }
       ],
       "answer": "B",
-      "feedback_correct": null,
-      "feedback_incorrect": null,
       "hint": null,
       "media": {
         "youtube_url": null,
         "image_alt": null,
-        "image": null,
+        "image": "/static/exercises/media/mcq/mcq-test/q0_image.jpg",
         "audio": null,
         "video": null
       }
     }
   ],
+  "settings": {},
   "meta": {}
 }

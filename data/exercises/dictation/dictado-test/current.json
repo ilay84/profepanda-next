@@ -1,0 +1,30 @@
+{
+  "id": "1206073174fe4ca59c4d83bb1de5d03c",
+  "type": "dictation",
+  "title": "DICTADO test",
+  "media": null,
+  "version": 3,
+  "created_at": "2025-10-09T21:14:11Z",
+  "instructions": null,
+  "columns": [],
+  "items": [
+    {
+      "answer": "Que ganas de cagarle la vida a la familia, ¿no?",
+      "hint": "Just listen to it edoit",
+      "media": {
+        "youtube_url": null,
+        "image_alt": null,
+        "image": null,
+        "audio": "/static/exercises/media/dictation/dictado-test/q0_audio.mp3",
+        "video": null
+      }
+    }
+  ],
+  "settings": {
+    "case_sensitive": false,
+    "punctuation_sensitive": false,
+    "accent_sensitive": true,
+    "trim_user_input": true
+  },
+  "meta": {}
+}

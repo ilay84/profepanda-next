@@ -1,0 +1,40 @@
+{
+  "id": "24b62635c98c49079d10eb23e896c8d6",
+  "type": "cloze",
+  "title": "CLOZE Test",
+  "media": null,
+  "version": 8,
+  "created_at": "2025-10-09T13:08:09Z",
+  "instructions": null,
+  "columns": {},
+  "items": [
+    {
+      "prompt": "¿Cómo (estar) [[B1]] tú?",
+      "blanks": [
+        {
+          "key": "B1",
+          "answers": [
+            "estás"
+          ],
+          "case_sensitive": false,
+          "normalize_accents": true,
+          "hint": null,
+          "feedback_correct": null,
+          "feedback_incorrect": null
+        }
+      ],
+      "feedback_correct": null,
+      "feedback_incorrect": null,
+      "hint": null,
+      "media": {
+        "youtube_url": null,
+        "image_alt": null,
+        "image": "/static/exercises/media/cloze/test/q0_image.jpg",
+        "audio": null,
+        "video": null
+      }
+    }
+  ],
+  "settings": {},
+  "meta": {}
+}

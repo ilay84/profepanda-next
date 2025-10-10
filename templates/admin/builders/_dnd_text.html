@@ -1,0 +1,193 @@
+<form id="ex-dnd-form" class="tiny" action="{{ url_for('admin.admin_exercises_save') }}" method="post" enctype="multipart/form-data" style="margin-top:.25rem;">
+  <input type="hidden" name="type" value="dnd_text">
+  {% if edit_ex and edit_ex.id %}
+  <input type="hidden" name="id" value="{{ edit_ex.id }}">
+  {% endif %}
+
+  <!-- This hidden textarea will be filled with JSON on submit (columns, items, settings) -->
+  <textarea id="itemsPayload" name="items" style="display:none;"></textarea>
+
+  <div style="display:flex;flex-direction:column;gap:.75rem;max-width:900px;">
+    <label><strong>Título del ejercicio</strong>
+      <input name="title" type="text" required placeholder="Ej.: SER vs ESTAR — Arrastrar y soltar (A2)"
+             style="width:100%;padding:.6rem;border:1px solid #cbd5e1;border-radius:8px;">
+    </label>
+
+    <!-- Optional instructions (HTML allowed like other types) -->
+    <label><strong>Instrucciones (opcional)</strong>
+      <textarea name="instructions" rows="3" placeholder="Ej.: Arrastrá cada oración a la columna correcta."
+                style="width:100%;padding:.6rem;border:1px solid #cbd5e1;border-radius:8px;"></textarea>
+    </label>
+
+    <!-- Media (opcional) — global, CLOZE-style header & controls -->
+    <div class="ex-panel" id="dnd-media-panel" style="border:1px dashed #cbd5e1;border-radius:12px;background:#f8fafc;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.5rem .75rem;">
+        <div class="muted" style="font-weight:700;letter-spacing:.2px;display:flex;align-items:center;gap:.4rem;">🖼️🎧 Media (opcional)</div>
+        <button type="button" id="dnd-media-toggle" class="btn tiny" style="padding:.3rem .55rem;border-radius:999px;">+ Agregar media</button>
+      </div>
+
+      <!-- Hidden until toggled -->
+      <div id="dnd-media-box" style="display:none;border-top:1px dashed #d1d5db;margin-top:.25rem;padding:.6rem .75rem;background:#fff;border-bottom-left-radius:12px;border-bottom-right-radius:12px;">
+
+        <!-- Row 1: Imagen + Alt -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;align-items:start;">
+          <div style="display:flex;flex-direction:column;gap:.35rem;">
+            <label class="tiny muted">📷 Imagen</label>
+            <div class="row" style="gap:.5rem;flex-wrap:wrap;align-items:center;">
+              <label class="btn tiny" style="padding:.35rem .65rem;background:#f8fafc;color:#0f172a;border:1px solid #cbd5e1;border-radius:8px;cursor:pointer;">
+                Elegir archivo
+                <input id="dnd-media-image" type="file" name="media_image" accept="image/*" style="display:none;">
+              </label>
+              <span id="dnd-media-image-name" class="tiny muted"></span>
+              <button type="button" id="dnd-media-image-clear" class="btn tiny" style="padding:.25rem .5rem;">Quitar</button>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:.35rem;">
+            <label class="tiny muted">🔤 Alt text (para lectores de pantalla)</label>
+            <input type="text" name="media_image_alt" placeholder="Breve descripción de la imagen"
+                   value="{{ (edit_ex.media.image_alt if edit_ex and edit_ex.media and edit_ex.media.image_alt) or '' }}"
+                   style="width:100%;padding:.45rem .55rem;border:1px solid #cbd5e1;border-radius:8px;">
+          </div>
+        </div>
+
+        <!-- Row 2: Audio -->
+        <div style="display:flex;flex-direction:column;gap:.35rem;margin-top:.5rem;">
+          <label class="tiny muted">🎤 Audio</label>
+          <div class="row" style="gap:.5rem;flex-wrap:wrap;align-items:center;">
+            <label class="btn tiny" style="padding:.35rem .65rem;background:#f8fafc;color:#0f172a;border:1px solid #cbd5e1;border-radius:8px;cursor:pointer;">
+              Elegir archivo
+              <input id="dnd-media-audio" type="file" name="media_audio" accept="audio/*" style="display:none;">
+            </label>
+            <span id="dnd-media-audio-name" class="tiny muted"></span>
+            <button type="button" id="dnd-media-audio-clear" class="btn tiny" style="padding:.25rem .5rem;">Quitar</button>
+          </div>
+        </div>
+
+        <!-- Row 3: Video + YouTube -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;align-items:start;margin-top:.5rem;">
+          <div style="display:flex;flex-direction:column;gap:.35rem;">
+            <label class="tiny muted">🎬 Video (archivo)</label>
+            <div class="row" style="gap:.5rem;flex-wrap:wrap;align-items:center;">
+              <label class="btn tiny" style="padding:.35rem .65rem;background:#f8fafc;color:#0f172a;border:1px solid #cbd5e1;border-radius:8px;cursor:pointer;">
+                Elegir archivo
+                <input id="dnd-media-video" type="file" name="media_video" accept="video/*" style="display:none;">
+              </label>
+              <span id="dnd-media-video-name" class="tiny muted"></span>
+              <button type="button" id="dnd-media-video-clear" class="btn tiny" style="padding:.25rem .5rem;">Quitar</button>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:.35rem;">
+            <label class="tiny muted">🔗 YouTube URL</label>
+            <div class="row" style="gap:.5rem;align-items:center;">
+              <input id="dnd-media-youtube" type="url" name="media_youtube_url" placeholder="https://www.youtube.com/watch?v=…"
+                     value="{{ (edit_ex.media.youtube_url if edit_ex and edit_ex.media and edit_ex.media.youtube_url) or '' }}"
+                     style="flex:1;padding:.45rem .55rem;border:1px solid #cbd5e1;border-radius:8px;">
+              <button type="button" id="dnd-media-youtube-clear" class="btn tiny" style="padding:.25rem .5rem;white-space:nowrap;">Borrar</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="tiny muted" style="margin-top:.5rem;">Formatos soportados: JPG/PNG, MP3, MP4. Podés arrastrar archivos a esta caja.</div>
+      </div>
+    </div>
+
+    <!-- Columns editor -->
+    <div class="ex-panel">
+      <header style="padding:.5rem 1rem;border-bottom:1px solid #e5e7eb;background:#f8fafc;">
+        <strong>Columnas</strong>
+      </header>
+      <div style="padding: .75rem 1rem;">
+        <p class="muted tiny" style="margin-top:0;">Agregá 2 a 6 columnas (ej.: SER, ESTAR). El <code>id</code> se genera automáticamente.</p>
+        <div id="columnsList" style="display:flex;flex-direction:column;gap:.5rem;margin-top:.5rem;"></div>
+        <div class="row" style="margin-top:.5rem;justify-content:flex-end;">
+          <button type="button" id="btnAddColumn" class="btn">+ Agregar columna</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Items editor -->
+    <div class="ex-panel">
+      <header style="padding:.5rem 1rem;border-bottom:1px solid #e5e7eb;background:#f8fafc;">
+        <strong>Ítems (arrastrables)</strong>
+      </header>
+      <div style="padding: .75rem 1rem;">
+        <p class="muted tiny" style="margin-top:0;">Cada ítem pertenece a una sola columna correcta.</p>
+        <!-- Where DnD items will be rendered by builder_dnd_text.js -->
+        <div id="itemsList" style="display:flex;flex-direction:column;gap:.75rem;margin-top:.75rem;"></div>
+
+        <div class="row" style="margin-top:.5rem;justify-content:flex-end;">
+          <button type="button" id="btnAddItem" class="btn">+ Agregar ítem</button>
+        </div>
+    </div>
+    </div>
+
+    <!-- Settings -->
+    <div class="ex-panel">
+      <header style="padding:.5rem 1rem;border-bottom:1px solid #e5e7eb;background:#f8fafc;">
+        <strong>Configuración</strong>
+      </header>
+      <div style="padding: .75rem 1rem;display:flex;flex-direction:column;gap:.5rem;">
+        <label class="row" style="gap:.5rem;align-items:center;">
+          <input type="checkbox" id="setShuffle"> <span>Mezclar ítems al iniciar</span>
+        </label>
+        <label class="row" style="gap:.5rem;align-items:center;">
+          <input type="checkbox" id="setPartial"> <span>Permitir enviar con ítems sin ubicar</span>
+        </label>
+        <label class="row" style="gap:.5rem;align-items:center;">
+          <input type="checkbox" id="setHints" checked> <span>Mostrar botón de pistas (si existen)</span>
+        </label>
+        <label><span class="muted tiny">Máximo recomendado de columnas (2–6)</span>
+          <input type="number" id="setMaxCols" min="2" max="12" value="6"
+                 style="width:120px;padding:.4rem;border:1px solid #cbd5e1;border-radius:8px;margin-left:.5rem;">
+        </label>
+      </div>
+    </div>
+
+    <div class="row">
+      <button class="btn btn-primary" type="submit">Guardar versión</button>
+      <button class="btn btn-secondary" type="button" id="btnCancel">Cancelar</button>
+      <span class="tiny muted">Se guardará en <code>data/exercises/&lt;slug&gt;</code> y se actualizará <code>exercises.index.json</code>.</span>
+    </div>
+  </div>
+</form>
+
+<script>
+  // Collapse/expand + clear buttons (same behavior as TF/MCQ/FIB)
+  (function(){
+    const btn = document.getElementById('dnd-media-toggle');
+    const box = document.getElementById('dnd-media-box');
+    if (!btn || !box) return;
+
+    // Start collapsed to match other builders
+    box.style.display = 'none';
+    btn.textContent = '+ Agregar media';
+    btn.setAttribute('aria-expanded', 'false');
+
+    // If editing and there is any existing media, open by default
+    {% if edit_ex and edit_ex.media and (edit_ex.media.image or edit_ex.media.audio or edit_ex.media.video or edit_ex.media.youtube_url) %}
+      box.style.display = 'block';
+      btn.textContent = '– Ocultar media';
+      btn.setAttribute('aria-expanded', 'true');
+    {% endif %}
+
+    btn.addEventListener('click', () => {
+      const open = (box.style.display !== 'none');
+      box.style.display = open ? 'none' : 'block';
+      btn.textContent = open ? '+ Agregar media' : '– Ocultar media';
+      btn.setAttribute('aria-expanded', String(!open));
+    });
+
+    // Clear buttons
+    const q = s => document.querySelector(s);
+    const clear = (id, sel) => {
+      const b = document.getElementById(id), el = q(sel);
+      if (!b || !el) return;
+      b.addEventListener('click', () => { el.value = ''; });
+    };
+    clear('dnd-media-image-clear',   'input[name="media_image"]');
+    clear('dnd-media-audio-clear',   'input[name="media_audio"]');
+    clear('dnd-media-video-clear',   'input[name="media_video"]');
+    clear('dnd-media-youtube-clear', 'input[name="media_youtube_url"]');
+  })();
+</script>

@@ -1,0 +1,74 @@
+{# templates/admin/builders/_dictation.html #}
+<form id="ex-dictation-form"
+      class="tiny"
+      action="{{ url_for('admin.admin_exercises_save') }}"
+      method="post"
+      enctype="multipart/form-data"
+      style="margin-top:.25rem;">
+
+  <input type="hidden" name="type" value="dictation">
+  {% if edit_ex and edit_ex.id %}
+    <input type="hidden" name="id" value="{{ edit_ex.id }}">
+  {% endif %}
+  <!-- Will be filled with JSON on submit by builder_dictation.js -->
+  <textarea id="dictationItemsPayload" name="items" style="display:none;"></textarea>
+
+  <div style="display:flex;flex-direction:column;gap:.75rem;max-width:900px;">
+
+    <label><strong>Título del ejercicio</strong>
+      <input name="title" type="text" required placeholder="Ej.: Dictado — A2"
+             style="width:100%;padding:.6rem;border:1px solid #cbd5e1;border-radius:8px;">
+    </label>
+
+    <!-- Instrucciones (opcional) -->
+    <label><strong>Instrucciones (opcional)</strong>
+      <textarea name="instructions" rows="3" placeholder="Ej.: Escuchá cada clip y escribí exactamente lo que escuches."
+                style="width:100%;padding:.6rem;border:1px solid #cbd5e1;border-radius:8px;"></textarea>
+    </label>
+
+    <!-- Ajustes del ejercicio -->
+    <div class="ex-panel">
+      <header class="row" style="padding:.5rem 1rem;border-bottom:1px solid #e5e7eb;background:#f8fafc;">
+        <div class="muted" style="font-weight:600;">Ajustes</div>
+      </header>
+      <div style="display:flex;flex-direction:column;gap:.5rem;padding:1rem;">
+        <label class="row" style="gap:.5rem;align-items:center;">
+          <input type="checkbox" id="optCaseSensitive">
+          <span>Sensible a mayúsculas/minúsculas</span>
+        </label>
+        <label class="row" style="gap:.5rem;align-items:center;">
+          <input type="checkbox" id="optPunctSensitive">
+          <span>Sensible a puntuación</span>
+        </label>
+        <label class="row" style="gap:.5rem;align-items:center;">
+          <input type="checkbox" id="optAccentSensitive">
+          <span>Sensible a acentos</span>
+        </label>
+        <div class="tiny muted">Si no marcás una opción, el verificador ignora esa diferencia (p. ej., acentos o puntuación).</div>
+      </div>
+    </div>
+
+    <!-- Ítems (un clip de media + una respuesta por slide) -->
+    <div class="ex-panel">
+      <header class="row" style="padding:.5rem 1rem;border-bottom:1px solid #e5e7eb;background:#f8fafc;">
+        <div class="muted" style="font-weight:600;">Ítems</div>
+      </header>
+
+      <div id="dictationItemsList"
+           style="display:flex;flex-direction:column;gap:.75rem;padding:1rem;"></div>
+
+      <div class="row" style="margin:.5rem 1rem 1rem;justify-content:flex-end;">
+        <button type="button" id="btnAddDictationItem" class="btn">+ Agregar ítem</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <button class="btn btn-primary" type="submit">Guardar versión</button>
+      <button class="btn btn-secondary" type="button" id="btnCancelDictation">Cancelar</button>
+      <span class="tiny muted">Se guardará en <code>data/exercises/&lt;slug&gt;/</code> y se actualizará <code>exercises.index.json</code>.</span>
+    </div>
+  </div>
+</form>
+
+<script>window.PP_DICT_EDIT_EX = {{ edit_ex|tojson|safe if edit_ex else 'null' }};</script>
+<script src="{{ url_for('static', filename='js/admin/builder_dictation.js') }}"></script>

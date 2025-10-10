@@ -233,6 +233,7 @@
                   {% elif ex.type == 'mcq' %}Respuesta múltiple
                   {% elif ex.type == 'cloze' %}Llenar los huecos
                   {% elif ex.type == 'dnd_text' %}Arrastrar y soltar (texto)
+                  {% elif ex.type == 'dictation' %}Dictado
                   {% else %}{{ ex.type|upper }}{% endif %}
                 </span>
                 <div class="pill-row">
@@ -267,6 +268,7 @@
       <a class="btn" href="{{ url_for('admin.admin_exercises_new') }}?type=mcq">+ Respuesta múltiple</a>
       <a class="btn" href="{{ url_for('admin.admin_exercises_new') }}?type=cloze">+ Llenar los huecos</a>
       <a class="btn" href="{{ url_for('admin.admin_exercises_new') }}?type=dnd_text">+ Arrastrar y soltar (texto)</a>
+      <a class="btn" href="{{ url_for('admin.admin_exercises_new') }}?type=dictation">+ Dictado</a>
     </div>
     <div class="ex-body">
       <hr style="margin:1rem 0;border:none;border-top:1px solid #e5e7eb;">
@@ -311,6 +313,24 @@
             window.PP_ADMIN_LIBRARY_URL = "{{ url_for('admin.admin_exercises_library') }}";
           </script>
           <script defer src="{{ url_for('static', filename='js/admin/builder_cloze.js') }}?v=ex1"></script>
+
+        {% elif create_type == 'dnd_text' %}
+          {% include 'admin/builders/_dnd_text.html' %}
+          <script>
+            // Safe JS/Jinja bridge
+            window.PP_DND_EDIT_EX = {{ edit_ex|tojson|safe if edit_ex else "null" }};
+            window.PP_ADMIN_LIBRARY_URL = "{{ url_for('admin.admin_exercises_library') }}";
+          </script>
+          <script defer src="{{ url_for('static', filename='js/admin/builder_dnd_text.js') }}?v=ex2"></script>
+
+        {% elif create_type == 'dictation' %}
+          {% include 'admin/builders/_dictation.html' %}
+          <script>
+            // Safe JS/Jinja bridge
+            window.PP_DICT_EDIT_EX = {{ edit_ex|tojson|safe if edit_ex else "null" }};
+            window.PP_ADMIN_LIBRARY_URL = "{{ url_for('admin.admin_exercises_library') }}";
+          </script>
+          <script defer src="{{ url_for('static', filename='js/admin/buildier_dictation.js') }}?v=ex5"></script>
 
         {% else %}
           <p class="muted">

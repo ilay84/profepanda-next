@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, jsonify, send_from_directory
+from flask import Blueprint, render_template, request, jsonify, send_from_directory, redirect, url_for
 import os
 import json
 import uuid
@@ -849,17 +849,177 @@ def admin_pages_new():
     # We'll create this template next: templates/admin_pages_new.html
     return render_template("admin_pages_new.html")
 
+@bp.route("/pages/<slug>/edit", methods=["GET"])
+def admin_pages_edit(slug):
+    """
+    Lightweight redirect so we can reuse the 'New Page' editor UI.
+    The editor will detect ?slug=... and prefill fields.
+    """
+    return redirect(f"/admin/pages/new?slug={slug}")
+
+
+@bp.route("/pages/<slug>.json", methods=["GET"])
+def admin_pages_get(slug):
+    """
+    Return a single page object as JSON for the editor prefill.
+    Prefers foldered file at data/pages/<slug>/page.json,
+    falls back to the flat index (data/pages/pages.json).
+    """
+    try:
+        # 1) Try foldered structure first: data/pages/<slug>/page.json
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+        folder = os.path.join(project_root, "data", "pages", slug)
+        page_json_path = os.path.join(folder, "page.json")
+
+        if os.path.exists(page_json_path):
+            with open(page_json_path, "r", encoding="utf-8") as f:
+                obj = json.load(f)
+            return jsonify({"success": True, "page": obj})
+
+        # 2) Fallback: search the flat list
+        pages = _load_pages()  # existing helper that reads data/pages/pages.json
+        for p in pages:
+            if (p.get("slug") or "").strip().lower() == slug.strip().lower():
+                return jsonify({"success": True, "page": p})
+
+        return jsonify({"success": False, "error": "Page not found."}), 404
+
+    except Exception as e:
+        return jsonify({"success": False, "error": f"Failed to read page: {e}"}), 500
+
+
+@bp.route("/pages/<slug>/update", methods=["POST"])
+def admin_pages_update(slug):
+    """
+    Update an existing page identified by slug.
+    - Keeps slug (URL) stable even if title changes.
+    - Updates both foldered file: data/pages/<slug>/page.json
+      and the flat index:   data/pages/pages.json
+    """
+    from datetime import datetime
+
+    try:
+        title = (request.form.get("title") or "").strip()
+        html = (request.form.get("html") or "").strip()
+        tags_raw = (request.form.get("tags") or "").strip()
+
+        if not title or not html:
+            return jsonify({"success": False, "error": "Both 'title' and 'html' are required."}), 400
+
+        tags = [t.strip() for t in tags_raw.split(",") if t.strip()] if tags_raw else []
+
+        # Load current page (foldered preferred, else from flat)
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+        folder = os.path.join(project_root, "data", "pages", slug)
+        page_json_path = os.path.join(folder, "page.json")
+
+        current = None
+        if os.path.exists(page_json_path):
+            with open(page_json_path, "r", encoding="utf-8") as f:
+                current = json.load(f)
+        else:
+            pages_flat = _load_pages()
+            for p in pages_flat:
+                if (p.get("slug") or "").strip().lower() == slug.strip().lower():
+                    current = p
+                    break
+
+        if not current:
+            return jsonify({"success": False, "error": "Page not found."}), 404
+
+        # Update fields
+        current["title"] = title
+        current["html"] = html
+        current["tags"] = tags
+        current["updated_at"] = datetime.utcnow().isoformat(timespec="seconds") + "Z"
+        current.setdefault("id", slug)
+        current.setdefault("slug", slug)
+        current.setdefault("status", "published")
+
+        # Ensure folder exists and write foldered JSON
+        os.makedirs(folder, exist_ok=True)
+        with open(page_json_path, "w", encoding="utf-8") as f:
+            json.dump(current, f, ensure_ascii=False, indent=2)
+
+        # Also update the flat index
+        pages = _load_pages()
+        idx = next((i for i, p in enumerate(pages)
+                    if (p.get("slug") or "").strip().lower() == slug.strip().lower()), -1)
+        if idx == -1:
+            # Not in flat list yet → append (keeps legacy views working)
+            pages.append(current)
+        else:
+            pages[idx] = current
+        _save_pages(pages)
+
+        return jsonify({"success": True, "page": current})
+
+    except Exception as e:
+        return jsonify({"success": False, "error": f"Failed to update page: {e}"}), 500
+
+@bp.route("/pages/<slug>/toggle_status", methods=["POST"])
+def admin_pages_toggle_status(slug):
+    """
+    Toggle a page's public visibility between 'published' and 'hidden'.
+    Updates both:
+      - data/pages/<slug>/page.json   (foldered, if present)
+      - data/pages/pages.json          (flat index)
+    Returns JSON: { success, page }
+    """
+    try:
+        # Prefer foldered page first
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+        folder = os.path.join(project_root, "data", "pages", slug)
+        page_json_path = os.path.join(folder, "page.json")
+
+        current = None
+        if os.path.exists(page_json_path):
+            with open(page_json_path, "r", encoding="utf-8") as f:
+                current = json.load(f)
+        else:
+            # Fallback: flat list
+            pages_flat = _load_pages()
+            for p in pages_flat:
+                if (p.get("slug") or "").strip().lower() == slug.strip().lower():
+                    current = p
+                    break
+
+        if not current:
+            return jsonify({"success": False, "error": "Page not found."}), 404
+
+        # Flip status
+        new_status = "hidden" if current.get("status") != "hidden" else "published"
+        current["status"] = new_status
+
+        # Ensure folder exists & write foldered JSON
+        os.makedirs(folder, exist_ok=True)
+        with open(page_json_path, "w", encoding="utf-8") as f:
+            json.dump(current, f, ensure_ascii=False, indent=2)
+
+        # Update the flat index too
+        pages = _load_pages()
+        idx = next((i for i, p in enumerate(pages)
+                    if (p.get("slug") or "").strip().lower() == slug.strip().lower()), -1)
+        if idx == -1:
+            pages.append(current)
+        else:
+            pages[idx] = current
+        _save_pages(pages)
+
+        return jsonify({"success": True, "page": current})
+    except Exception as e:
+        return jsonify({"success": False, "error": f"Failed to toggle status: {e}"}), 500
+
 @bp.route("/pages", methods=["POST"])
 def admin_pages_create():
     """
-    Create a new page.
-    Expects form fields (multipart/form-data or application/x-www-form-urlencoded):
-      - title: str (required)
-      - html: str (required) -> full HTML content from the rich text editor
-      - tags: str (optional, comma-separated: e.g., "ser/estar, beginner, A2")
-    Returns JSON.
+    Create a new page and store it BOTH in a foldered structure:
+      data/pages/<slug>/page.json
+    and in the flat index:
+      data/pages/pages.json
     """
     from datetime import datetime
+
     title = (request.form.get("title") or "").strip()
     html = (request.form.get("html") or "").strip()
     tags_raw = (request.form.get("tags") or "").strip()
@@ -869,10 +1029,11 @@ def admin_pages_create():
 
     tags = [t.strip() for t in tags_raw.split(",") if t.strip()] if tags_raw else []
 
-    pages = _load_pages()
+    # Load existing flat list (for uniqueness + index compatibility)
+    pages = _load_pages()  # writes to data/pages/pages.json via _save_pages()  :contentReference[oaicite:0]{index=0}
 
-    # Simple unique slug attempt; append suffix if conflict
-    base_slug = _slugify(title)
+    # Slug (unique)
+    base_slug = _slugify(title)  # existing helper  :contentReference[oaicite:1]{index=1}
     slug = base_slug
     existing_slugs = {p.get("slug") for p in pages}
     i = 2
@@ -880,21 +1041,35 @@ def admin_pages_create():
         slug = f"{base_slug}-{i}"
         i += 1
 
-    new_page = {
-        "id": f"{slug}",                 # simple ID = slug
+    # Build the canonical page object
+    now_iso = datetime.utcnow().isoformat(timespec="seconds") + "Z"
+    page_obj = {
+        "id": slug,                 # simple ID = slug
         "slug": slug,
         "title": title,
-        "html": html,                    # store as HTML (editor output)
-        "tags": tags,                    # list of strings
-        "created_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+        "html": html,
+        "tags": tags,               # list of strings
+        "created_at": now_iso,
         "updated_at": None,
-        "status": "published"            # future use: draft/published
+        "status": "published"
     }
 
-    pages.append(new_page)
-    _save_pages(pages)
+    # 1) Write foldered file: data/pages/<slug>/page.json
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    folder = os.path.join(project_root, "data", "pages", slug)
+    os.makedirs(folder, exist_ok=True)
+    page_json_path = os.path.join(folder, "page.json")
+    try:
+        with open(page_json_path, "w", encoding="utf-8") as f:
+            json.dump(page_obj, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        return jsonify({"success": False, "error": f"Failed to write page folder: {e}"}), 500
 
-    return jsonify({"success": True, "page": new_page})
+    # 2) Also update the flat index (data/pages/pages.json) for current readers
+    pages.append(page_obj)
+    _save_pages(pages)  # persists to data/pages/pages.json  :contentReference[oaicite:2]{index=2}
+
+    return jsonify({"success": True, "page": page_obj})
 
 @bp.route("/pages/<slug>/delete", methods=["POST"])
 def admin_pages_delete(slug):
@@ -1385,91 +1560,12 @@ def admin_exercises_preview(exercise_id):
         with open(abs_path, "r", encoding="utf-8") as f:
             payload = json.load(f)
 
-        # ---------- NEW: if ?as=player, return an embeddable HTML player ----------
-        if (request.args.get("as") or "").lower() == "player":
-            from flask import render_template_string
-            # minimal TF player (no external template needed)
-            html = r"""
-<!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8">
-  <title>{{ ex.title or 'Vista previa' }}</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    :root{--bg:#f6f8fb;--card:#fff;--muted:#64748b;--ink:#0f172a;--line:#e5e7eb;--good:#15803d;--bad:#b91c1c;}
-    html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial}
-    .wrap{padding:14px 16px}
-    .h{margin:0 0 10px;font-weight:700}
-    .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin:0 0 12px;box-shadow:0 6px 20px rgba(0,0,0,.06)}
-    .prompt{font-weight:600;margin-bottom:8px}
-    .row{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
-    .btn{appearance:none;border:1px solid var(--line);background:#fff;color:var(--ink);padding:.45rem .7rem;border-radius:10px;cursor:pointer;font-weight:600}
-    .btn:hover{background:#f8fafc}
-    .tiny{font-size:.9rem;color:var(--muted)}
-    .media{display:flex;gap:.75rem;flex-wrap:wrap;align-items:flex-start;margin-bottom:.5rem}
-    .media img{max-width:220px;border:1px solid var(--line);border-radius:8px}
-    .media video{display:block;max-width:320px;border-radius:6px}
-    .media iframe{width:320px;height:180px;border:0;border-radius:6px}
-    .fb{margin-top:.35rem}
-    .good{color:var(--good)} .bad{color:var(--bad)}
-  </style>
-</head>
-<body>
-  <div class="wrap">
-    <h3 class="h">{{ ex.title or 'Vista previa' }}</h3>
-    {% set items_list = ex['items'] or [] %}
-    {% for it in items_list %}
-      <div class="card" data-idx="{{ loop.index0 }}">
-        {% set m = (it.media or {}) %}
-        {% if m.image or m.audio or m.video or m.youtube_url %}
-          <div class="media">
-            {% if m.image %}<img src="{{ m.image }}" alt="{{ m.image_alt or '' }}">{% endif %}
-            {% if m.audio %}<audio controls src="{{ m.audio }}"></audio>{% endif %}
-            {% if m.video %}<video controls src="{{ m.video }}"></video>{% endif %}
-            {% if m.youtube_url %}
-              {% set _id = 'v=' in m.youtube_url and m.youtube_url.split('v=')[-1].split('&')[0] or m.youtube_url.rsplit('/',1)[-1] %}
-              <iframe src="https://www.youtube.com/embed/{{ _id }}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-            {% endif %}
-          </div>
-        {% endif %}
-        <div class="prompt">{{ it.prompt or '(sin enunciado)' }}</div>
-        <div class="row">
-          <button class="btn" data-a="true">Verdadero</button>
-          <button class="btn" data-a="false">Falso</button>
-          {% if it.hint %}<button class="btn" data-hint>Ver pista</button>{% endif %}
-        </div>
-        {% if it.hint %}<div class="tiny" data-hint-box style="display:none;margin-top:.35rem;">{{ it.hint }}</div>{% endif %}
-        <div class="fb tiny" data-fb></div>
-      </div>
-    {% endfor %}
-  </div>
-  <script>
-    (function(){
-      var items = {{ (payload.get("items") or [])|tojson }};
-      document.addEventListener('click', function(e){
-        var b = e.target.closest('button[data-a],button[data-hint]');
-        if(!b) return;
-        var card = b.closest('.card');
-        var idx = parseInt(card.getAttribute('data-idx')||'0',10);
-        var it = items[idx] || {};
-        if(b.hasAttribute('data-hint')){
-          var box = card.querySelector('[data-hint-box]');
-          if(box){ box.style.display = box.style.display === 'none' ? 'block' : 'none'; }
-          return;
-        }
-        var ans = b.getAttribute('data-a') === 'true';
-        var ok = (ans === !!it.answer);
-        var fb = card.querySelector('[data-fb]');
-        fb.textContent = ok ? (it.feedback_correct || '¡Correcto!') : (it.feedback_incorrect || 'No es correcto.');
-        fb.className = 'fb tiny ' + (ok ? 'good' : 'bad');
-      });
-    })();
-  </script>
-</body>
-</html>
-"""
-            return render_template_string(html, ex=payload, payload=payload)
+        # ---------- normalize DnD structure ----------
+        if payload.get("type") == "dnd_text":
+            payload.setdefault("columns", [])
+            payload.setdefault("items", [])
+            payload.setdefault("settings", {})
+
 
         # ---------- default JSON (unchanged) ----------
         return jsonify({"success": True, "exercise": payload})
@@ -1563,7 +1659,17 @@ def admin_exercises_save():
     if isinstance(instructions, str):
         instructions = instructions.strip() or None
 
-    # Normalize items to a list
+    # Normalize items / columns / settings (support DnD and other structured types)
+    columns = ensure_obj(pick("columns", {}), [])
+    settings = ensure_obj(pick("settings", {}), {})
+
+    # If client sent a structured object in "items" that includes columns/settings, unpack it.
+    if isinstance(items, dict) and ("columns" in items or "settings" in items or "items" in items):
+        columns = items.get("columns", columns) or []
+        settings = items.get("settings", settings) or {}
+        items = items.get("items", [])
+
+    # Otherwise, expect a plain list in "items"
     if not isinstance(items, list):
         items = []
 
@@ -1607,44 +1713,6 @@ def admin_exercises_save():
                 except Exception:
                     prev_items = []
 
-    if prev_items:
-        for i, it in enumerate(items):
-            if not isinstance(it, dict):
-                continue
-            m = it.get("media") if isinstance(it.get("media"), dict) else {}
-            pm = {}
-            if i < len(prev_items) and isinstance(prev_items[i], dict):
-                pm = prev_items[i].get("media") if isinstance(prev_items[i].get("media"), dict) else {}
-
-            def _apply(key):
-                new_val = m.get(key)
-                if new_val == "__DELETE__":
-                    if pm.get(key):
-                        deleted_media_paths.append(pm[key])
-                    m[key] = None
-                    return
-                if (new_val is None or new_val == "") and new_val not in ("__UPLOAD__", "__DELETE__"):
-                    if pm.get(key):
-                        m[key] = pm[key]
-
-            for _k in ("image", "audio", "video"):
-                _apply(_k)
-
-            if m.get("youtube_url") == "__DELETE__":
-                if pm.get("youtube_url"):
-                    deleted_media_paths.append(None)
-                m["youtube_url"] = None
-            elif (m.get("youtube_url") in (None, "")) and pm.get("youtube_url"):
-                m["youtube_url"] = pm["youtube_url"]
-
-            if m.get("image_alt") == "__DELETE__":
-                m["image_alt"] = None
-            elif (m.get("image_alt") in (None, "")) and pm.get("image_alt"):
-                m["image_alt"] = pm["image_alt"]
-
-            it["media"] = m
-            items[i] = it
-
     # ---------- Handle media uploads (form-data only) ----------
     if request.files:
         # Decide target folder: /static/exercises/media/<type>/<slug>/
@@ -1657,10 +1725,10 @@ def admin_exercises_save():
                 p = (existing["versions"][-1] or {}).get("path") or ""
                 parts = p.split("/")
                 if "exercises" in parts:
-                    i = parts.index("exercises")
-                    if len(parts) >= i + 3:
-                        media_type = parts[i + 1]
-                        media_slug = parts[i + 2]
+                    ixo = parts.index("exercises")
+                    if len(parts) >= ixo + 3:
+                        media_type = parts[ixo + 1]
+                        media_slug = parts[ixo + 2]
         except Exception:
             pass
 
@@ -1688,6 +1756,7 @@ def admin_exercises_save():
         raw_auds = request.files.getlist("media_audio[]")
         raw_vids = request.files.getlist("media_video[]")
 
+        # Keep index-aligned versions too (skip empties)
         img_list = [fs for fs in raw_imgs if getattr(fs, "filename", "")]
         aud_list = [fs for fs in raw_auds if getattr(fs, "filename", "")]
         vid_list = [fs for fs in raw_vids if getattr(fs, "filename", "")]
@@ -1717,6 +1786,47 @@ def admin_exercises_save():
             fs.save(abs_path)
             return f"{media_web_base}/{out_name}".replace("\\", "/")
 
+        # 1) Prefer explicit mapping by media_index[] (so edits overwrite even without "__UPLOAD__")
+        form_idx = request.form.getlist("media_index[]")  # e.g., ["0","1","2",...]
+        for n, idx_str in enumerate(form_idx):
+            try:
+                i = int(idx_str)
+            except Exception:
+                continue
+            if i < 0 or i >= len(items) or not isinstance(items[i], dict):
+                continue
+
+            it = items[i]
+            m  = it.get("media") if isinstance(it.get("media"), dict) else {}
+
+            # Image at array slot n
+            if n < len(raw_imgs) and getattr(raw_imgs[n], "filename", ""):
+                saved = _save_file(raw_imgs[n], f"q{i}_image")
+                if saved:
+                    m["image"] = saved
+
+            # Audio at slot n
+            if n < len(raw_auds) and getattr(raw_auds[n], "filename", ""):
+                saved = _save_file(raw_auds[n], f"q{i}_audio")
+                if saved:
+                    m["audio"] = saved
+
+            # Video at slot n
+            if n < len(raw_vids) and getattr(raw_vids[n], "filename", ""):
+                saved = _save_file(raw_vids[n], f"q{i}_video")
+                if saved:
+                    m["video"] = saved
+
+            it["media"] = {
+                "youtube_url": (m.get("youtube_url") or None),
+                "image_alt":   (m.get("image_alt")   or None),
+                "image":        m.get("image")       or None,
+                "audio":        m.get("audio")       or None,
+                "video":        m.get("video")       or None,
+            }
+            items[i] = it
+
+        # 2) Fallback: still honor "__UPLOAD__" placeholders for any remaining uploads
         for i, it in enumerate(items):
             if not isinstance(it, dict):
                 continue
@@ -1739,14 +1849,15 @@ def admin_exercises_save():
 
             it["media"] = {
                 "youtube_url": (m.get("youtube_url") or None),
-                "image_alt": (m.get("image_alt") or None),
-                "image": m.get("image") or None,
-                "audio": m.get("audio") or None,
-                "video": m.get("video") or None,
+                "image_alt":   (m.get("image_alt")   or None),
+                "image":        m.get("image")       or None,
+                "audio":        m.get("audio")       or None,
+                "video":        m.get("video")       or None,
             }
             items[i] = it
 
     else:
+        # No files uploaded this time: clean up __UPLOAD__/__DELETE__ markers and backfill from prev
         for i, it in enumerate(items):
             if not isinstance(it, dict):
                 continue
@@ -1763,20 +1874,164 @@ def admin_exercises_save():
                     if pm.get(k):
                         deleted_media_paths.append(pm[k])
                     m[k] = None
+                elif (m.get(k) in (None, "")) and pm.get(k):
+                    # backfill previous media when nothing provided
+                    m[k] = pm[k]
 
             if m.get("youtube_url") == "__DELETE__":
                 m["youtube_url"] = None
+            elif (m.get("youtube_url") in (None, "")) and pm.get("youtube_url"):
+                m["youtube_url"] = pm["youtube_url"]
+
             if m.get("image_alt") == "__DELETE__":
                 m["image_alt"] = None
+            elif (m.get("image_alt") in (None, "")) and pm.get("image_alt"):
+                m["image_alt"] = pm["image_alt"]
 
             it["media"] = {
                 "youtube_url": (m.get("youtube_url") or None),
-                "image_alt": (m.get("image_alt") or None),
-                "image": m.get("image") or None,
-                "audio": m.get("audio") or None,
-                "video": m.get("video") or None,
+                "image_alt":   (m.get("image_alt")   or None),
+                "image":        m.get("image")       or None,
+                "audio":        m.get("audio")       or None,
+                "video":        m.get("video")       or None,
             }
             items[i] = it
+
+    # ---------- Merge per-item media *text* fields from form arrays (if present) ----------
+    # Handles builders (like CLOZE) that submit youtube_url/alt text via form arrays alongside items JSON.
+    try:
+        form_idx = request.form.getlist("media_index[]")  # ["0","1","2",...]
+        yt_list  = request.form.getlist("media_youtube_url[]")
+        alt_list = request.form.getlist("media_image_alt[]")
+
+        if form_idx:
+            for n, idx_str in enumerate(form_idx):
+                try:
+                    i = int(idx_str)
+                except Exception:
+                    continue
+                if i < 0 or i >= len(items):
+                    continue
+
+                it = items[i] if isinstance(items[i], dict) else {}
+                m  = it.get("media") if isinstance(it.get("media"), dict) else {}
+
+                # Merge YouTube URL
+                if n < len(yt_list):
+                    val = (yt_list[n] or "").strip()
+                    if val == "__DELETE__":
+                        m["youtube_url"] = None
+                    elif val != "":
+                        m["youtube_url"] = val  # keep as provided
+
+                # Merge Image ALT / caption
+                if n < len(alt_list):
+                    val = (alt_list[n] or "").strip()
+                    if val == "__DELETE__":
+                        m["image_alt"] = None
+                    elif val != "":
+                        m["image_alt"] = val
+
+                # Normalize back onto the item
+                it["media"] = {
+                    "youtube_url": m.get("youtube_url") or None,
+                    "image_alt":   m.get("image_alt")   or None,
+                    "image":       m.get("image")       or None,
+                    "audio":       m.get("audio")       or None,
+                    "video":       m.get("video")       or None,
+                }
+                items[i] = it
+    except Exception:
+        # Non-fatal: if arrays aren't present, ignore.
+        pass
+
+# ---------- NEW: Handle exercise-level (global) media uploads ----------
+    # These correspond to <input name="media_image">, etc. in the DnD builder form.
+    media_fields = {}
+    try:
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+        # Resolve <type>/<slug> for media placement
+        media_type = ex_type
+        media_slug = None
+        try:
+            if existing and isinstance(existing.get("versions"), list) and existing["versions"]:
+                p = (existing["versions"][-1] or {}).get("path") or ""
+                parts = p.split("/")
+                if "exercises" in parts:
+                    ix = parts.index("exercises")
+                    if len(parts) >= ix + 3:
+                        media_type = parts[ix + 1]
+                        media_slug = parts[ix + 2]
+        except Exception:
+            pass
+
+        # Fallback: slugify current title
+        if not media_slug:
+            try:
+                from .storage import slugify_title as _slugify_title
+            except Exception:
+                def _slugify_title(t):
+                    import re, unicodedata
+                    t = unicodedata.normalize("NFKD", str(t or "")).encode("ascii","ignore").decode("ascii")
+                    t = re.sub(r"[\s_]+","-", t.lower().strip())
+                    t = re.sub(r"[^a-z0-9\-]","", t)
+                    t = re.sub(r"-{2,}","-", t).strip("-")
+                    return t or "untitled"
+            media_slug = _slugify_title(title or exercise_id)
+
+        # Decide storage + URL base:
+        #  - DnD:   data/exercises/dnd/<slug>/media          +  /admin/exercises/file/dnd/<slug>/media/<filename>
+        #  - Other: static/exercises/media/<type>/<slug>      +  /static/exercises/media/<type>/<slug>/<filename>
+        if ex_type == "dnd":
+            media_dir_abs = os.path.abspath(
+                os.path.join(project_root, "data", "exercises", "dnd", media_slug, "media")
+            )
+            os.makedirs(media_dir_abs, exist_ok=True)
+            def _to_url(out_name):
+                return f"/admin/exercises/file/dnd/{media_slug}/media/{out_name}".replace("\\", "/")
+        else:
+            media_dir_abs = os.path.abspath(
+                os.path.join(project_root, "static", "exercises", "media", media_type, media_slug)
+            )
+            os.makedirs(media_dir_abs, exist_ok=True)
+            def _to_url(out_name):
+                return f"/static/exercises/media/{media_type}/{media_slug}/{out_name}".replace("\\", "/")
+
+        def _save_global(fs, key):
+            if not fs or not getattr(fs, "filename", ""):
+                return None
+            from werkzeug.utils import secure_filename
+            name, ext = os.path.splitext(secure_filename(fs.filename))
+            if not ext:
+                mt = (getattr(fs, "mimetype", "") or "").lower()
+                if mt.startswith("audio/"):
+                    ext = ".mp3"
+                elif mt.startswith("video/"):
+                    ext = ".mp4"
+                else:
+                    ext = ".png"
+            out_name = f"global_{key}{ext.lower()}"
+            abs_path = os.path.join(media_dir_abs, out_name)
+            os.makedirs(os.path.dirname(abs_path), exist_ok=True)
+            fs.save(abs_path)
+            return _to_url(out_name)
+
+        # Files (optional)
+        if "media_image" in request.files and request.files["media_image"].filename:
+            media_fields["image"] = _save_global(request.files["media_image"], "image")
+        if "media_audio" in request.files and request.files["media_audio"].filename:
+            media_fields["audio"] = _save_global(request.files["media_audio"], "audio")
+        if "media_video" in request.files and request.files["media_video"].filename:
+            media_fields["video"] = _save_global(request.files["media_video"], "video")
+
+        # Text/url fields
+        if request.form.get("media_image_alt"):
+            media_fields["image_alt"] = request.form.get("media_image_alt")
+        if request.form.get("media_youtube_url"):
+            media_fields["youtube_url"] = request.form.get("media_youtube_url")
+    except Exception as e:
+        print("⚠️ Global media upload error:", e)
 
     for rel in deleted_media_paths:
         try:
@@ -1798,10 +2053,13 @@ def admin_exercises_save():
         "id": exercise_id,
         "type": ex_type,
         "title": title,
+        "media": media_fields or None,  # NEW: exercise-level media (image/audio/video/youtube_url/image_alt)
         "version": version,
         "created_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
         "instructions": instructions,   # ← NEW field (None if not provided)
+        "columns": columns,
         "items": items,
+        "settings": settings,
         "meta": meta,
     }
 
@@ -1837,6 +2095,7 @@ def admin_exercises_save():
     index_data["exercises"] = ex_list
     _save_exercise_index(index_data)
 
+    # -------- Always return JSON so the admin UI never sees an HTML redirect --------
     return jsonify({
         "success": True,
         "exercise": {
@@ -1985,6 +2244,25 @@ def admin_exercises_delete(exercise_id):
         })
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+@bp.route("/exercises/file/<ex_type>/<slug>/media/<path:filename>")
+def admin_exercises_file(ex_type, slug, filename):
+    """
+    Serve exercise media stored under data/exercises/<type>/<slug>/media/.
+    Used for DnD global media so we don't rely on /static.
+    """
+    from flask import send_from_directory
+    base_dir = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..", "data", "exercises", ex_type, slug, "media")
+    )
+    # simple safety: ensure requested path stays within base_dir
+    try:
+        abs_candidate = os.path.abspath(os.path.join(base_dir, filename))
+        if os.path.commonpath([abs_candidate, base_dir]) != base_dir:
+            return "Invalid path", 400
+    except Exception:
+        return "Invalid path", 400
+    return send_from_directory(base_dir, filename)
 
 # === END: Exercises storage + admin routes scaffolding ===
 

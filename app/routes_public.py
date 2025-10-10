@@ -3,23 +3,67 @@ import os
 import json
 from flask import request
 
-# === BEGIN: Public Pages loader ===
-import os, json
-
+# === BEGIN: Public Pages loader (flat + foldered) ===
 def _public_pages_path():
-    return os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data', 'pages', 'pages.json'))
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), '.', 'data', 'pages', 'pages.json'))
 
-def _public_load_pages():
-    path = _public_pages_path()
-    if not os.path.exists(path):
-        return []
+def _public_pages_root():
+    # root folder that may contain <slug>/page.json
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), '.', 'data', 'pages'))
+
+def _safe_read_json(path):
     try:
         with open(path, "r", encoding="utf-8") as f:
-            data = json.load(f) or []
-        return [p for p in data if isinstance(p, dict)]
+            data = json.load(f)
+        return data
     except Exception:
-        return []
-# === END: Public Pages loader ===
+        return None
+
+def _public_load_pages():
+    """
+    Load pages from:
+      1) data/pages/pages.json (flat list)
+      2) data/pages/<slug>/page.json (foldered)
+    Merge by slug; prefer foldered version on conflict.
+    """
+    # 1) Flat list
+    flat = []
+    flat_path = _public_pages_path()
+    if os.path.exists(flat_path):
+        data = _safe_read_json(flat_path) or []
+        if isinstance(data, list):
+            flat = [p for p in data if isinstance(p, dict)]
+
+    # 2) Foldered pages
+    merged = {}
+    root = _public_pages_root()
+    if os.path.isdir(root):
+        try:
+            for name in os.listdir(root):
+                folder = os.path.join(root, name)
+                if not os.path.isdir(folder):
+                    continue
+                page_json = os.path.join(folder, "page.json")
+                if not os.path.exists(page_json):
+                    continue
+                obj = _safe_read_json(page_json)
+                if isinstance(obj, dict):
+                    slug = (obj.get("slug") or name).strip().lower()
+                    if slug:
+                        merged[slug] = obj
+        except Exception:
+            pass
+
+    # 3) Add any flat entries not overridden by foldered
+    for p in flat:
+        slug = (p.get("slug") or "").strip().lower()
+        if slug and slug not in merged:
+            merged[slug] = p
+
+    # Return newest-first friendly list (caller also sorts by created_at)
+    # 4) Remove hidden pages from public output
+    return [p for p in merged.values() if (p.get("status") != "hidden")]
+# === END: Public Pages loader (flat + foldered) ===
 
 # === BEGIN: public-side loader for glossary visibility settings ===
 def _public_settings_path():
@@ -107,15 +151,55 @@ def _public_pages_path():
     return os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data', 'pages', 'pages.json'))
 
 def _public_load_pages():
+    """
+    Load pages from both sources and hide those with status == 'hidden':
+      - flat:  data/pages/pages.json
+      - foldered: data/pages/<slug>/page.json   (wins on conflict)
+    """
+    # 1) Flat list
+    flat = []
     path = _public_pages_path()
-    if not os.path.exists(path):
-        return []
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            data = json.load(f) or []
-        return [p for p in data if isinstance(p, dict)]
-    except Exception:
-        return []
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f) or []
+            if isinstance(data, list):
+                flat = [p for p in data if isinstance(p, dict)]
+        except Exception:
+            pass
+
+    # 2) Foldered pages
+    merged = {}
+    pages_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "pages"))
+    if os.path.isdir(pages_root):
+        try:
+            for name in os.listdir(pages_root):
+                folder = os.path.join(pages_root, name)
+                if not os.path.isdir(folder):
+                    continue
+                page_json = os.path.join(folder, "page.json")
+                if not os.path.exists(page_json):
+                    continue
+                try:
+                    with open(page_json, "r", encoding="utf-8") as f:
+                        obj = json.load(f)
+                    if isinstance(obj, dict):
+                        slug = (obj.get("slug") or name).strip().lower()
+                        if slug:
+                            merged[slug] = obj
+                except Exception:
+                    continue
+        except Exception:
+            pass
+
+    # 3) Add any flat entries not overridden by foldered
+    for p in flat:
+        slug = (p.get("slug") or "").strip().lower()
+        if slug and slug not in merged:
+            merged[slug] = p
+
+    # 4) Filter out hidden
+    return [p for p in merged.values() if (p.get("status") != "hidden")]
 # === END: Public Pages loader ===
 
 @bp.route("/")

@@ -91,12 +91,25 @@
               hint: it.hint || null,
               feedback_correct: it.feedback_correct || null,
               feedback_incorrect: it.feedback_incorrect || null,
-              image: (m.image || it.image || null),
-              image_caption: (m.image_alt || it.image_caption || it.alt || null) || null,
+              // be generous with media shapes (string, {url|path|src}, or *_url variants)
+              // helper to coerce any value to a usable src string
+              image: (function () {
+                const pick = (v) => (typeof v === 'string' && v) || (v && (v.url || v.path || v.src)) || null;
+                return pick(m.image) || pick(it.image) || pick(m.image_url) || pick(it.image_url) || null;
+              })(),
+              image_caption: (m.image_alt || m.caption || it.image_caption || it.alt || null) || null,
               image_alt: (m.image_alt || it.image_alt || it.alt || null) || null,
-              audio: (m.audio || it.audio || null),
-              video_mp4: (m.video || it.video || null),
-              video_iframe: toYT(m.youtube_url || it.youtube || it.video_iframe || null)
+              audio: (function () {
+                const pick = (v) => (typeof v === 'string' && v) || (v && (v.url || v.path || v.src)) || null;
+                return pick(m.audio) || pick(it.audio) || null;
+              })(),
+              video_mp4: (function () {
+                const pick = (v) => (typeof v === 'string' && v) || (v && (v.url || v.path || v.src)) || null;
+                return pick(m.video) || pick(it.video) || pick(m.video_mp4) || pick(it.video_mp4) || null;
+              })(),
+              video_iframe: toYT(
+                m.youtube_url || m.youtube || it.youtube_url || it.youtube || it.video_iframe || null
+              )
             };
           }),
           settings: ex.settings || {}
@@ -180,6 +193,14 @@ const choices = (Array.isArray(it.choices) ? it.choices : []).map((c, j) => {
           return u;
         };
 
+        // cache-bust static assets we overwrite (e.g., /static/.../q0_image.jpg)
+        const cb = (u) => {
+          if (!u || typeof u !== 'string') return u;
+          if (u.indexOf('/static/') !== 0) return u;
+          const v = (ex.saved_version || ex.version || Date.now());
+          return u + (u.indexOf('?') >= 0 ? '&' : '?') + 'v=' + v;
+        };
+
         return {
           exercise_id: ex.id || 'cloze_preview',
           title: ex.title || 'Completar huecos',
@@ -204,15 +225,88 @@ const choices = (Array.isArray(it.choices) ? it.choices : []).map((c, j) => {
               hint: it.hint || null,
               feedback_correct: it.feedback_correct || null,
               feedback_incorrect: it.feedback_incorrect || null,
-              image: (m.image || it.image || null),
+
+              // renderer expects media under it.media.*
+              media: {
+                image: cb(m.image || it.image || null),
+                image_alt: (m.image_alt || it.image_alt || it.image_caption || it.alt || null) || null,
+                audio: cb(m.audio || it.audio || null),
+                video: cb(m.video || it.video || it.video_mp4 || null),
+                youtube_url: toYT(m.youtube_url || it.youtube_url || it.youtube || it.video_iframe || null)
+              },
+
+              // optional: keep legacy top-level fields for backward compatibility
+              image: cb(m.image || it.image || null),
               image_caption: (m.image_alt || it.image_caption || it.alt || null) || null,
               image_alt: (m.image_alt || it.image_alt || it.alt || null) || null,
-              audio: (m.audio || it.audio || null),
-              video_mp4: (m.video || it.video || null),
+              audio: cb(m.audio || it.audio || null),
+              video_mp4: cb(m.video || it.video || it.video_mp4 || null),
               video_iframe: toYT(m.youtube_url || it.youtube || it.video_iframe || null)
             };
           }),
           settings: ex.settings || {}
+        };
+      }
+
+      // normalize Dictation (rendered via the Cloze carousel with one blank)
+      function adaptDictation(ex) {
+        if (!ex || ex.type !== 'dictation') return ex;
+        const items = Array.isArray(ex.items) ? ex.items : [];
+        const S = ex.settings || {};
+
+        const toYT = (u) => {
+          if (!u) return null;
+          try {
+            const url = new URL(u, window.location.href);
+            const host = url.hostname || '';
+            if (host.indexOf('youtu.be') >= 0) {
+              const id = url.pathname.slice(1);
+              return id ? ('https://www.youtube.com/embed/' + id) : u;
+            }
+            if (host.indexOf('youtube.com') >= 0) {
+              const id = url.searchParams.get('v');
+              return id ? ('https://www.youtube.com/embed/' + id) : u;
+            }
+          } catch (_) {}
+          return u;
+        };
+
+        return {
+          exercise_id: ex.id || 'dictation_preview',
+          title: ex.title || 'Dictado',
+          type: 'dictation',
+          instructions: ex.instructions || '',
+          items: items.map((it, idx) => {
+            const m = it.media || {};
+            // Answers support string or array (builder emits string OR string[])
+            const ans = Array.isArray(it.answer) ? it.answer
+                      : (typeof it.answer === 'string' && it.answer.trim() ? [it.answer] : []);
+            return {
+              id: it.id || ('i' + (idx + 1)),
+              // Single input rendered by Cloze carousel
+              prompt_html: '[[B1]]',
+              blanks: [{
+                key: 'B1',
+                answers: ans,
+                case_sensitive: !!S.case_sensitive,
+                // In Cloze, normalize_accents=true means "ignore accents".
+                // So if exercise is accent_sensitive, do NOT normalize.
+                normalize_accents: !S.accent_sensitive,
+                // New flag we’ll honor in the Cloze evaluator:
+                punctuation_sensitive: !!S.punctuation_sensitive
+              }],
+              media: {
+                image: null, // dictation doesn’t use images
+                audio: (m.audio || null),
+                video: (m.video || null),
+                video_iframe: toYT(m.youtube_url || null)
+              },
+              hint: it.hint || null,
+              feedback_correct: it.feedback_correct || null,
+              feedback_incorrect: it.feedback_incorrect || null
+            };
+          }),
+          settings: Object.assign({}, ex.settings || {})
         };
       }
 
@@ -260,6 +354,7 @@ const choices = (Array.isArray(it.choices) ? it.choices : []).map((c, j) => {
         var barEl   = containerEl.querySelector('.pp-ex-progressbar');
         var prevBtn = containerEl.querySelector('.pp-ex-prev');
         var nextBtn = containerEl.querySelector('.pp-ex-next');
+        var isDictation = !!(playable && playable.type === 'dictation');
 
         // Ensure disabled styling feels consistent
         function syncBtn(el){
@@ -299,10 +394,18 @@ const choices = (Array.isArray(it.choices) ? it.choices : []).map((c, j) => {
             }
 
             var caseSensitive = !!cfg.case_sensitive;
-            var normAccents  = (cfg.normalize_accents !== false);
+            var normAccents   = (cfg.normalize_accents !== false);
+            var punctSensitive = !!cfg.punctuation_sensitive;
+
+            function stripPunct(s){
+              // Remove common punctuation incl. ¡! ¿? quotes, dashes, ellipses, parens
+              return s.replace(/[.,;:!¡?¿"“”'’()\-—…]/g, '');
+            }
+
             var norm = function(s){
               var o = s;
               if (!caseSensitive) o = o.toLowerCase();
+              if (!punctSensitive) o = stripPunct(o);
               if (normAccents) o = stripAccents(o);
               return o;
             };
@@ -436,6 +539,15 @@ const choices = (Array.isArray(it.choices) ? it.choices : []).map((c, j) => {
               inp.type = 'text';
               inp.setAttribute('data-key', key);
               inp.style.cssText = 'padding:.35rem .5rem;border:1px solid #cbd5e1;border-radius:8px;min-width:120px;';
+              
+              // Wider input for Dictation (full-sentence typing)
+              if (isDictation) {
+                // make the input stretch nicely on desktop while remaining responsive
+               inp.style.cssText += 'width:calc(100% - 1rem);max-width:760px;font-size:1.05rem;padding:.55rem .75rem;box-sizing:border-box;';
+                // let the container align to the wider input
+                wrap.style.alignItems = 'flex-start';
+                wrap.style.minWidth = 'min(100%, 760px)';
+              }
 
               // restore value if previously checked/saved
               var prev = state.results[it.id] && state.results[it.id].blanks && state.results[it.id].blanks[key];
@@ -446,6 +558,7 @@ const choices = (Array.isArray(it.choices) ? it.choices : []).map((c, j) => {
               hintBtn.type = 'button';
               hintBtn.className = 'btn tiny';
               hintBtn.textContent = '💡';
+
               var hintBox = document.createElement('div');
               hintBox.className = 'tiny muted';
               hintBox.style.cssText = 'display:none;margin-top:.15rem;';
@@ -555,12 +668,20 @@ const choices = (Array.isArray(it.choices) ? it.choices : []).map((c, j) => {
           // initial gating
           function gate(){
             var hasAll = allInputsFilled();
+
+            // Button state
             checkBtn.disabled = !hasAll;
             checkBtn.style.opacity = hasAll ? '1' : '0.6';
             checkBtn.style.cursor  = hasAll ? 'pointer' : 'not-allowed';
 
-            // NEW: Next is enabled once all blanks are filled (no need to press "Comprobar")
-            nextBtn.disabled = !hasAll;
+            // For Dictation: require pressing "Comprobar" before enabling Next
+            if (isDictation) {
+              var checked = !!(state.results[it.id] && state.results[it.id].checked);
+              nextBtn.disabled = !(hasAll && checked);
+            } else {
+              // Cloze (non-dictation): allow Next when all blanks are filled
+              nextBtn.disabled = !hasAll;
+            }
             syncBtn(nextBtn);
           }
           currentControls.forEach(function(c){ c.input.addEventListener('input', gate); });
@@ -618,8 +739,9 @@ const choices = (Array.isArray(it.choices) ? it.choices : []).map((c, j) => {
             save();
           });
 
-          // HIDE Comprobar button for Cloze (auto-evaluated flow)
-          checkBtn.style.display = 'none';
+          // Dictation shows "Comprobar"; Cloze hides it (auto-evaluated)
+          checkBtn.style.display = isDictation ? 'inline-block' : 'none';
+          card.appendChild(checkBtn);
           card.appendChild(overallBox);
 
           slide.innerHTML = '';
@@ -653,9 +775,10 @@ const choices = (Array.isArray(it.choices) ? it.choices : []).map((c, j) => {
         nextBtn.addEventListener('click', function(){
           if (nextBtn.disabled) return;
 
-          // NEW: if this item hasn’t been “checked” yet, auto-evaluate it now
           var it = items[state.i];
-          if (it && !(state.results[it.id] && state.results[it.id].checked)) {
+
+          // For non-dictation Cloze, still auto-evaluate if user skipped "Comprobar"
+          if (!isDictation && it && !(state.results[it.id] && state.results[it.id].checked)) {
             var per = evaluateItem(it, currentControls || []);
             state.results[it.id] = per;
             recalcCorrect();
@@ -883,6 +1006,265 @@ const choices = (Array.isArray(it.choices) ? it.choices : []).map((c, j) => {
         });
       }
 
+      // ------- normalize DND (drag & drop text -> columns) -------
+      // IMPORTANT: carry through exercise-level media AND per-item media.
+      function adaptDND(ex) {
+        if (!ex || ex.type !== 'dnd_text') return ex;
+
+        const cols  = Array.isArray(ex.columns) ? ex.columns : [];
+        const items = Array.isArray(ex.items)   ? ex.items   : [];
+
+        // Pass exercise-level media verbatim if present
+        const media = (ex.media && typeof ex.media === 'object') ? ex.media : undefined;
+
+        return {
+          exercise_id: ex.id || 'dnd_preview',
+          title:       ex.title || 'Arrastrar y soltar',
+          type:        'dnd_text',
+          instructions: ex.instructions || '',
+          media, // <-- keep exercise-level media so PPTypes.renderDnDText can render it
+
+          columns: cols.map(c => ({
+            id:    c.id || String(c.label || '').toLowerCase() || 'col',
+            label: c.label || c.id || 'Columna'
+          })),
+
+          items: items.map((it, i) => {
+            const m = it.media || {};
+            return {
+              id:                 it.id || ('i' + (i + 1)),
+              text:               it.text || '',
+              correct_column:     it.correct_column || '',
+              hint:               it.hint || '',
+              feedback_correct:   it.feedback_correct || '',
+              feedback_incorrect: it.feedback_incorrect || '',
+              media: (Object.keys(m).length ? m : undefined) // <-- keep per-item media
+            };
+          }),
+
+          settings: Object.assign(
+            { shuffle_items: true, allow_partial_submit: false, show_hints: true, max_columns: 6 },
+            ex.settings || {}
+          )
+        };
+      }
+
+      // ------- Minimal in-modal DND renderer (fallback when public player is missing) -------
+      function renderDNDMinimal(containerEl, playable) {
+        if (!containerEl) return;
+        containerEl.innerHTML = '';
+
+        const cols = Array.isArray(playable.columns) ? playable.columns : [];
+        const items = Array.isArray(playable.items) ? playable.items.slice() : [];
+        if (!cols.length || !items.length) {
+          containerEl.innerHTML = '<div class="tiny muted">Configurá columnas e ítems para previsualizar.</div>';
+          return;
+        }
+        if (playable.settings && playable.settings.shuffle_items) {
+          for (let i = items.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            const t = items[i]; items[i] = items[j]; items[j] = t;
+          }
+        }
+
+        // Styled helpers
+        const mkCard = (css) => {
+          const d = document.createElement('div');
+          d.style.cssText = (css || 'border:1px solid #e5e7eb;border-radius:12px;padding:.75rem;background:#fff;');
+          return d;
+        };
+        const mkBtn = (label) => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.textContent = label;
+          b.style.cssText = 'border:1px solid #cbd5e1;border-radius:10px;padding:.5rem .75rem;background:#f8fafc;cursor:grab;';
+          return b;
+        };
+
+        // Tray
+        const tray = mkCard('border:1px dashed #cbd5e1;border-radius:12px;padding:.75rem;background:#fafafa;');
+        const trayTitle = document.createElement('div');
+        trayTitle.textContent = 'Ítems';
+        trayTitle.style.cssText = 'font-weight:600;margin-bottom:.5rem;';
+        tray.appendChild(trayTitle);
+        const trayWrap = document.createElement('div');
+        trayWrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:.5rem;';
+        tray.appendChild(trayWrap);
+
+        // Columns
+        const grid = document.createElement('div');
+        const colCount = Math.min(cols.length, Math.max(2, (playable.settings && playable.settings.max_columns) || 6));
+        grid.style.cssText = 'display:grid;gap:.75rem;margin-top:.75rem;grid-template-columns:repeat(' + Math.min(colCount, cols.length) + ', minmax(0,1fr));';
+
+        const colBoxes = {};
+        cols.forEach(c => {
+          const box = mkCard();
+          box.dataset.col = c.id;
+          box.style.minHeight = '110px';
+          box.style.display = 'flex';
+          box.style.flexDirection = 'column';
+          box.style.gap = '.5rem';
+
+          const lab = document.createElement('div');
+          lab.textContent = c.label || c.id;
+          lab.style.cssText = 'font-weight:700;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;padding:.35rem .5rem;margin:-.25rem -.25rem .25rem;';
+          box.appendChild(lab);
+
+          const drop = document.createElement('div');
+          drop.style.cssText = 'min-height:60px;display:flex;flex-wrap:wrap;gap:.5rem;';
+          box.appendChild(drop);
+
+          // DnD events
+          ;[box, drop].forEach(el => {
+            el.addEventListener('dragover', (e) => { e.preventDefault(); el.style.background = '#f8fafc'; });
+            el.addEventListener('dragleave', () => { el.style.background = '#fff'; });
+            el.addEventListener('drop', (e) => {
+              e.preventDefault();
+              el.style.background = '#fff';
+              const id = e.dataTransfer.getData('text/plain');
+              const chip = containerEl.querySelector('[data-item-id="' + id + '"]');
+              if (chip) drop.appendChild(chip);
+            });
+          });
+
+          grid.appendChild(box);
+          colBoxes[c.id] = drop;
+        });
+
+        // Build item chips
+        items.forEach(it => {
+          const chip = mkBtn(it.text || it.id);
+          chip.setAttribute('draggable', 'true');
+          chip.dataset.itemId = it.id;
+          chip.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', it.id);
+            chip.style.opacity = '0.6';
+          });
+          chip.addEventListener('dragend', () => { chip.style.opacity = '1'; });
+          // Hint (optional)
+          if (playable.settings && playable.settings.show_hints && it.hint) {
+            chip.title = it.hint;
+          }
+          trayWrap.appendChild(chip);
+        });
+
+        // Controls
+        const controls = document.createElement('div');
+        controls.style.cssText = 'display:flex;gap:.5rem;margin-top:.75rem;';
+        const submitBtn = document.createElement('button');
+        submitBtn.className = 'btn btn-primary';
+        submitBtn.type = 'button';
+        submitBtn.textContent = 'Enviar';
+        const resetBtn = document.createElement('button');
+        resetBtn.className = 'btn';
+        resetBtn.type = 'button';
+        resetBtn.textContent = 'Reiniciar';
+
+        controls.appendChild(submitBtn);
+        controls.appendChild(resetBtn);
+
+        // Mount
+        containerEl.appendChild(tray);
+        containerEl.appendChild(grid);
+        containerEl.appendChild(controls);
+
+        // Helpers
+        function allPlaced() {
+          const chips = Array.from(containerEl.querySelectorAll('[data-item-id]'));
+          return chips.every(ch => ch.parentElement && ch.parentElement !== trayWrap);
+        }
+
+        resetBtn.addEventListener('click', () => {
+          // Move all chips back to tray
+          Array.from(containerEl.querySelectorAll('[data-item-id]')).forEach(ch => {
+            ch.style.borderColor = '#cbd5e1';
+            ch.style.background = '#f8fafc';
+            ch.textContent = (items.find(i => i.id === ch.dataset.itemId)?.text) || ch.textContent;
+            trayWrap.appendChild(ch);
+          });
+          // remove any summary if exists
+          const old = containerEl.querySelector('.pp-dnd-summary');
+          if (old) old.remove();
+        });
+
+        submitBtn.addEventListener('click', () => {
+          if (!playable.settings.allow_partial_submit && !allPlaced()) {
+            alert('Completá todas las ubicaciones antes de enviar.');
+            return;
+          }
+          // grade
+          let correct = 0;
+          items.forEach(it => {
+            const chip = containerEl.querySelector('[data-item-id="' + it.id + '"]');
+            let placedCol = '';
+            if (chip) {
+              const box = chip.closest('[data-col]');
+              placedCol = box ? box.dataset.col : '';
+            }
+            const ok = placedCol && it.correct_column && placedCol === it.correct_column;
+            if (ok) {
+              chip.style.background = '#dcfce7';
+              chip.style.borderColor = '#86efac';
+              chip.textContent = '✅ ' + (it.text || it.id);
+              correct++;
+            } else {
+              chip.style.background = '#fee2e2';
+              chip.style.borderColor = '#fecaca';
+              chip.textContent = '❌ ' + (it.text || it.id);
+            }
+          });
+
+          // Summary page
+          const summary = document.createElement('div');
+          summary.className = 'pp-dnd-summary';
+          summary.style.cssText = 'margin-top:1rem;border-top:1px dashed #e5e7eb;padding-top:.75rem;';
+
+          const score = document.createElement('div');
+          score.style.cssText = 'font-weight:700;margin-bottom:.5rem;';
+          score.textContent = 'Resultado: ' + correct + ' / ' + items.length;
+          summary.appendChild(score);
+
+          const colsWrap = document.createElement('div');
+          colsWrap.style.cssText = 'display:grid;gap:.75rem;grid-template-columns:repeat(' + Math.min(cols.length, 3) + ', minmax(0,1fr));';
+          cols.forEach(c => {
+            const card = mkCard();
+            const h = document.createElement('div');
+            h.textContent = c.label || c.id;
+            h.style.cssText = 'font-weight:700;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;padding:.35rem .5rem;margin:-.25rem -.25rem .25rem;';
+            card.appendChild(h);
+
+            const list = document.createElement('div');
+            list.style.cssText = 'display:flex;flex-direction:column;gap:.35rem;';
+            // collect items placed here
+            const chips = Array.from(grid.querySelectorAll('[data-col="' + c.id + '"] [data-item-id]'));
+            chips.forEach(ch => {
+              const id = ch.dataset.itemId;
+              const it = items.find(i => i.id === id);
+              const ok = (it && it.correct_column === c.id);
+              const row = document.createElement('div');
+              row.style.cssText = 'display:flex;justify-content:space-between;gap:.5rem;';
+              const txt = document.createElement('div');
+              txt.textContent = (ok ? '✅ ' : '❌ ') + (it?.text || id);
+              const fb = document.createElement('div');
+              fb.className = 'tiny muted';
+              fb.textContent = ok ? (it?.feedback_correct || '') : (it?.feedback_incorrect || '');
+              row.appendChild(txt);
+              row.appendChild(fb);
+              list.appendChild(row);
+            });
+            card.appendChild(list);
+            colsWrap.appendChild(card);
+          });
+
+          summary.appendChild(colsWrap);
+
+          // replace trailing content if already there
+          const old = containerEl.querySelector('.pp-dnd-summary');
+          if (old) old.replaceWith(summary);
+          else containerEl.appendChild(summary);
+        });
+      }
+
       // --- public player bootstrap (detect / optionally load) ---
       function getPublicCarouselFn() {
         const fn =
@@ -951,9 +1333,11 @@ const choices = (Array.isArray(it.choices) ? it.choices : []).map((c, j) => {
 
         // Normalize to the playable shape
         const playable =
-          exercise && exercise.type === 'tf'    ? adaptTF(exercise)   :
-          exercise && exercise.type === 'mcq'   ? adaptMCQ(exercise)  :
-          exercise && exercise.type === 'cloze' ? adaptCloze(exercise) :
+          exercise && exercise.type === 'tf'        ? adaptTF(exercise)        :
+          exercise && exercise.type === 'mcq'       ? adaptMCQ(exercise)       :
+          exercise && exercise.type === 'cloze'     ? adaptCloze(exercise)     :
+          exercise && exercise.type === 'dictation' ? adaptDictation(exercise) :
+          exercise && exercise.type === 'dnd_text'  ? adaptDND(exercise)       :
           exercise;
 
         // Helper to inject the instructions box at the very top of the modal body
@@ -974,8 +1358,8 @@ const choices = (Array.isArray(it.choices) ? it.choices : []).map((c, j) => {
 
         // Detect CLOZE quickly
         const isCloze = !!(playable && (
-          playable.type === 'cloze' ||
-          (Array.isArray(playable.items) && playable.items.some(it => it.type === 'cloze'))
+          playable.type === 'cloze' || playable.type === 'dictation' ||
+          (Array.isArray(playable.items) && playable.items.some(it => it.type === 'cloze' || it.type === 'dictation'))
         ));
 
         // CLOZE → always use our local carousel (we control the body; inject instructions first)
@@ -991,10 +1375,10 @@ const choices = (Array.isArray(it.choices) ? it.choices : []).map((c, j) => {
           return;
         }
 
-        // TF / MCQ → try the public carousel first (it renders into the whole modal),
-        // then prepend the instructions (even if the player re-rendered the body).
-        const playerFn = getPublicCarouselFn();
-        if (playerFn) {
+        // TF / MCQ → try the public carousel first (never for DnD/Cloze)
+        const wantsPublic = !!(exercise && (exercise.type === 'tf' || exercise.type === 'mcq'));
+        const playerFn = wantsPublic ? getPublicCarouselFn() : null;
+        if (wantsPublic && playerFn) {
           try {
             playerFn(modal, playable);
             // Try a few times in case the player renders asynchronously
@@ -1021,9 +1405,21 @@ const choices = (Array.isArray(it.choices) ? it.choices : []).map((c, j) => {
           injectInstructions();
           const mount = document.createElement('div');
           bodyEl.appendChild(mount);
-          if (exercise && exercise.type === 'tf') renderTFMinimal(mount, playable);
-          else renderMCQMinimal(mount, playable);
-          upgradeWhenReady(modal, playable);
+          if (exercise && exercise.type === 'tf') {
+            renderTFMinimal(mount, playable);
+          } else if (exercise && exercise.type === 'mcq') {
+            renderMCQMinimal(mount, playable);
+          } else if (exercise && exercise.type === 'dnd_text') {
+            if (window.PPTypes && typeof window.PPTypes.renderDnDText === 'function') {
+              window.PPTypes.renderDnDText(mount, playable);
+            } else {
+              renderDNDMinimal(mount, playable);
+            }
+          } else {
+            renderMCQMinimal(mount, playable);
+          }
+          const shouldUpgrade = !!(exercise && (exercise.type === 'tf' || exercise.type === 'mcq'));
+          if (shouldUpgrade) upgradeWhenReady(modal, playable);
         }
       }
 
@@ -1063,7 +1459,7 @@ const choices = (Array.isArray(it.choices) ? it.choices : []).map((c, j) => {
       const tmpl = window.PP_ADMIN_PREVIEW_URL_TMPL;
       const url = dataUrl
         ? dataUrl
-        : (tmpl ? tmpl.replace('__ID__', exId) : '/admin/exercises/preview/' + encodeURIComponent(exId));
+        : (tmpl ? tmpl.replace('__ID__', exId) : '/admin/exercises/' + encodeURIComponent(exId) + '/preview');
 
       let finished = false;
       try {

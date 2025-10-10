@@ -78,6 +78,11 @@
     </div>
 
     <div class="actions">
+      <button type="button" class="btn secondary" id="cancelBtn"
+        style="color:#dc2626;font-weight:400;background:#e2e8f0;"
+        onclick="if (confirm('Discard this page and return to Pages?')) window.location.href='{{ url_for('admin.admin_pages_index') }}'">
+        Cancel
+      </button>
       <button type="button" class="btn secondary" id="resetBtn">Reset</button>
       <button type="button" class="btn primary" id="publishBtn">Publish</button>
     </div>
@@ -85,26 +90,46 @@
 </div>
 
 <script>
-  // Initialize TinyMCE
+  // Initialize TinyMCE (with Accordion support via <details>/<summary>)
   tinymce.init({
     selector: '#editor',
-    base_url: 'https://cdn.jsdelivr.net/npm/tinymce@6.8.3',  // ← ADD
-    suffix: '.min',                                          // ← ADD
+    base_url: 'https://cdn.jsdelivr.net/npm/tinymce@6.8.3',
+    suffix: '.min',
     height: 520,
     menubar: 'file edit view insert format tools table',
-    plugins: 'code link lists table media image autoresize',
+    plugins: 'code link lists table media image autoresize template visualblocks',
     toolbar: [
       'undo redo | blocks | bold italic underline removeformat |',
       'alignleft aligncenter alignright alignjustify | bullist numlist outdent indent |',
-      'link image media table | code'
+      'link image media table | template visualblocks | code'
     ].join(' '),
-    // Limit block formats to H1–H5 + paragraph
+
+    // Block formats
     block_formats: 'Paragraph=p; H1=h1; H2=h2; H3=h3; H4=h4; H5=h5',
-    // Allow iframes and common attributes to support H5P/YouTube/Canva/Genially embeds
-    extended_valid_elements: 'iframe[src|frameborder|allow|allowfullscreen|width|height|style|loading],script[src|type],div[*],span[*]',
-    valid_children: '+body[style],+div[iframe|div|span|p|h1|h2|h3|h4|h5|ul|ol|table],+p[iframe|span|strong|em|a|img|code]',
-    // Don’t strip styles on paste (useful for some providers)
-    paste_data_images: true,
+
+    // Allow embeds + details/summary for accordions
+    extended_valid_elements: [
+      'iframe[src|frameborder|allow|allowfullscreen|width|height|style|loading]',
+      'script[src|type]',
+      'details[class|open]',
+      'summary[class]',
+      'div[*]',
+      'span[*]',
+      'p[*]',
+      'h1[*],h2[*],h3[*],h4[*],h5[*]',
+      'ul[*],ol[*],li[*]',
+      'table[*],thead[*],tbody[*],tr[*],th[*],td[*]',
+      'img[src|alt|width|height|style]'
+    ].join(','),
+
+    // Let <details> contain useful children
+    valid_children: [
+      '+details[summary|div|p|ul|ol|table|img|iframe|h1|h2|h3|h4|h5]',
+      '+div[iframe|div|span|p|h1|h2|h3|h4|h5|ul|ol|table|img]',
+      '+p[iframe|span|strong|em|a|img|code]'
+    ].join(','),
+
+    // Editor content styles (so accordions look nice while editing)
     content_style: `
       @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
       body { font-family: 'Montserrat', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; font-size:16px; color:#0f172a; }
@@ -118,11 +143,57 @@
       img { max-width:100%; height:auto; }
       ul,ol { padding-left: 1.35rem; }
       a { color:#2563eb; text-decoration: underline; }
+
+      /* Accordion styling inside the editor */
+      details.pp-accordion { border:1px solid #e5e7eb; border-radius:10px; background:#fff; margin:.75rem 0; }
+      details.pp-accordion + details.pp-accordion { margin-top:.5rem; }
+      details.pp-accordion > summary {
+        cursor:pointer; list-style:none; padding:.6rem .8rem; font-weight:600; color:#0f172a; display:flex; align-items:center; gap:.5rem;
+      }
+      details.pp-accordion > summary::-webkit-details-marker { display:none; }
+      details.pp-accordion > summary::before {
+        content:"▸"; transform: translateY(1px);
+      }
+      details.pp-accordion[open] > summary::before { content:"▾"; }
+      .pp-accordion-body { padding:.6rem .8rem .8rem; border-top:1px solid #e5e7eb; color:#334155; }
     `,
+
     // Keep iframes on paste
     paste_remove_elements: '',
-    // Optional: convert URLs to absolute left as-is
-    convert_urls: false
+    paste_data_images: true,
+    convert_urls: false,
+
+    // One-click “Accordion” template
+    templates: [
+      {
+        title: 'Accordion',
+        description: 'Insert a collapsible section (details/summary)',
+        content: `
+<details class="pp-accordion" open>
+  <summary>Section title</summary>
+  <div class="pp-accordion-body">
+    <p>Write your content here…</p>
+  </div>
+</details>`
+      },
+      {
+        title: 'FAQ Accordion (2 items)',
+        description: 'Two collapsible questions',
+        content: `
+<details class="pp-accordion" open>
+  <summary>Question 1</summary>
+  <div class="pp-accordion-body">
+    <p>Answer 1…</p>
+  </div>
+</details>
+<details class="pp-accordion" open>
+  <summary>Question 2</summary>
+  <div class="pp-accordion-body">
+    <p>Answer 2…</p>
+  </div>
+</details>`
+      }
+    ]
   });
 
   // Helpers
@@ -132,6 +203,47 @@
     pill.classList.add('show');
     setTimeout(() => pill.classList.remove('show'), 2200);
   };
+  const getSlugParam = () => new URLSearchParams(location.search).get('slug');
+
+  // Prefill when editing (?slug=...)
+  (function prefillIfEditing(){
+    const slug = getSlugParam();
+    if (!slug) return;
+
+    // Update header + primary button text
+    const h = document.querySelector('.pages-head h1');
+    if (h) h.textContent = 'Edit Page';
+    const pub = $('#publishBtn');
+    if (pub) pub.textContent = 'Update';
+
+    // Helper: wait until TinyMCE editor is fully initialized
+    const waitForEditor = () => new Promise((resolve) => {
+      const tick = () => {
+        const ed = tinymce.get('editor');
+        if (ed && ed.initialized) return resolve(ed);
+        setTimeout(tick, 50);
+      };
+      tick();
+    });
+
+    (async () => {
+      try {
+        const res = await fetch(`/admin/pages/${slug}.json`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data || !data.page) return;
+
+        const p = data.page;
+        $('#title').value = p.title || '';
+        $('#tags').value = Array.isArray(p.tags) ? p.tags.join(', ') : (p.tags || '');
+
+        const ed = await waitForEditor();
+        ed.setContent(p.html || '');
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+  })();
 
   // Reset form
   $('#resetBtn').addEventListener('click', () => {
@@ -139,11 +251,12 @@
     if (tinymce.get('editor')) tinymce.get('editor').setContent('');
   });
 
-  // Publish (POST to /admin/pages)
+  // Publish / Update
   $('#publishBtn').addEventListener('click', async () => {
     const title = $('#title').value.trim();
     const tags = $('#tags').value.trim();
     const html = tinymce.get('editor') ? tinymce.get('editor').getContent() : '';
+    const slug = getSlugParam();
 
     if (!title || !html) {
       alert("Please add both a Title and Content.");
@@ -155,8 +268,11 @@
     form.append('tags', tags);
     form.append('html', html);
 
+    // Create vs Update endpoint
+    const endpoint = slug ? `/admin/pages/${slug}/update` : '/admin/pages';
+
     try {
-      const res = await fetch('/admin/pages', { method: 'POST', body: form });
+      const res = await fetch(endpoint, { method: 'POST', body: form });
       const data = await res.json();
       if (!data.success) {
         console.error(data);
@@ -164,9 +280,6 @@
         return;
       }
       showSaved();
-      // Optionally clear fields after save:
-      // $('#pageForm').reset(); tinymce.get('editor').setContent('');
-      // Or keep content for further edits—your call.
     } catch (e) {
       console.error(e);
       alert('Network error while saving page.');

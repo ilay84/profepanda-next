@@ -33,6 +33,38 @@
   .link { color:#2563eb; text-decoration:underline; font-weight:600; }
   .link.danger { color:#b91c1c; }
   .empty { padding:1rem; color:#475569; }
+  /* Toggle pill for page visibility */
+  .row-actions .toggle-page-status {
+    display:inline-block;
+    padding:.15rem .5rem;
+    border-radius:999px;
+    font-weight:600;
+    text-decoration:none;
+    border:1px solid transparent;
+    transition:all .15s ease;
+  }
+
+  /* Published (green) */
+  .row-actions .toggle-page-status:not([data-status="hidden"]) {
+    background:#dcfce7;           /* light green */
+    color:#166534;                 /* dark green text */
+    border-color:#bbf7d0;
+  }
+
+  /* Hidden (grey) */
+  .row-actions .toggle-page-status[data-status="hidden"] {
+    background:#f1f5f9;           /* light grey */
+    color:#475569;                 /* slate text */
+    border-color:#e2e8f0;
+  }
+
+  /* Hover states (slight emphasis) */
+  .row-actions .toggle-page-status:not([data-status="hidden"]):hover {
+    filter:brightness(0.98);
+  }
+  .row-actions .toggle-page-status[data-status="hidden"]:hover {
+    filter:brightness(0.97);
+  }
 </style>
 
 <div class="pages-wrap">
@@ -76,11 +108,22 @@
             </td>
             <td>
               <div class="row-actions">
-                <a class="link" href="/pages/{{ p.slug }}" target="_blank" rel="noopener">View</a>
-                <span class="muted">·</span>
-                <a class="link" href="/admin/pages/new" title="Duplicate by opening editor and pasting content">New</a>
-                <span class="muted">·</span>
-                <a href="#" class="link danger delete-page" data-slug="{{ p.slug }}" data-title="{{ p.title }}">Delete</a>
+                <div class="row-actions-top">
+                  <a class="link" href="/pages/{{ p.slug }}" target="_blank" rel="noopener">View</a>
+                  <span class="muted">·</span>
+                  <a class="link" href="/admin/pages/{{ p.slug }}/edit">Edit</a>
+                  <span class="muted">·</span>
+                  <a href="#" class="link danger delete-page" data-slug="{{ p.slug }}" data-title="{{ p.title }}">Delete</a>
+                </div>
+                <div class="row-actions-bottom" style="margin-top:.25rem;">
+                  <a href="#"
+                     class="toggle-page-status"
+                     data-slug="{{ p.slug }}"
+                     data-title="{{ p.title }}"
+                     data-status="{{ p.status or 'published' }}">
+                    {% if p.status and p.status == 'hidden' %}Show{% else %}Hide{% endif %}
+                  </a>
+                </div>
               </div>
             </td>
           </tr>
@@ -120,6 +163,30 @@
       alert('Delete failed: ' + err.message);
     }
   });
-</script>
 
+  // Handle Show/Hide (visibility) toggle
+  document.addEventListener('click', async (e) => {
+    const el = e.target.closest('.toggle-page-status');
+    if (!el) return;
+    e.preventDefault();
+
+    const slug = el.getAttribute('data-slug');
+    const title = el.getAttribute('data-title') || slug;
+    if (!slug) return;
+
+    try {
+      const res = await fetch(`/admin/pages/${encodeURIComponent(slug)}/toggle_status`, { method: 'POST' });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Failed');
+
+      // Update the link label based on new status
+      const newStatus = (data.page && data.page.status) || 'published';
+      el.setAttribute('data-status', newStatus);
+      el.textContent = newStatus === 'hidden' ? 'Show' : 'Hide';
+    } catch (err) {
+      console.error(err);
+      alert('Toggle failed: ' + err.message);
+    }
+  });
+</script>
 {% endblock %}
