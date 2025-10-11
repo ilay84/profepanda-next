@@ -91,7 +91,17 @@
           {% for p in pages %}
             <tr data-slug="{{ p.slug }}">
             <td>
-              <div style="font-weight:700; color:#0f172a; margin-bottom:.15rem;">{{ p.title }}</div>
+              <div style="display:flex; align-items:center; gap:.4rem; flex-wrap:wrap; margin-bottom:.15rem;">
+                <div style="font-weight:700; color:#0f172a;">{{ p.title }}</div>
+                {% if (p.title_en or p.html_en) and (p.title_es or p.html_es) %}
+                  <span style="display:inline-block; padding:.05rem .4rem; border-radius:999px; background:#eef2ff; color:#1e40af; font-weight:700; font-size:.72rem; line-height:1;">EN</span>
+                  <span style="display:inline-block; padding:.05rem .4rem; border-radius:999px; background:#ecfdf5; color:#065f46; font-weight:700; font-size:.72rem; line-height:1;">ES</span>
+                {% elif (p.title_en or p.html_en) %}
+                  <span style="display:inline-block; padding:.05rem .4rem; border-radius:999px; background:#eef2ff; color:#1e40af; font-weight:700; font-size:.72rem; line-height:1;">EN</span>
+                {% elif (p.title_es or p.html_es) %}
+                  <span style="display:inline-block; padding:.05rem .4rem; border-radius:999px; background:#ecfdf5; color:#065f46; font-weight:700; font-size:.72rem; line-height:1;">ES</span>
+                {% endif %}
+              </div>
               <div class="muted">/pages/{{ p.slug }}</div>
             </td>
             <td>

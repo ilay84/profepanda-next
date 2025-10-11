@@ -45,27 +45,152 @@
 </style>
 
 <div class="page-wrap">
-  <h1 class="page-title">{{ page.title }}</h1>
+
+  <!-- Article toolbar: always-visible language switch -->
+  <div style="display:flex; align-items:center; justify-content:flex-end; gap:.5rem; margin-bottom:.5rem; padding:.4rem .6rem; background:#f8fafc; border:1px solid #e5e7eb; border-radius:10px;">
+    <button id="lang-toggle"
+            style="padding:.45rem .9rem; border:1px solid #94a3b8; border-radius:999px;
+                   background:#2563eb; color:white; font-weight:600; cursor:pointer;
+                   font-size:.9rem;">
+      {{ 'versión en español' if lang == 'en' else 'English version' }}
+    </button>
+  </div>
+
+  <!-- Bilingual header + toggle -->
+  {# Detect bilingual fields #}
+  {% set has_en = (page.html_en and page.html_en|length > 0) %}
+  {% set has_es = (page.html_es and page.html_es|length > 0) %}
+
+  {# Build renderable HTML for each side.
+     Do NOT fall back to legacy page.html here—show a placeholder instead if missing. #}
+  {% set html_en_render = page.html_en if has_en else (page.html or '<p style="padding:.75rem 1rem; background:#fff7ed; border:1px solid #fed7aa; border-radius:10px; color:#7c2d12; font-weight:600;">English version is not available yet.</p>') %}
+  {% set html_es_render = page.html_es if has_es else '<p style="padding:.75rem 1rem; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; color:#14532d; font-weight:600;">La versión en español todavía no está disponible.</p>' %}
+
+  {# What can we actually render? #}
+  {% set can_en = has_en %}
+  {% set can_es = has_es %}
+
+  {# Decide which side to show first: respect ?lang=, even if that side is missing (we'll show the placeholder). #}
+  {% if lang == 'en' %}
+    {% set show_en = True %}{% set show_es = False %}
+  {% else %}
+    {% set show_en = False %}{% set show_es = True %}
+  {% endif %}
+
+  <!-- TEMP DEBUG: fixed-position language toggle so it's impossible to miss -->
+    <!-- FORCE-VISIBLE: fixed-position language toggle so it cannot be off-screen -->
+    <button id="lang-toggle"
+            style="position:fixed; right:20px; top:20px; z-index:2147483647;
+                   padding:.55rem 1rem; border:1px solid #0ea5e9; border-radius:999px;
+                   background:#2563eb; color:#fff; font-weight:700; letter-spacing:.2px;
+                   box-shadow:0 8px 22px rgba(0,0,0,.12);">
+      {{ 'versión en español' if show_en else 'English version' }}
+    </button>
+
+  <script>
+    (function () {
+      var btn = document.getElementById('lang-toggle');
+      if (!btn) return;
+
+      // Always switch to the opposite of the current page language
+      var next = "{{ 'es' if lang == 'en' else 'en' }}";
+
+      btn.addEventListener('click', function () {
+        try {
+          var url = new URL(window.location.href);
+          url.searchParams.set('lang', next);
+          window.location.href = url.pathname + "?" + url.searchParams.toString();
+        } catch (e) {
+          window.location.href = window.location.pathname + "?lang=" + next;
+        }
+      });
+    })();
+  </script>
 
   <div class="meta">
     {% if page.created_at %}
-      <span>{{ 'Publicado:' if lang == 'es' else 'Published:' }} {{ page.created_at|pp_date(lang) }}</span>
+      <span>{{ 'Publicado:' if (show_es or not has_en) else 'Published:' }} {{ page.created_at|pp_date(lang) }}</span>
     {% endif %}
-    {% if page.tags %}
-      <span>•</span>
-      <span>
-        {% for t in page.tags %}
+
+    {# English tags #}
+    {% if page.tags_en or page.tags %}
+      <span id="dot-en" style="{{ 'display:none;' if not show_en else '' }}">•</span>
+      <span id="tags-en" style="{{ 'display:none;' if not show_en else '' }}">
+        {% for t in page.tags_en or page.tags %}
+          <span class="tag">{{ t }}</span>
+        {% endfor %}
+      </span>
+    {% endif %}
+
+    {# Spanish tags #}
+    {% if page.tags_es or page.tags %}
+      <span id="dot-es" style="{{ 'display:none;' if not show_es else '' }}">•</span>
+      <span id="tags-es" style="{{ 'display:none;' if not show_es else '' }}">
+        {% for t in page.tags_es or page.tags %}
           <span class="tag">{{ t }}</span>
         {% endfor %}
       </span>
     {% endif %}
   </div>
 
+  <script>
+    // Keep tags in sync with language toggle
+    (function () {
+      var toggleBtn = document.getElementById('lang-toggle');
+      var tagsEn = document.getElementById('tags-en');
+      var tagsEs = document.getElementById('tags-es');
+      var dotEn  = document.getElementById('dot-en');
+      var dotEs  = document.getElementById('dot-es');
+      var en = document.getElementById('page-content-en');
+      var es = document.getElementById('page-content-es');
+
+      function syncTags() {
+        if (!tagsEn && !tagsEs) return;
+        var isEn = en && (en.style.display !== 'none');
+        if (tagsEn) tagsEn.style.display = isEn ? '' : 'none';
+        if (tagsEs) tagsEs.style.display = isEn ? 'none' : '';
+        if (dotEn)  dotEn.style.display  = isEn ? '' : 'none';
+        if (dotEs)  dotEs.style.display  = isEn ? 'none' : '';
+      }
+
+      // Initial sync (also covers sessionStorage-applied state)
+      syncTags();
+
+      // Re-sync on toggle clicks
+      if (toggleBtn) {
+        toggleBtn.addEventListener('click', function () {
+          // toggle runs elsewhere; wait a tick then sync
+          setTimeout(syncTags, 0);
+        });
+      }
+    })();
+  </script>
+
   <hr class="divider">
 
-  <div class="page-content">
-    {{ page.html | safe }}
+  <!-- Two versions of the content -->
+  <div id="page-content-en" class="page-content" style="{{ 'display:none;' if not show_en else '' }}">
+    {{ html_en_render | safe }}
   </div>
+
+  <div id="page-content-es" class="page-content" style="{{ 'display:none;' if not show_es else '' }}">
+    {{ html_es_render | safe }}
+  </div>
+
+  <script>
+    // Close all accordions on public page load (public view only)
+    (function () {
+      try {
+        var rootEn = document.getElementById('page-content-en');
+        var rootEs = document.getElementById('page-content-es');
+        [rootEn, rootEs].forEach(function (root) {
+          if (!root) return;
+          var accs = root.querySelectorAll('details.pp-accordion[open]');
+          accs.forEach(function (d) { d.removeAttribute('open'); });
+        });
+      } catch (e) { /* no-op */ }
+    })();
+  </script>
 
   <div class="back-link" style="margin-top:1rem;">
     <a href="{{ url_for('public.public_pages_index') }}" style="text-decoration:none;color:#2563eb;font-weight:600;">
@@ -74,13 +199,72 @@
   </div>
 </div>
 <script>
-  // Public pages: ensure all accordions start CLOSED (ignore any saved 'open')
-  (function () {
-    var root = document.querySelector('.page-content');
-    if (!root) return;
-    root.querySelectorAll('details.pp-accordion[open]').forEach(function (d) {
-      d.removeAttribute('open');
-    });
-  })();
+  // Prefill from server JSON when editing an existing page
+  async function prefillIfEditing() {
+    const slug = getSlugParam();
+    if (!slug) return; // "new" mode, nothing to load
+
+    try {
+      const res = await fetch(`/admin/pages/${encodeURIComponent(slug)}/json`, { method: 'GET' });
+      const data = await res.json();
+      if (!data.success || !data.page) return;
+
+      const p = data.page;
+
+      // What actually exists
+      const hasEnBody = !!(p.html_en && p.html_en.trim().length);
+      const hasEsBody = !!(p.html_es && p.html_es.trim().length);
+
+      // Decide which side (EN or ES) should absorb legacy fields (title/tags/html)
+      // If both bilingual bodies are missing, prefer ES if there is any Spanish signal,
+      // otherwise prefer EN.
+      const preferEsForLegacy =
+        (!hasEnBody && !hasEsBody) && (
+          (p.title_es && p.title_es.trim().length) ||
+          (Array.isArray(p.tags_es) && p.tags_es.length)
+        );
+
+      // Titles (fall back on only ONE side)
+      const title_en = hasEnBody ? (p.title_en || '') : (preferEsForLegacy ? '' : (p.title_en || p.title || ''));
+      const title_es = hasEsBody ? (p.title_es || '') : (preferEsForLegacy ? (p.title_es || p.title || '') : '');
+
+      // Tags (fall back on only ONE side)
+      const tags_en = hasEnBody ? (p.tags_en || []) : (preferEsForLegacy ? [] : (p.tags_en || p.tags || []));
+      const tags_es = hasEsBody ? (p.tags_es || []) : (preferEsForLegacy ? (p.tags_es || p.tags || []) : []);
+
+      // Bodies (fall back on only ONE side)
+      const html_en = hasEnBody ? p.html_en : (preferEsForLegacy ? '' : (p.html || ''));
+      const html_es = hasEsBody ? p.html_es : (preferEsForLegacy ? (p.html || '') : '');
+
+      // Fill inputs
+      const tEn = document.getElementById('title_en');
+      const tEs = document.getElementById('title_es');
+      const gEn = document.getElementById('tags_en');
+      const gEs = document.getElementById('tags_es');
+
+      if (tEn) tEn.value = title_en || '';
+      if (tEs) tEs.value = title_es || '';
+      if (gEn) gEn.value = (Array.isArray(tags_en) ? tags_en : []).join(', ');
+      if (gEs) gEs.value = (Array.isArray(tags_es) ? tags_es : []).join(', ');
+
+      // Fill editors (TinyMCE may not be ready yet → wait until it is)
+      function setEditorWhenReady(id, html) {
+        const trySet = () => {
+          const ed = tinymce.get(id);
+          if (ed) { ed.setContent(html || ''); return true; }
+          return false;
+        };
+        if (!trySet()) {
+          const iv = setInterval(() => { if (trySet()) clearInterval(iv); }, 60);
+          setTimeout(() => clearInterval(iv), 4000); // safety stop
+        }
+      }
+      setEditorWhenReady('html_en', html_en);
+      setEditorWhenReady('html_es', html_es);
+    } catch (e) {
+      console.error('Failed to prefill page:', e);
+    }
+  }
+  prefillIfEditing();
 </script>
 {% endblock %}

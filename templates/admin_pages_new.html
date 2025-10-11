@@ -38,6 +38,25 @@
     padding:.35rem .6rem; border-radius:999px; background:#dcfce7; color:#166534; font-weight:600; font-size:.9rem;
   }
   .success-pill.show{ display:inline-flex; }
+
+  /* Visually pin the saved pill near the bottom-right actions so it's seen next to Publish */
+  #saveOk.success-pill.show {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 50;
+    box-shadow: 0 8px 22px rgba(0,0,0,.12);
+  }
+
+  /* Saving spinner next to Publish */
+  .saving { display:none; align-items:center; gap:.5rem; font-weight:600; color:#475569; }
+  .saving.show { display:inline-flex; }
+  .saving .dot {
+    display:inline-block; width:10px; height:10px; border-radius:50%;
+    border:2px solid currentColor; border-top-color: transparent;
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 
 <!-- TinyMCE (rich text editor) -->
@@ -45,21 +64,49 @@
 
 <div class="pages-wrapper">
   <div class="pages-card">
-    <div class="pages-head">
+    <div class="pages-head" id="pagesHead" data-slug="{{ page.slug if page and page.slug }}">
       <h1>New Page</h1>
       <span id="saveOk" class="success-pill">✓ Saved</span>
     </div>
 
     <div class="pages-body">
       <form id="pageForm">
-        <!-- Language -->
+        {# Ensure 'page' exists on new-page view #}
+        {% if page is not defined %}{% set page = {} %}{% endif %}
+
+        <!-- Title -->
         <div class="field">
-          <label class="label" for="lang">Language</label>
-          <select class="input" id="lang" name="lang" required>
-            <option value="es" selected>Español (es)</option>
-            <option value="en">English (en)</option>
-          </select>
-          <div class="help">Choose the language this page is written in. You’ll create the other language as a separate page.</div>
+          <label class="label" for="title">Title</label>
+          <input class="input" id="title" name="title" type="text" placeholder="Enter the page title" />
+        </div>
+
+        <!-- Bilingual content (Option B) -->
+        <div class="field">
+          <h3 style="font-weight:600; margin:12px 0 6px;">English version</h3>
+
+          <label class="label" for="title_en">Title (English)</label>
+          <input class="input" id="title_en" name="title_en" type="text" placeholder="Enter the English title" value="{{ (page.title_en or (page.title if (page.title and not page.title_es))) or '' }}" />
+
+          <label class="label" for="tags_en" style="margin-top:10px;">Tags (English, comma-separated)</label>
+          <input class="input" id="tags_en" name="tags_en" type="text" placeholder="e.g., verbs, copulas, A2" value="{{ (page.tags_en or (page.tags if (page.tags and not page.tags_es)) or [])|join(', ') }}" />
+
+          <label class="label" for="html_en" style="margin-top:10px;">Content (English)</label>
+          <textarea class="input" id="html_en" name="html_en" rows="12" placeholder="Enter the English HTML or rich text">{{ (page.html_en or (page.html if (page.html and not page.html_es)) or '') }}</textarea>
+          <div class="help">Fill in any of these fields. If you leave all of them empty, only the Spanish version will be shown.</div>
+        </div>
+
+        <div class="field" style="margin-top:18px;">
+          <h3 style="font-weight:600; margin:12px 0 6px;">Versión en español</h3>
+
+          <label class="label" for="title_es">Título (Español)</label>
+          <input class="input" id="title_es" name="title_es" type="text" placeholder="Ingresá el título en español" value="{{ page.title_es or (page.title if (page.title and not page.title_en)) or '' }}" />
+
+          <label class="label" for="tags_es" style="margin-top:10px;">Etiquetas (Español, separadas por coma)</label>
+          <input class="input" id="tags_es" name="tags_es" type="text" placeholder="p. ej., verbos, ser y estar, A2" value="{{ (page.tags_es or (page.tags if (page.tags and not page.tags_en)) or [])|join(', ') }}" />
+
+          <label class="label" for="html_es" style="margin-top:10px;">Contenido (Español)</label>
+          <textarea class="input" id="html_es" name="html_es" rows="12" placeholder="Ingresá el HTML o texto enriquecido en español">{{ page.html_es or (page.html if (page.html and not page.html_en)) or '' }}</textarea>
+          <div class="help">Completá los campos que necesites. Si dejás todo vacío en español, solo se mostrará la versión en inglés.</div>
         </div>
 
         <!-- Tags -->
@@ -69,226 +116,268 @@
           <div class="help">Comma-separated (e.g., <em>ser/estar, beginner, A2</em>).</div>
         </div>
 
-        <!-- Editor -->
-        <div class="field">
-          <label class="label">Content</label>
-          <div class="toolbar-note">
-            Headings H1–H5, paragraphs, lists, links, tables, code, and media embeds are enabled.
-            You can paste **iframe** snippets (H5P, YouTube, Canva, Genially, etc.) directly.
-          </div>
-          <textarea id="editor" name="html"></textarea>
-        </div>
       </form>
     </div>
 
-    <div class="actions">
+<div class="actions">
       <button type="button" class="btn secondary" id="cancelBtn"
         style="color:#dc2626;font-weight:400;background:#e2e8f0;"
         onclick="if (confirm('Discard this page and return to Pages?')) window.location.href='{{ url_for('admin.admin_pages_index') }}'">
         Cancel
       </button>
       <button type="button" class="btn secondary" id="resetBtn">Reset</button>
+
+      <!-- Saving indicator (shown while publishing) -->
+      <span id="savingIndicator" class="saving" aria-live="polite" style="margin-left:auto;">
+        <span class="dot"></span> Saving…
+      </span>
+
       <button type="button" class="btn primary" id="publishBtn">Publish</button>
     </div>
   </div>
 </div>
 
 <script>
-  // Initialize TinyMCE (with Accordion support via <details>/<summary>)
-  tinymce.init({
-    selector: '#editor',
-    base_url: 'https://cdn.jsdelivr.net/npm/tinymce@6.8.3',
-    suffix: '.min',
-    height: 520,
-    menubar: 'file edit view insert format tools table',
-    plugins: 'code link lists table media image autoresize template visualblocks',
-    toolbar: [
-      'undo redo | blocks | bold italic underline removeformat |',
-      'alignleft aligncenter alignright alignjustify | bullist numlist outdent indent |',
-      'link image media table | template visualblocks | code'
-    ].join(' '),
+  document.addEventListener('DOMContentLoaded', function () {
+    // ---- Safe helpers ----
+    const $ = (sel) => document.querySelector(sel);
 
-    // Block formats
-    block_formats: 'Paragraph=p; H1=h1; H2=h2; H3=h3; H4=h4; H5=h5',
+    // Slug detection (reads data attribute first, then URL patterns)
+    const getSlugParam = () => {
+      try {
+        // 0) ?slug=... (used by /admin/pages/<slug>/edit → redirect)
+        const usp = new URLSearchParams(window.location.search);
+        const qs = usp.get('slug');
+        if (qs) return decodeURIComponent(qs);
 
-    // Allow embeds + details/summary for accordions
-    extended_valid_elements: [
-      'iframe[src|frameborder|allow|allowfullscreen|width|height|style|loading]',
-      'script[src|type]',
-      'details[class|open]',
-      'summary[class]',
-      'div[*]',
-      'span[*]',
-      'p[*]',
-      'h1[*],h2[*],h3[*],h4[*],h5[*]',
-      'ul[*],ol[*],li[*]',
-      'table[*],thead[*],tbody[*],tr[*],th[*],td[*]',
-      'img[src|alt|width|height|style]'
-    ].join(','),
+        // 1) data attribute (if template was rendered with a page)
+        const headEl = document.getElementById('pagesHead');
+        const ds = headEl && headEl.dataset ? headEl.dataset.slug : '';
+        if (ds) return ds;
 
-    // Let <details> contain useful children
-    valid_children: [
-      '+details[summary|div|p|ul|ol|table|img|iframe|h1|h2|h3|h4|h5]',
-      '+div[iframe|div|span|p|h1|h2|h3|h4|h5|ul|ol|table|img]',
-      '+p[iframe|span|strong|em|a|img|code]'
-    ].join(','),
+        // 2) /admin/pages/<slug>/edit
+        let path = window.location.pathname || '';
+        let m = path.match(/\/admin\/pages\/([^\/]+)\/edit\/?$/);
+        if (m && m[1]) return decodeURIComponent(m[1]);
 
-    // Editor content styles (so accordions look nice while editing)
-    content_style: `
-      @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
-      body { font-family: 'Montserrat', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; font-size:16px; color:#0f172a; }
-      h1,h2,h3,h4,h5 { font-weight:700; color:#0f172a; margin: 1.1em 0 .5em; }
-      p { line-height: 1.7; margin: .6em 0; }
-      pre, code { background:#0b102026; padding:.15rem .35rem; border-radius:6px; }
-      table { width:100%; border-collapse: collapse; }
-      table, th, td { border:1px solid #e2e8f0; }
-      th, td { padding:.5rem .6rem; }
-      iframe { display:block; max-width:100%; border:0; margin: .75rem 0; }
-      img { max-width:100%; height:auto; }
-      ul,ol { padding-left: 1.35rem; }
-      a { color:#2563eb; text-decoration: underline; }
+        // 3) /admin/pages/<slug>
+        m = path.match(/\/admin\/pages\/([^\/]+)\/?$/);
+        if (m && m[1] && m[1] !== 'new') return decodeURIComponent(m[1]);
 
-      /* Accordion styling inside the editor */
-      details.pp-accordion { border:1px solid #e5e7eb; border-radius:10px; background:#fff; margin:.75rem 0; }
-      details.pp-accordion + details.pp-accordion { margin-top:.5rem; }
-      details.pp-accordion > summary {
-        cursor:pointer; list-style:none; padding:.6rem .8rem; font-weight:600; color:#0f172a; display:flex; align-items:center; gap:.5rem;
+        // 4) <meta name="pp-page-slug" ...>
+        const meta = document.querySelector('meta[name="pp-page-slug"]');
+        if (meta && meta.content) return meta.content;
+      } catch (e) { console.error('Slug detection failed:', e); }
+      return null;
+    };
+
+    const showSaved = () => {
+      const pill = $('#saveOk');
+      if (pill) {
+        pill.classList.add('show');
+        setTimeout(() => pill.classList.remove('show'), 1500);
       }
-      details.pp-accordion > summary::-webkit-details-marker { display:none; }
-      details.pp-accordion > summary::before {
-        content:"▸"; transform: translateY(1px);
-      }
-      details.pp-accordion[open] > summary::before { content:"▾"; }
-      .pp-accordion-body { padding:.6rem .8rem .8rem; border-top:1px solid #e5e7eb; color:#334155; }
-    `,
+      // Also hide spinner & re-enable Publish
+      const saving = $('#savingIndicator');
+      const pubBtn = $('#publishBtn');
+      if (saving) saving.classList.remove('show');
+      if (pubBtn) pubBtn.disabled = false;
+    };
 
-    // Keep iframes on paste
-    paste_remove_elements: '',
-    paste_data_images: true,
-    convert_urls: false,
-
-    // One-click “Accordion” template
-    templates: [
-      {
-        title: 'Accordion',
-        description: 'Insert a collapsible section (details/summary)',
-        content: `
+    // ---- Init TinyMCE (both editors) ----
+    try {
+      tinymce.init({
+        selector: '#html_en,#html_es',
+        base_url: 'https://cdn.jsdelivr.net/npm/tinymce@6.8.3',
+        suffix: '.min',
+        height: 520,
+        menubar: 'file edit view insert format tools table',
+        plugins: 'code link lists table media image autoresize template visualblocks template',
+        toolbar: [
+          'undo redo | blocks | bold italic underline removeformat |',
+          'alignleft aligncenter alignright alignjustify | bullist numlist outdent indent |',
+          'link image media table | template visualblocks | code'
+        ].join(' '),
+        block_formats: 'Paragraph=p; H1=h1; H2=h2; H3=h3; H4=h4; H5=h5',
+        extended_valid_elements: [
+          'iframe[src|frameborder|allow|allowfullscreen|width|height|style|loading]',
+          'script[src|type]',
+          'details[class|open]',
+          'summary[class]',
+          'div[*]',
+          'span[*]',
+          'p[*]',
+          'h1[*],h2[*],h3[*],h4[*],h5[*]',
+          'ul[*],ol[*],li[*]',
+          'table[*],thead[*],tbody[*],tr[*],th[*],td[*]',
+          'img[src|alt|width|height|style]'
+        ].join(','),
+        templates: [{
+          title: 'Accordion',
+          description: 'Collapsible section',
+          content: `
 <details class="pp-accordion" open>
-  <summary>Section title</summary>
+  <summary><strong>Section title</strong></summary>
   <div class="pp-accordion-body">
     <p>Write your content here…</p>
   </div>
 </details>`
-      },
-      {
-        title: 'FAQ Accordion (2 items)',
-        description: 'Two collapsible questions',
-        content: `
-<details class="pp-accordion" open>
-  <summary>Question 1</summary>
-  <div class="pp-accordion-body">
-    <p>Answer 1…</p>
-  </div>
-</details>
-<details class="pp-accordion" open>
-  <summary>Question 2</summary>
-  <div class="pp-accordion-body">
-    <p>Answer 2…</p>
-  </div>
-</details>`
-      }
-    ]
-  });
-
-  // Helpers
-  const $ = sel => document.querySelector(sel);
-  const showSaved = () => {
-    const pill = $('#saveOk');
-    pill.classList.add('show');
-    setTimeout(() => pill.classList.remove('show'), 2200);
-  };
-  const getSlugParam = () => new URLSearchParams(location.search).get('slug');
-
-  // Prefill when editing (?slug=...)
-  (function prefillIfEditing(){
-    const slug = getSlugParam();
-    if (!slug) return;
-
-    // Update header + primary button text
-    const h = document.querySelector('.pages-head h1');
-    if (h) h.textContent = 'Edit Page';
-    const pub = $('#publishBtn');
-    if (pub) pub.textContent = 'Update';
-
-    // Helper: wait until TinyMCE editor is fully initialized
-    const waitForEditor = () => new Promise((resolve) => {
-      const tick = () => {
-        const ed = tinymce.get('editor');
-        if (ed && ed.initialized) return resolve(ed);
-        setTimeout(tick, 50);
-      };
-      tick();
-    });
-
-    (async () => {
-      try {
-        const res = await fetch(`/admin/pages/${slug}.json`);
-        if (!res.ok) return;
-        const data = await res.json();
-        if (!data || !data.page) return;
-
-        const p = data.page;
-        $('#lang').value = (p.lang === 'en' ? 'en' : 'es');
-        $('#tags').value = Array.isArray(p.tags) ? p.tags.join(', ') : (p.tags || '');
-
-        const ed = await waitForEditor();
-        ed.setContent(p.html || '');
-      } catch (e) {
-        console.error(e);
-      }
-    })();
-  })();
-
-  // Reset form
-  $('#resetBtn').addEventListener('click', () => {
-    $('#pageForm').reset();
-    if (tinymce.get('editor')) tinymce.get('editor').setContent('');
-  });
-
-  // Publish / Update
-  $('#publishBtn').addEventListener('click', async () => {
-    const title = $('#title').value.trim();
-    const tags = $('#tags').value.trim();
-    const html = tinymce.get('editor') ? tinymce.get('editor').getContent() : '';
-    const lang = ($('#lang') ? $('#lang').value : 'es');
-    const slug = getSlugParam();
-
-    if (!title || !html) {
-      alert("Please add both a Title and Content.");
-      return;
+        }],
+        paste_remove_elements: '',
+        paste_data_images: true,
+        convert_urls: false,
+        content_style: `
+          @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+          body { font-family:'Montserrat', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:#0f172a; line-height:1.8; }
+          img { max-width:100%; height:auto; }
+          iframe { max-width:100%; width:100%; border:0; margin:.75rem 0; }
+          details.pp-accordion { border:1px solid #e5e7eb; border-radius:10px; background:#fff; margin:.75rem 0; }
+          details.pp-accordion + details.pp-accordion { margin-top:.5rem; }
+          details.pp-accordion > summary { cursor:pointer; list-style:none; padding:.6rem .8rem; font-weight:600; color:#0f172a; display:flex; align-items:center; gap:.5rem; }
+          details.pp-accordion > summary::-webkit-details-marker { display:none; }
+          details.pp-accordion > summary::before { content:"▸"; transform: translateY(1px); }
+          details.pp-accordion[open] > summary::before { content:"▾"; }
+          .pp-accordion-body { padding:.6rem .8rem .8rem; border-top:1px solid #e5e7eb; color:#334155; }
+        `
+      });
+    } catch (e) {
+      console.error('TinyMCE init failed:', e);
     }
 
-    const form = new FormData();
-    form.append('title', title);
-    form.append('tags', tags);
-    form.append('html', html);
-    form.append('lang', lang);
+    // ---- Reset button ----
+    const resetBtn = $('#resetBtn');
+    if (resetBtn) {
+      resetBtn.addEventListener('click', () => {
+        const form = $('#pageForm');
+        if (form) form.reset();
+        if (tinymce.get('html_en')) tinymce.get('html_en').setContent('');
+        if (tinymce.get('html_es')) tinymce.get('html_es').setContent('');
+      });
+    }
 
-    // Create vs Update endpoint
-    const endpoint = slug ? `/admin/pages/${slug}/update` : '/admin/pages';
+    // ---- Prefill when editing ----
+    (async function prefillIfEditing() {
+      const slug = getSlugParam();
+      if (!slug) return; // "new" mode
 
-    try {
-      const res = await fetch(endpoint, { method: 'POST', body: form });
-      const data = await res.json();
-      if (!data.success) {
-        console.error(data);
-        alert(data.error || 'Failed to save page.');
-        return;
+      try {
+        const res = await fetch(`/admin/pages/${encodeURIComponent(slug)}/json`, { method: 'GET' });
+        const data = await res.json();
+        if (!data.success || !data.page) return;
+        const p = data.page;
+
+        const title_en = p.title_en || (p.title && !p.title_es ? p.title : '');
+        const title_es = p.title_es || (p.title && !p.title_en ? p.title : '');
+        const tags_en  = Array.isArray(p.tags_en) ? p.tags_en : (!p.tags_es && Array.isArray(p.tags) ? p.tags : []);
+        const tags_es  = Array.isArray(p.tags_es) ? p.tags_es : (!p.tags_en && Array.isArray(p.tags) ? p.tags : []);
+        const html_en  = p.html_en || (p.html && !p.html_es ? p.html : '');
+        const html_es  = p.html_es || (p.html && !p.html_en ? p.html : '');
+
+        const tMain = $('#title');
+        const tEn = $('#title_en'), tEs = $('#title_es');
+        const gEn = $('#tags_en'),  gEs = $('#tags_es');
+
+        // Main (legacy) title shows whatever currently represents the page title.
+        if (tMain) tMain.value = (p.title || title_en || title_es || '');
+
+        if (tEn) tEn.value = title_en || '';
+        if (tEs) tEs.value = title_es || '';
+        if (gEn) gEn.value = (tags_en || []).join(', ');
+        if (gEs) gEs.value = (tags_es || []).join(', ');
+
+        const setEditorWhenReady = (id, html) => {
+          const trySet = () => {
+            const ed = tinymce.get(id);
+            if (ed) { ed.setContent(html || ''); return true; }
+            return false;
+          };
+          if (!trySet()) {
+            const iv = setInterval(() => { if (trySet()) clearInterval(iv); }, 60);
+            setTimeout(() => clearInterval(iv), 4000);
+          }
+        };
+        setEditorWhenReady('html_en', html_en);
+        setEditorWhenReady('html_es', html_es);
+      } catch (e) {
+        console.error('Prefill failed:', e);
       }
-      showSaved();
-    } catch (e) {
-      console.error(e);
-      alert('Network error while saving page.');
+    })();
+
+    // ---- Publish / Update ----
+    const publishBtn = $('#publishBtn');
+    if (publishBtn) {
+      publishBtn.addEventListener('click', async () => {
+        const saving = document.getElementById('savingIndicator');
+        if (saving) saving.classList.add('show');
+        publishBtn.disabled = true;
+        try {
+          // Read fields
+          const title_main = ($('#title')?.value     || '').trim();   // <-- main title
+          const title_en   = ($('#title_en')?.value  || '').trim();
+          const tags_en    = ($('#tags_en')?.value   || '').trim();
+          const title_es   = ($('#title_es')?.value  || '').trim();
+          const tags_es    = ($('#tags_es')?.value   || '').trim();
+
+          const html_en = tinymce.get('html_en') ? tinymce.get('html_en').getContent() : ($('#html_en')?.value || '');
+          const html_es = tinymce.get('html_es') ? tinymce.get('html_es').getContent() : ($('#html_es')?.value || '');
+
+          if (!(title_en || html_en || title_es || html_es || title_main)) {
+            alert('Please fill at least one language (English or Spanish).');
+            return;
+          }
+
+          // 🧩 Ensure both bilingual sides have something, for fallback compatibility
+          let safe_html_en = html_en || '';
+          let safe_html_es = html_es || '';
+          // If one is empty but legacy main HTML exists, fill it in
+          const legacy_html_fallback = $('#html')?.value || safe_html_en || safe_html_es;
+          if (!safe_html_en && legacy_html_fallback) safe_html_en = legacy_html_fallback;
+          if (!safe_html_es && legacy_html_fallback) safe_html_es = legacy_html_fallback;
+
+          // What we submit in legacy fields (used by routes + slugging)
+          const legacy_title = title_main || title_es || title_en || '';
+          const legacy_html  = safe_html_es || safe_html_en || '';
+          const legacy_tags  = tags_es    || tags_en  || '';
+
+          const form = new FormData();
+          // 🧩 Bilingual – always provide both sides so toggle works publicly
+          const submit_html_en = html_en || html_es || legacy_html_fallback || '';
+          const submit_html_es = html_es || html_en || legacy_html_fallback || '';
+
+          form.append('title_en', title_en);
+          form.append('html_en',  submit_html_en);
+          form.append('tags_en',  tags_en);
+          form.append('title_es', title_es);
+          form.append('html_es',  submit_html_es);
+          form.append('tags_es',  tags_es);
+          // Legacy mirrors (keep older renderers & slug creation happy)
+          form.append('title', legacy_title);
+          form.append('html',  legacy_html);
+          form.append('tags',  legacy_tags);
+
+          const slug = getSlugParam();
+          const creating = !slug;
+          const endpoint = creating ? '/admin/pages' : `/admin/pages/${encodeURIComponent(slug)}/update`;
+
+          const res = await fetch(endpoint, { method: 'POST', body: form });
+          const data = await res.json();
+          if (!data.success) {
+            console.error(data);
+            alert(data.error || 'Failed to save page.');
+            return;
+          }
+
+          if (creating && data.page && data.page.slug) {
+            // Jump to edit so subsequent saves UPDATE (not create new)
+            window.location.href = `/admin/pages/${encodeURIComponent(data.page.slug)}/edit`;
+            return;
+          }
+          showSaved();
+        } catch (e) {
+          console.error('Save failed:', e);
+          alert('Network error while saving page.');
+        }
+      });
     }
   });
 </script>

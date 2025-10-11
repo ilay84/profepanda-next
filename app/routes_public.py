@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, send_from_directory, abort
 import os
 import json
 from flask import request
+from flask import make_response
 
 # === BEGIN: Public Pages loader (flat + foldered) ===
 def _public_pages_path():
@@ -152,11 +153,37 @@ def _public_pages_path():
 
 def _public_load_pages():
     """
-    Load pages from both sources and hide those with status == 'hidden':
-      - flat:  data/pages/pages.json
-      - foldered: data/pages/<slug>/page.json   (wins on conflict)
+    Load pages from both sources, hide status == 'hidden',
+    and de-duplicate by *base* slug (strip a trailing -<number>),
+    keeping the newest (by updated_at, then created_at).
+      - flat:     data/pages/pages.json
+      - foldered: data/pages/<slug>/page.json
     """
-    # 1) Flat list
+    from datetime import datetime
+    import re
+
+    def norm_slug(s: str) -> str:
+        s = (s or "").strip().lower()
+        # strip trailing "-<digits>" once: e.g., "foo-bar-3" -> "foo-bar"
+        m = re.match(r"^(.*?)(?:-\d+)?$", s)
+        return m.group(1) if m else s
+
+    def parse_dt(s):
+        if not s:
+            return None
+        s = str(s).strip()
+        try:
+            # ISO (with/without Z)
+            return datetime.fromisoformat(s.replace("Z", "").replace("z", ""))
+        except Exception:
+            for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d"):
+                try:
+                    return datetime.strptime(s, fmt)
+                except Exception:
+                    continue
+        return None
+
+    # 1) read flat list
     flat = []
     path = _public_pages_path()
     if os.path.exists(path):
@@ -168,8 +195,8 @@ def _public_load_pages():
         except Exception:
             pass
 
-    # 2) Foldered pages
-    merged = {}
+    # 2) read foldered pages
+    foldered = []
     pages_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "pages"))
     if os.path.isdir(pages_root):
         try:
@@ -184,22 +211,42 @@ def _public_load_pages():
                     with open(page_json, "r", encoding="utf-8") as f:
                         obj = json.load(f)
                     if isinstance(obj, dict):
-                        slug = (obj.get("slug") or name).strip().lower()
-                        if slug:
-                            merged[slug] = obj
+                        foldered.append(obj)
                 except Exception:
                     continue
         except Exception:
             pass
 
-    # 3) Add any flat entries not overridden by foldered
-    for p in flat:
-        slug = (p.get("slug") or "").strip().lower()
-        if slug and slug not in merged:
-            merged[slug] = p
+    # 3) combine, drop hidden
+    all_pages = []
+    for p in flat + foldered:
+        if not isinstance(p, dict):
+            continue
+        if (p.get("status") == "hidden"):
+            continue
+        all_pages.append(p)
 
-    # 4) Filter out hidden
-    return [p for p in merged.values() if (p.get("status") != "hidden")]
+    # 4) de-duplicate by base slug; pick newest by (updated_at, created_at)
+    buckets = {}
+    for p in all_pages:
+        slug = (p.get("slug") or "").strip().lower()
+        base = norm_slug(slug)
+        key = base or slug
+        # choose best candidate
+        cur = buckets.get(key)
+        def score(x):
+            return (
+                parse_dt(x.get("updated_at")) or parse_dt(x.get("created_at")) or datetime.min,
+                # tie-breaker: prefer longer slug (usually the one with -<n>)
+                len(x.get("slug") or ""),
+            )
+        if cur is None or score(p) > score(cur):
+            buckets[key] = p
+
+    # 5) return newest-first friendly list
+    result = list(buckets.values())
+    result.sort(key=lambda p: (p.get("updated_at") or p.get("created_at") or ""), reverse=True)
+    return result
 # === END: Public Pages loader ===
 
 # ------------------------------------------------------
@@ -801,7 +848,19 @@ def public_page(slug):
     page = next((p for p in pages if p.get("slug") == slug), None)
     if not page:
         return f"Página no encontrada: {slug}", 404
-    return render_template("public_page.html", page=page)
+
+    # Determine language for initial render: ?lang= takes precedence, then cookie, else 'es'
+    lang = (request.args.get("lang") or "").strip().lower()
+    if lang not in ("es", "en"):
+        lang = (request.cookies.get("pp_lang") or "").strip().lower()
+        if lang not in ("es", "en"):
+            lang = "es"
+
+    # Remember the user’s choice if they provided ?lang=...
+    resp = make_response(render_template("public_page.html", page=page, lang=lang))
+    if "lang" in request.args:
+        resp.set_cookie("pp_lang", lang, max_age=60 * 60 * 24 * 365, samesite="Lax")
+    return resp
 # === END: Public Page view ===
 
 # === BEGIN: Serve new foldered exercises (type/slug) ===

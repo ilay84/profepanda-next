@@ -849,18 +849,37 @@ def admin_pages_index():
 @bp.route("/pages/new", methods=["GET"])
 def admin_pages_new():
     """
-    Render the 'New Page' form (template to be added next step).
+    Render the New Page editor. Pass an empty 'page' so the template
+    can safely reference page.* without Jinja errors.
     """
-    # We'll create this template next: templates/admin_pages_new.html
-    return render_template("admin_pages_new.html")
+    return render_template("admin_pages_new.html", page={})
 
 @bp.route("/pages/<slug>/edit", methods=["GET"])
 def admin_pages_edit(slug):
     """
-    Lightweight redirect so we can reuse the 'New Page' editor UI.
-    The editor will detect ?slug=... and prefill fields.
+    Load an existing page and render the editor with a real `page` object.
+    This lets the template expose data-slug and the JS reliably prefill + update.
     """
-    return redirect(f"/admin/pages/new?slug={slug}")
+    pages = _load_pages()
+    page = next((p for p in pages if (p.get("slug") or "").strip().lower() == slug.strip().lower()), None)
+
+    # If not found in flat index, try foldered JSON: data/pages/<slug>/page.json
+    if not page:
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+        folder = os.path.join(project_root, "data", "pages", slug)
+        page_json_path = os.path.join(folder, "page.json")
+        if os.path.exists(page_json_path):
+            try:
+                with open(page_json_path, "r", encoding="utf-8") as f:
+                    page = json.load(f) or {}
+            except Exception:
+                page = None
+
+    if not page:
+        return render_template("admin_pages_new.html", page={"slug": slug}), 404
+
+    # Render the same editor template, but now with the actual page
+    return render_template("admin_pages_new.html", page=page)
 
 
 @bp.route("/pages/<slug>.json", methods=["GET"])
@@ -896,22 +915,52 @@ def admin_pages_get(slug):
 @bp.route("/pages/<slug>/update", methods=["POST"])
 def admin_pages_update(slug):
     """
-    Update an existing page identified by slug.
-    - Keeps slug (URL) stable even if title changes.
-    - Updates both foldered file: data/pages/<slug>/page.json
-      and the flat index:   data/pages/pages.json
+    Update an existing page identified by slug (bilingual-aware).
+    Accepts BOTH new bilingual fields and legacy single-language fields:
+
+      New (preferred):
+        - title_en, html_en, tags_en
+        - title_es, html_es, tags_es   (comma-separated tags)
+
+      Legacy (back-compat; used as fallback when a language is missing):
+        - title, html, tags
+
+    Writes to:
+      - data/pages/<slug>/page.json
+      - data/pages/pages.json
     """
     from datetime import datetime
 
     try:
-        title = (request.form.get("title") or "").strip()
-        html = (request.form.get("html") or "").strip()
-        tags_raw = (request.form.get("tags") or "").strip()
+        # --- Read bilingual fields (strings) ---
+        title_en = (request.form.get("title_en") or "").strip()
+        html_en  = (request.form.get("html_en") or "").strip()
+        tags_en_raw = (request.form.get("tags_en") or "").strip()
 
-        if not title or not html:
-            return jsonify({"success": False, "error": "Both 'title' and 'html' are required."}), 400
+        title_es = (request.form.get("title_es") or "").strip()
+        html_es  = (request.form.get("html_es") or "").strip()
+        tags_es_raw = (request.form.get("tags_es") or "").strip()
 
-        tags = [t.strip() for t in tags_raw.split(",") if t.strip()] if tags_raw else []
+        # --- Legacy fallbacks (for editors/templates not yet migrated) ---
+        legacy_title = (request.form.get("title") or "").strip()
+        legacy_html  = (request.form.get("html")  or "").strip()
+        legacy_tags_raw = (request.form.get("tags") or "").strip()
+
+        # Parse tags (comma-separated -> list)
+        def _parse_tags(raw):
+            return [t.strip() for t in (raw or "").split(",") if t and t.strip()]
+
+        tags_en = _parse_tags(tags_en_raw)
+        tags_es = _parse_tags(tags_es_raw)
+        legacy_tags = _parse_tags(legacy_tags_raw)
+
+        # Require at least one language present (either new fields or legacy)
+        has_en = bool(title_en or html_en)
+        has_es = bool(title_es or html_es)
+        has_legacy = bool(legacy_title or legacy_html)
+
+        if not (has_en or has_es or has_legacy):
+            return jsonify({"success": False, "error": "Provide at least one language (EN or ES)."}), 400
 
         # Load current page (foldered preferred, else from flat)
         project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -921,43 +970,101 @@ def admin_pages_update(slug):
         current = None
         if os.path.exists(page_json_path):
             with open(page_json_path, "r", encoding="utf-8") as f:
-                current = json.load(f)
+                try:
+                    current = json.load(f)
+                except Exception:
+                    current = {}
         else:
             pages_flat = _load_pages()
             for p in pages_flat:
                 if (p.get("slug") or "").strip().lower() == slug.strip().lower():
                     current = p
                     break
-
         if not current:
             return jsonify({"success": False, "error": "Page not found."}), 404
 
-        # Update fields
-        current["title"] = title
-        current["html"] = html
-        current["tags"] = tags
-        current["updated_at"] = datetime.utcnow().isoformat(timespec="seconds") + "Z"
-        current.setdefault("id", slug)
-        current.setdefault("slug", slug)
-        current.setdefault("status", "published")
+        # --- Start from existing to avoid wiping fields the user didn't touch ---
+        updated = dict(current or {})
+        now_iso = datetime.utcnow().isoformat(timespec="seconds") + "Z"
 
-        # Ensure folder exists and write foldered JSON
+        # Ensure identity fields
+        updated.setdefault("id", slug)
+        updated.setdefault("slug", slug)
+        updated.setdefault("status", "published")
+        updated.setdefault("created_at", current.get("created_at") or now_iso)
+
+        # --- Apply bilingual updates if provided (partial updates allowed) ---
+        if title_en or "title_en" in request.form:
+            updated["title_en"] = title_en
+        if html_en or "html_en" in request.form:
+            updated["html_en"] = html_en
+        if tags_en_raw or "tags_en" in request.form:
+            updated["tags_en"] = tags_en
+
+        if title_es or "title_es" in request.form:
+            updated["title_es"] = title_es
+        if html_es or "html_es" in request.form:
+            updated["html_es"] = html_es
+        if tags_es_raw or "tags_es" in request.form:
+            updated["tags_es"] = tags_es
+
+        # --- Backward-compat fields (keep for legacy renderers) ---
+        # Single source of truth: prefer EN → ES → legacy (do NOT overwrite twice).
+        def _pick_legacy(val_primary, val_secondary, legacy):
+            if isinstance(val_primary, list):
+                return val_primary if val_primary else (val_secondary if isinstance(val_secondary, list) else legacy)
+            return val_primary or val_secondary or legacy
+
+        updated["title"] = _pick_legacy(
+            updated.get("title_en") or title_en,
+            updated.get("title_es") or title_es,
+            legacy_title
+        ) or updated.get("title")
+
+        updated["html"] = _pick_legacy(
+            updated.get("html_en") or html_en,
+            updated.get("html_es") or html_es,
+            legacy_html
+        ) or updated.get("html")
+
+        updated["tags"] = _pick_legacy(
+            updated.get("tags_en") if isinstance(updated.get("tags_en"), list) else tags_en,
+            updated.get("tags_es") if isinstance(updated.get("tags_es"), list) else tags_es,
+            legacy_tags
+        ) or updated.get("tags", [])
+
+        # Must have some html/title to remain valid (for existing legacy consumers)
+        if not (updated.get("title") and updated.get("html")):
+            # If only EN provided, mirror EN to legacy; if only ES provided, mirror ES.
+            if updated.get("title_en") and updated.get("html_en") and not (updated.get("title_es") or updated.get("html_es")):
+                updated["title"] = updated["title_en"]
+                updated["html"]  = updated["html_en"]
+                if updated.get("tags_en"):
+                    updated["tags"] = updated["tags_en"]
+            elif updated.get("title_es") and updated.get("html_es") and not (updated.get("title_en") or updated.get("html_en")):
+                updated["title"] = updated["title_es"]
+                updated["html"]  = updated["html_es"]
+                if updated.get("tags_es"):
+                    updated["tags"] = updated["tags_es"]
+
+        updated["updated_at"] = now_iso
+
+        # --- Persist: foldered JSON ---
         os.makedirs(folder, exist_ok=True)
         with open(page_json_path, "w", encoding="utf-8") as f:
-            json.dump(current, f, ensure_ascii=False, indent=2)
+            json.dump(updated, f, ensure_ascii=False, indent=2)
 
-        # Also update the flat index
+        # --- Persist: flat index (create if missing) ---
         pages = _load_pages()
         idx = next((i for i, p in enumerate(pages)
                     if (p.get("slug") or "").strip().lower() == slug.strip().lower()), -1)
         if idx == -1:
-            # Not in flat list yet → append (keeps legacy views working)
-            pages.append(current)
+            pages.append(updated)
         else:
-            pages[idx] = current
+            pages[idx] = updated
         _save_pages(pages)
 
-        return jsonify({"success": True, "page": current})
+        return jsonify({"success": True, "page": updated})
 
     except Exception as e:
         return jsonify({"success": False, "error": f"Failed to update page: {e}"}), 500
@@ -1014,67 +1121,166 @@ def admin_pages_toggle_status(slug):
         return jsonify({"success": True, "page": current})
     except Exception as e:
         return jsonify({"success": False, "error": f"Failed to toggle status: {e}"}), 500
+    
+@bp.route("/pages/<slug>/json", methods=["GET"])
+def admin_pages_get_json(slug):
+    """
+    Return the page object (merged) for a given slug as JSON.
+    Prefers the foldered JSON at data/pages/<slug>/page.json,
+    falling back to the flat index data/pages/pages.json.
+    """
+    try:
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+        folder = os.path.join(project_root, "data", "pages", slug)
+        page_json_path = os.path.join(folder, "page.json")
+
+        page = None
+        if os.path.exists(page_json_path):
+            with open(page_json_path, "r", encoding="utf-8") as f:
+                page = json.load(f)
+        else:
+            pages_flat = _load_pages()
+            for p in pages_flat:
+                if (p.get("slug") or "").strip().lower() == slug.strip().lower():
+                    page = p
+                    break
+
+        if not page:
+            return jsonify({"success": False, "error": "Page not found."}), 404
+
+        return jsonify({"success": True, "page": page})
+    except Exception as e:
+        return jsonify({"success": False, "error": f"Failed to load page: {e}"}), 500
 
 @bp.route("/pages", methods=["POST"])
 def admin_pages_create():
     """
-    Create a new page and store it BOTH in a foldered structure:
-      data/pages/<slug>/page.json
-    and in the flat index:
-      data/pages/pages.json
+    Create a new page (bilingual-aware).
+
+    Accepts BOTH new bilingual fields and legacy single-language fields.
+
+      New (preferred):
+        - title_en, html_en, tags_en
+        - title_es, html_es, tags_es   (comma-separated tags)
+
+      Legacy (back-compat; used as fallback):
+        - title, html, tags
+
+    Writes:
+      - data/pages/<slug>/page.json
+      - data/pages/pages.json
     """
     from datetime import datetime
 
-    title = (request.form.get("title") or "").strip()
-    html = (request.form.get("html") or "").strip()
-    tags_raw = (request.form.get("tags") or "").strip()
-
-    if not title or not html:
-        return jsonify({"success": False, "error": "Both 'title' and 'html' are required."}), 400
-
-    tags = [t.strip() for t in tags_raw.split(",") if t.strip()] if tags_raw else []
-
-    # Load existing flat list (for uniqueness + index compatibility)
-    pages = _load_pages()  # writes to data/pages/pages.json via _save_pages()  :contentReference[oaicite:0]{index=0}
-
-    # Slug (unique)
-    base_slug = _slugify(title)  # existing helper  :contentReference[oaicite:1]{index=1}
-    slug = base_slug
-    existing_slugs = {p.get("slug") for p in pages}
-    i = 2
-    while slug in existing_slugs:
-        slug = f"{base_slug}-{i}"
-        i += 1
-
-    # Build the canonical page object
-    now_iso = datetime.utcnow().isoformat(timespec="seconds") + "Z"
-    page_obj = {
-        "id": slug,                 # simple ID = slug
-        "slug": slug,
-        "title": title,
-        "html": html,
-        "tags": tags,               # list of strings
-        "created_at": now_iso,
-        "updated_at": None,
-        "status": "published"
-    }
-
-    # 1) Write foldered file: data/pages/<slug>/page.json
-    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    folder = os.path.join(project_root, "data", "pages", slug)
-    os.makedirs(folder, exist_ok=True)
-    page_json_path = os.path.join(folder, "page.json")
     try:
-        with open(page_json_path, "w", encoding="utf-8") as f:
-            json.dump(page_obj, f, ensure_ascii=False, indent=2)
+        # --- Read input fields ---
+        title_en = (request.form.get("title_en") or "").strip()
+        html_en  = (request.form.get("html_en") or "").strip()
+        tags_en_raw = (request.form.get("tags_en") or "").strip()
+
+        title_es = (request.form.get("title_es") or "").strip()
+        html_es  = (request.form.get("html_es") or "").strip()
+        tags_es_raw = (request.form.get("tags_es") or "").strip()
+
+        legacy_title = (request.form.get("title") or "").strip()
+        legacy_html  = (request.form.get("html")  or "").strip()
+        legacy_tags_raw = (request.form.get("tags") or "").strip()
+
+        # Parse tags
+        def _parse_tags(raw):
+            return [t.strip() for t in (raw or "").split(",") if t and t.strip()]
+
+        tags_en = _parse_tags(tags_en_raw)
+        tags_es = _parse_tags(tags_es_raw)
+        legacy_tags = _parse_tags(legacy_tags_raw)
+
+        # Must have at least one language
+        has_en = bool(title_en or html_en)
+        has_es = bool(title_es or html_es)
+        has_legacy = bool(legacy_title or legacy_html)
+        if not (has_en or has_es or has_legacy):
+            return jsonify({"success": False, "error": "Provide at least one language (EN or ES)."}), 400
+
+        # Slug source preference: EN → ES → legacy
+        primary_title = title_en or title_es or legacy_title
+        if not primary_title:
+            return jsonify({"success": False, "error": "A title is required in at least one language."}), 400
+
+        # Slugify + ensure uniqueness
+        def _slugify(s):
+            import re, unicodedata
+            s = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode("ascii")
+            s = re.sub(r"[^a-zA-Z0-9\- ]+", "", s).strip().lower()
+            s = re.sub(r"\s+", "-", s)
+            s = re.sub(r"-+", "-", s)
+            return s or "page"
+
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+        flat_path = os.path.join(project_root, "data", "pages", "pages.json")
+        existing = []
+        if os.path.exists(flat_path):
+            try:
+                with open(flat_path, "r", encoding="utf-8") as f:
+                    existing = json.load(f) or []
+            except Exception:
+                existing = []
+
+        base_slug = _slugify(primary_title)
+        slug = base_slug
+        n = 2
+        existing_slugs = { (p.get("slug") or "").strip().lower() for p in existing }
+        while slug in existing_slugs:
+            slug = f"{base_slug}-{n}"
+            n += 1
+
+        # Build legacy mirrors (keeps current renderers working)
+        def _pick_legacy(val_es, val_en, legacy):
+            if isinstance(val_es, list):
+                return val_es if val_es else (val_en if isinstance(val_en, list) else legacy)
+            return val_es or val_en or legacy
+
+        now_iso = datetime.utcnow().isoformat(timespec="seconds") + "Z"
+        page = {
+            "id": slug,
+            "slug": slug,
+            "status": "published",
+            "created_at": now_iso,
+            "updated_at": now_iso,
+
+            # Bilingual fields
+            **({"title_en": title_en} if (title_en or "title_en" in request.form) else {}),
+            **({"html_en": html_en}   if (html_en  or "html_en"  in request.form) else {}),
+            **({"tags_en": tags_en}   if (tags_en_raw or "tags_en" in request.form) else {}),
+
+            **({"title_es": title_es} if (title_es or "title_es" in request.form) else {}),
+            **({"html_es": html_es}   if (html_es  or "html_es"  in request.form) else {}),
+            **({"tags_es": tags_es}   if (tags_es_raw or "tags_es" in request.form) else {}),
+        }
+
+        # Compute legacy fields for compatibility (prefer EN → ES → legacy)
+        legacy_title_final = _pick_legacy(page.get("title_en"), page.get("title_es"), legacy_title)
+        legacy_html_final  = _pick_legacy(page.get("html_en"),  page.get("html_es"),  legacy_html)
+        legacy_tags_final  = _pick_legacy(page.get("tags_en"),  page.get("tags_es"),  legacy_tags)
+        if legacy_title_final: page["title"] = legacy_title_final
+        if legacy_html_final:  page["html"]  = legacy_html_final
+        page["tags"] = legacy_tags_final or []
+
+        # Persist: foldered json
+        folder = os.path.join(project_root, "data", "pages", slug)
+        os.makedirs(folder, exist_ok=True)
+        with open(os.path.join(folder, "page.json"), "w", encoding="utf-8") as f:
+            json.dump(page, f, ensure_ascii=False, indent=2)
+
+        # Persist: flat index
+        pages = existing
+        pages.append(page)
+        with open(flat_path, "w", encoding="utf-8") as f:
+            json.dump(pages, f, ensure_ascii=False, indent=2)
+
+        return jsonify({"success": True, "page": page})
+
     except Exception as e:
-        return jsonify({"success": False, "error": f"Failed to write page folder: {e}"}), 500
-
-    # 2) Also update the flat index (data/pages/pages.json) for current readers
-    pages.append(page_obj)
-    _save_pages(pages)  # persists to data/pages/pages.json  :contentReference[oaicite:2]{index=2}
-
-    return jsonify({"success": True, "page": page_obj})
+        return jsonify({"success": False, "error": f"Failed to create page: {e}"}), 500
 
 @bp.route("/pages/<slug>/delete", methods=["POST"])
 def admin_pages_delete(slug):
