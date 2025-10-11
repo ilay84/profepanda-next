@@ -77,16 +77,6 @@
     {% set show_en = False %}{% set show_es = True %}
   {% endif %}
 
-  <!-- TEMP DEBUG: fixed-position language toggle so it's impossible to miss -->
-    <!-- FORCE-VISIBLE: fixed-position language toggle so it cannot be off-screen -->
-    <button id="lang-toggle"
-            style="position:fixed; right:20px; top:20px; z-index:2147483647;
-                   padding:.55rem 1rem; border:1px solid #0ea5e9; border-radius:999px;
-                   background:#2563eb; color:#fff; font-weight:700; letter-spacing:.2px;
-                   box-shadow:0 8px 22px rgba(0,0,0,.12);">
-      {{ 'versión en español' if show_en else 'English version' }}
-    </button>
-
   <script>
     (function () {
       var btn = document.getElementById('lang-toggle');

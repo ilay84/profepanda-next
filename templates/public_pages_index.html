@@ -45,7 +45,7 @@
     <div class="grid">
       {% for p in pages %}
       <article class="item">
-        <h2><a href="/pages/{{ p.slug }}">{{ p.title_en or p.title_es or p.title }}</a></h2>
+        <h2><a href="/pages/{{ p.slug }}">{{ (p.title_es or p.title or p.title_en) if lang == 'es' else (p.title_en or p.title or p.title_es) }}</a></h2>
 
         <div class="meta" style="flex-direction:column;align-items:flex-start;">
           {% if p.display_date %}
