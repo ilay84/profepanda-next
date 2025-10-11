@@ -59,8 +59,9 @@
   @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 
-<!-- TinyMCE (rich text editor) -->
+<!-- Editors & converters -->
 <script src="https://cdn.jsdelivr.net/npm/tinymce@6.8.3/tinymce.min.js" referrerpolicy="origin"></script>
+<script src="https://cdn.jsdelivr.net/npm/turndown@7.2.0/dist/turndown.min.js" referrerpolicy="origin"></script>
 
 <div class="pages-wrapper">
   <div class="pages-card">
@@ -108,24 +109,22 @@
           <textarea class="input" id="html_es" name="html_es" rows="12" placeholder="Ingresá el HTML o texto enriquecido en español">{{ page.html_es or (page.html if (page.html and not page.html_en)) or '' }}</textarea>
           <div class="help">Completá los campos que necesites. Si dejás todo vacío en español, solo se mostrará la versión en inglés.</div>
         </div>
-
-        <!-- Tags -->
-        <div class="field">
-          <label class="label" for="tags">Tags</label>
-          <input class="tags-input" id="tags" name="tags" type="text" placeholder="ser/estar, beginner, A2" />
-          <div class="help">Comma-separated (e.g., <em>ser/estar, beginner, A2</em>).</div>
-        </div>
-
       </form>
     </div>
 
 <div class="actions">
       <button type="button" class="btn secondary" id="cancelBtn"
         style="color:#dc2626;font-weight:400;background:#e2e8f0;"
-        onclick="if (confirm('Discard this page and return to Pages?')) window.location.href='{{ url_for('admin.admin_pages_index') }}'">
+        onclick="if (confirm('Discard this page and return to Pages?')) { window.location.href='{{ url_for('admin.admin_pages_index') }}'; }">
         Cancel
       </button>
+
       <button type="button" class="btn secondary" id="resetBtn">Reset</button>
+
+      <!-- New: Copy all content as Markdown -->
+      <button type="button" class="btn secondary" id="copyMdBtn" title="Copy all content as Markdown">
+        Copy as Markdown
+      </button>
 
       <!-- Saving indicator (shown while publishing) -->
       <span id="savingIndicator" class="saving" aria-live="polite" style="margin-left:auto;">
@@ -141,6 +140,27 @@
   document.addEventListener('DOMContentLoaded', function () {
     // ---- Safe helpers ----
     const $ = (sel) => document.querySelector(sel);
+
+    // Ensure "Copy as Markdown" button exists (inject if missing)
+    (function ensureCopyBtn(){
+      var actions = document.querySelector('.actions');
+      if (!actions) return;
+      var existing = document.getElementById('copyMdBtn');
+      if (existing) return;
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.id = 'copyMdBtn';
+      btn.className = 'btn secondary';
+      btn.title = 'Copy all content as Markdown';
+      btn.textContent = 'Copy as Markdown';
+      // Insert after Reset if present; otherwise append at start
+      var reset = document.getElementById('resetBtn');
+      if (reset && reset.parentNode === actions) {
+        actions.insertBefore(btn, reset.nextSibling);
+      } else {
+        actions.insertBefore(btn, actions.firstChild);
+      }
+    })();
 
     // Slug detection (reads data attribute first, then URL patterns)
     const getSlugParam = () => {
@@ -174,14 +194,28 @@
     const showSaved = () => {
       const pill = $('#saveOk');
       if (pill) {
+        pill.textContent = '✓ Guardado exitosamente';
+        // Move pill to top-right instead of bottom-right
+        Object.assign(pill.style, {
+          position: 'fixed',
+          top: '24px',
+          right: '24px',
+          bottom: 'auto',
+          zIndex: '100',
+          boxShadow: '0 6px 16px rgba(0,0,0,.12)'
+        });
         pill.classList.add('show');
-        setTimeout(() => pill.classList.remove('show'), 1500);
+        setTimeout(() => pill.classList.remove('show'), 1800);
       }
-      // Also hide spinner & re-enable Publish
+
+      // Hide spinner & re-enable Publish
       const saving = $('#savingIndicator');
       const pubBtn = $('#publishBtn');
       if (saving) saving.classList.remove('show');
       if (pubBtn) pubBtn.disabled = false;
+
+      // Scroll user to top smoothly
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     // ---- Init TinyMCE (both editors) ----
@@ -194,7 +228,7 @@
         menubar: 'file edit view insert format tools table',
         plugins: 'code link lists table media image autoresize template visualblocks template',
         toolbar: [
-          'undo redo | blocks | bold italic underline removeformat |',
+          'undo redo | blocks | bold italic underline forecolor backcolor removeformat |',
           'alignleft aligncenter alignright alignjustify | bullist numlist outdent indent |',
           'link image media table | template visualblocks | code'
         ].join(' '),
@@ -326,23 +360,15 @@
             return;
           }
 
-          // 🧩 Ensure both bilingual sides have something, for fallback compatibility
-          let safe_html_en = html_en || '';
-          let safe_html_es = html_es || '';
-          // If one is empty but legacy main HTML exists, fill it in
-          const legacy_html_fallback = $('#html')?.value || safe_html_en || safe_html_es;
-          if (!safe_html_en && legacy_html_fallback) safe_html_en = legacy_html_fallback;
-          if (!safe_html_es && legacy_html_fallback) safe_html_es = legacy_html_fallback;
-
-          // What we submit in legacy fields (used by routes + slugging)
+          // 🧩 Legacy fields for compatibility (do NOT cross-fill EN/ES)
           const legacy_title = title_main || title_es || title_en || '';
-          const legacy_html  = safe_html_es || safe_html_en || '';
-          const legacy_tags  = tags_es    || tags_en  || '';
+          const legacy_html  = '';   // DO NOT use EN/ES here — prevents cross-fill into either language
+          const legacy_tags  = '';   // Keep legacy tags empty so they don’t overwrite bilingual tags
 
           const form = new FormData();
-          // 🧩 Bilingual – always provide both sides so toggle works publicly
-          const submit_html_en = html_en || html_es || legacy_html_fallback || '';
-          const submit_html_es = html_es || html_en || legacy_html_fallback || '';
+          // Preserve exactly what the user typed (allow empty strings)
+          const submit_html_en = html_en;
+          const submit_html_es = html_es;
 
           form.append('title_en', title_en);
           form.append('html_en',  submit_html_en);
@@ -379,6 +405,129 @@
         }
       });
     }
+
+    // ---- Copy as Markdown (per-language: EN / ES; Actions bar only) ----
+    (function () {
+      // 1) Ensure two buttons in the Actions bar (after Reset)
+      function ensureBarButton(id, text, title) {
+        var actions = document.querySelector('.actions');
+        if (!actions) return null;
+        var existing = document.getElementById(id);
+        if (existing) return existing;
+
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.id = id;
+        btn.className = 'btn secondary';
+        btn.textContent = text;
+        btn.title = title;
+
+        var reset = document.getElementById('resetBtn');
+        if (reset && reset.parentNode === actions) {
+          actions.insertBefore(btn, reset.nextSibling);
+        } else {
+          actions.insertBefore(btn, actions.firstChild);
+        }
+        return btn;
+      }
+
+      var btnEn = ensureBarButton('copyMdBtnEn', 'Copy Markdown (EN)', 'Copy English editor as Markdown');
+      var btnEs = ensureBarButton('copyMdBtnEs', 'Copiar Markdown (ES)', 'Copiar el editor en español a Markdown');
+
+      // 2) Helpers to read editor HTML
+      function getEditorHTMLById(id) {
+        if (window.tinymce && tinymce.get && tinymce.get(id)) {
+          try { return tinymce.get(id).getContent({ format: 'html' }) || ''; }
+          catch (e) { return tinymce.get(id).getContent() || ''; }
+        }
+        var ta = document.getElementById(id);
+        return (ta && ta.value) ? ta.value : '';
+      }
+
+      // 3) Fallback HTML→MD (basic) if Turndown isn’t available
+      function naiveHtmlToMd(html) {
+        if (!html) return '';
+        var md = html;
+        md = md.replace(/<\/h1>/gi, '\n').replace(/<h1[^>]*>/gi, '# ');
+        md = md.replace(/<\/h2>/gi, '\n').replace(/<h2[^>]*>/gi, '## ');
+        md = md.replace(/<\/h3>/gi, '\n').replace(/<h3[^>]*>/gi, '### ');
+        md = md.replace(/<\/h4>/gi, '\n').replace(/<h4[^>]*>/gi, '#### ');
+        md = md.replace(/<\/p>/gi, '\n\n').replace(/<p[^>]*>/gi, '');
+        md = md.replace(/<br\s*\/?>/gi, '\n');
+        md = md.replace(/<li[^>]*>/gi, '- ').replace(/<\/li>/gi, '\n');
+        md = md.replace(/<\/ul>/gi, '\n').replace(/<ul[^>]*>/gi, '\n');
+        md = md.replace(/<\/ol>/gi, '\n').replace(/<ol[^>]*>/gi, '\n');
+        md = md.replace(/<strong[^>]*>|<b[^>]*>/gi, '**').replace(/<\/strong>|<\/b>/gi, '**');
+        md = md.replace(/<em[^>]*>|<i[^>]*>/gi, '*').replace(/<\/em>|<\/i>/gi, '*');
+        md = md.replace(/<u[^>]*>|<\/u>/gi, '');
+        md = md.replace(/<img[^>]*alt="([^"]*)"[^>]*src="([^"]+)"[^>]*>/gi, '![$1]($2)');
+        md = md.replace(/<a[^>]*href="([^"]+)"[^>]*>(.*?)<\/a>/gi, '[$2]($1)');
+        md = md.replace(/<\/?[^>]+>/g, '');
+        md = md.replace(/\n{3,}/g, '\n\n').trim();
+        return md;
+      }
+
+      // 4) Core copy routine for a single editor
+      function copyOneEditorAsMarkdown(editorId, triggerBtn) {
+        var html = getEditorHTMLById(editorId);
+        if (!html || !html.trim()) {
+          alert('No content to copy in this editor.');
+          return;
+        }
+
+        var useTurndown = (typeof window.TurndownService === 'function');
+        var turndown = useTurndown ? new TurndownService({
+          headingStyle: 'atx',
+          codeBlockStyle: 'fenced',
+          bulletListMarker: '-',
+          emDelimiter: '*',
+          hr: '---'
+        }) : null;
+
+        if (turndown) {
+          turndown.addRule('details', {
+            filter: function (node) { return node.nodeName === 'DETAILS'; },
+            replacement: function (content, node) {
+              var summary = node.querySelector && node.querySelector('summary');
+              var title = summary ? '**' + summary.textContent.trim() + '**' : '**Details**';
+              return title + '\n\n' + (content || '').trim() + '\n';
+            }
+          });
+        }
+
+        var md = useTurndown ? turndown.turndown(html) : naiveHtmlToMd(html);
+
+        var done = function () {
+          var original = triggerBtn.textContent;
+          triggerBtn.textContent = 'Copied!';
+          triggerBtn.disabled = true;
+          setTimeout(function () { triggerBtn.textContent = original; triggerBtn.disabled = false; }, 1200);
+        };
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(md).then(done).catch(function () {
+            var ta = document.createElement('textarea');
+            ta.value = md; document.body.appendChild(ta); ta.select();
+            try { document.execCommand('copy'); } finally { document.body.removeChild(ta); done(); }
+          });
+        } else {
+          var ta = document.createElement('textarea');
+          ta.value = md; document.body.appendChild(ta); ta.select();
+          try { document.execCommand('copy'); } finally { document.body.removeChild(ta); done(); }
+        }
+      }
+
+      // 5) Wire the Actions-bar buttons
+      function wire(id, editorId) {
+        var btn = document.getElementById(id);
+        if (btn && !btn.__ppMdWired) {
+          btn.__ppMdWired = true;
+          btn.addEventListener('click', function () { copyOneEditorAsMarkdown(editorId, btn); });
+        }
+      }
+      wire('copyMdBtnEn', 'html_en');
+      wire('copyMdBtnEs', 'html_es');
+    })();
   });
 </script>
 {% endblock %}
