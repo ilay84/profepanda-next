@@ -17,8 +17,22 @@
   .item h2 a:hover{color:#2563eb;text-decoration:underline;}
   .meta{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;color:#64748b;font-size:.92rem;margin:.25rem 0 .6rem;}
   .tag{display:inline-block;padding:.15rem .55rem;border-radius:999px;background:#eef2ff;color:#1e40af;font-weight:600;font-size:.8rem;}
-  .more a{display:inline-block;padding:.45rem .75rem;border-radius:10px;background:#2563eb;color:#fff;text-decoration:none;font-weight:700;}
-  .more a:hover{filter:brightness(0.95);}
+
+  /* NEW: dual language call-to-action */
+  .lang-cta{display:flex;flex-direction:column;align-items:center;gap:.5rem;margin-top:.25rem;}
+  .lang-cta a{
+    display:block; width:100%; max-width:260px; text-align:center;
+    padding:.6rem .9rem; border-radius:12px; font-weight:700; text-decoration:none;
+    transition:filter .15s ease, transform .02s ease;
+  }
+  .lang-cta a:active{ transform:translateY(1px); }
+  .lang-cta a.es{ background:#2563eb; color:#fff; }
+  .lang-cta a.es:hover{ filter:brightness(.98); }
+  .lang-cta a.en{
+    background:#f1f5f9; color:#0f172a; border:1px solid #e2e8f0;
+  }
+  .lang-cta a.en:hover{ filter:brightness(.97); }
+
   .empty{color:#475569;margin-top:.75rem;}
 </style>
 
@@ -31,7 +45,8 @@
     <div class="grid">
       {% for p in pages %}
       <article class="item">
-       <h2><a href="/pages/{{ p.slug }}">{{ p.title_en or p.title_es or p.title }}</a></h2>
+        <h2><a href="/pages/{{ p.slug }}">{{ p.title_en or p.title_es or p.title }}</a></h2>
+
         <div class="meta" style="flex-direction:column;align-items:flex-start;">
           {% if p.display_date %}
             <div><strong>{{ 'Actualizado:' if lang == 'es' else 'Updated:' }}</strong> {{ p.display_date }}</div>
@@ -44,8 +59,11 @@
             </div>
           {% endif %}
         </div>
-        <div class="more">
-          <a href="/pages/{{ p.slug }}">{{ 'Leer' if lang == 'es' else 'Read' }}</a>
+
+        <!-- NEW: language selection buttons -->
+        <div class="lang-cta">
+          <a class="es" href="/pages/{{ p.slug }}?lang=es">Leer en español</a>
+          <a class="en" href="/pages/{{ p.slug }}?lang=en">Read in English</a>
         </div>
       </article>
       {% endfor %}
